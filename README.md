@@ -42,8 +42,7 @@ Load all the modules.
 ```
 cd scratch/car-VAE-na/
 module load StdEnv/2020 python/3.9.6 cuda/11.4
-# For some reason, you need to tell the compute node where the cudacore library is.
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/cvmfs/soft.computecanada.ca/easybuild/software/2020/Core/cudacore/11.4.2/lib/"
+# For some reason, you may need to tell the compute node where the cudacore library is. export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/cvmfs/soft.computecanada.ca/easybuild/software/2020/Core/cudacore/11.4.2/lib/"
 ```
 
 Activate the environment with `source env/bin/activate`. If it's your first time, you'll need to set up the virtual environment and install all the required libraries.
@@ -64,7 +63,7 @@ unset PYTHONPATH
 Copy-pasta this line of code into the terminal to do all the things!
 
 ```
-python vae.py --data_dir data/evox_64x64_1 --img_size 64 --train --visualize --extract_latent --model_path checkpoints/car-VAE-na.pth --latent_save_path latents/ --latent_dim 128 --kld_weight 0.001 --learning_rate 0.0001 --batch_size 512 --epochs 100
+python vae.py --data_dir data/evox_256x256_1-3 --img_size 256 --train --visualize --extract_latent --model_path checkpoints/car-VAE-na.pth --latent_save_path latents/ --latent_dim 128 --kld_weight 0.001 --learning_rate 0.0001 --batch_size 32 --epochs 100
 ```
 
 Key Arguments
