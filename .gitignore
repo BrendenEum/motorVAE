@@ -2,16 +2,13 @@
 *.ckpt
 *.mat
 *.pth
-*.png
-*.tfrecords*
 *.tar
-training_artifacts/cars/last_checkpoint
 
+data/
 env/
 __pycache__/
 .idea/
 *.pdf
-# *.png
 *.eps
 results*/
 ._.DS_Store
