@@ -1,7 +1,7 @@
-# Variational Autoencoder
+# motorVAE: Variational Autoencoder for Vehicle Image Reconstruction with Disentangled Latent Space
 Author: Brenden Eum (2025)
 
-This implementation creates a variational autoencoder specifically designed for your 64×64 grayscale vehicle images. 
+This implementation creates a variational autoencoder specifically designed for your pixel×pixel grayscale vehicle images. 
 
 
 ## Here's a breakdown of what it does:
@@ -40,9 +40,8 @@ salloc --account=def-webbr  --time=00:30:00 --gres=gpu:1 --mem=8000M --ntasks=1 
 Load all the modules.
 
 ```
-cd scratch/car-VAE-na/
+cd /home/beum/scratch/motorVAE
 module load StdEnv/2020 python/3.9.6 cuda/11.4
-# For some reason, you may need to tell the compute node where the cudacore library is. export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/cvmfs/soft.computecanada.ca/easybuild/software/2020/Core/cudacore/11.4.2/lib/"
 ```
 
 Activate the environment with `source env/bin/activate`. If it's your first time, you'll need to set up the virtual environment and install all the required libraries.
@@ -63,23 +62,29 @@ unset PYTHONPATH
 Copy-pasta this line of code into the terminal to do all the things!
 
 ```
-python vae.py --data_dir data/evox_256x256_1-3 --img_size 256 --train --visualize --extract_latent --model_path checkpoints/car-VAE-na.pth --latent_save_path latents/ --latent_dim 128 --kld_weight 0.001 --learning_rate 0.0001 --batch_size 32 --epochs 100
+python vae.py --data_dir data/evox_256x256_1-3 --dataset 256x256_1-3 --img_size 256 --model_path checkpoints/motorVAE_256x256_1-3.pth --train --visualize --extract_latent --latent_dim 128 --kld_weight 0.001 --learning_rate 0.0001 --batch_size 32 --epochs 100
 ```
 
 Key Arguments
 
-1. Use `--data_dir {path}`to set the location of your training images (default evox_64x64_1).
-2. Use `--img_size 64` to set the final image resolution (default 64).
-3. Use `--train` to train the VAE.
-4. Use `--visualize` to see reconstructions and latent space traversals.
-5. Use `--extract_latent` to save latent vectors for external analysis.
-6. Use `--model_path {path/fn.pth}` to save/load the model as a .pth file (default pwd/vae_model.pth).
-7. Use `--latent_save_path {path/folder_name}` to set the directory to save latent vectors
+1. Use `--data_dir {path}` to set the location of your training images (default evox_64x64_1).
+2. Use `--dataset {64x64_1}` to append the name of the dataset to the names of output folders.
+3. Use `--img_size 64` to set the final image resolution (default 64).
+4. Use `--model_path {path/fn.pth}` to save/load the model as a .pth file (default pwd/vae_model.pth).
+
+What Do You Want To Do
+
+- Use `--train` to train the VAE.
+- Use `--resume` to resume training from last checkpoint. This must be used with `--train`.
+- Use `--visualize` to see reconstructions and latent space traversals. Only requires `--train` the first time.
+- Use `--extract_latent` to save latent vectors for external analysis. Only requires `--train` the first time.
+- Use `--sample` to generate random samples from the latent space. Only requires `--train` the first time.
 
 Other Arguments
 
-- Use `--resume` to resume training from last checkpoint.
-- Use `--sample` to generate random samples from the latent space.
+- Use `--reconstruct_dir {folder_name}` to set the directory to save reconstructions. No need to set this if you specify `--dataset`.
+- Use `--latent_save_dir {folder_name}` to set the directory to save latent vectors. No need to set this if you specify `--dataset`
+- Use `--latent_traversal_dir {folder_name}` to set the directory to save latent traversals. No need to set this if you specify `--dataset`
 
 
 Parameters
@@ -96,5 +101,9 @@ Parameters
 Once you know how to run it interactively, you can just write all of this into shell code and submit it as a SLURM job.
 
 ```
-sbatch job_car-VAE-na.sh
+sbatch job-motorVAE-evox_256x256_1-3.sh
 ```
+
+To stream the output, type `tail -f {job_log.out}`. 
+
+To check in on GPU usage, open up a separate terminal, ssh into the cluster, then ssh into the compute node (check the compute node address using `sq`). Then run `watch -n 1 nvidia-smi`.
