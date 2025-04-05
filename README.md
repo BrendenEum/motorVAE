@@ -31,19 +31,27 @@ This implementation creates a variational autoencoder specifically designed for 
 
 ## To get started in an interactive job:
 
-```
-module load StdEnv/2020
-module load python/3.8.10
-module load cuda/11.0
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/cvmfs/soft.computecanada.ca/easybuild/software/2020/Core/cudacore/11.0.2/lib/"
-```
-
-The first time only, you need to create a virtual enviroment and install the necessary packages. Once this enviroment has been created the first time, you'll only need to run `source env/bin/activate`.
+Request an interactive session.
 
 ```
-virtualenv --no-download env
+salloc --account=def-webbr  --time=00:30:00 --gres=gpu:1 --mem=8000M --ntasks=1 --cpus-per-task=2
+```
+
+Load all the modules.
+
+```
+cd scratch/car-VAE-na/
+module load StdEnv/2020 python/3.9.6 cuda/11.4
+# For some reason, you need to tell the compute node where the cudacore library is.
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/cvmfs/soft.computecanada.ca/easybuild/software/2020/Core/cudacore/11.4.2/lib/"
+```
+
+Activate the environment with `source env/bin/activate`. If it's your first time, you'll need to set up the virtual environment and install all the required libraries.
+
+```
+#virtualenv --no-download env
 source env/bin/activate
-pip install -r requirements.txt
+#pip install -r requirements.txt
 ```
 
 If you have issues with installing the compute canada versions of the packages, then run this.
@@ -53,10 +61,10 @@ unset PIP_CONFIG_FILE
 unset PYTHONPATH
 ```
 
-Second, copy-pasta this line of code into the terminal to do all the things!
+Copy-pasta this line of code into the terminal to do all the things!
 
 ```
-python vae.py --data_dir evox_64x64_1 --train --visualize --extract_latent
+python vae.py --data_dir data/evox_64x64_1 --img_size 64 --train --visualize --extract_latent --model_path checkpoints/car-VAE-na.pth --latent_save_path latents/ --latent_dim 128 --kld_weight 0.001 --learning_rate 0.0001 --batch_size 512 --epochs 100
 ```
 
 Key Arguments
@@ -78,7 +86,16 @@ Other Arguments
 Parameters
 
 1. Use `--latent_dim 128` to control the size of your latent space (default is 128). Larger values capture more details but may be harder to train.
-2. Use `---kld_weight 0.005` to balance reconstruction quality versus latent space regularity (default is 0.005). Lower values -- like 0.001 -- prioritize reconstruction quality, while higher values -- like 0.01 -- create a more structured latent space.
+2. Use `--kld_weight 0.005` to balance reconstruction quality versus latent space regularity (default is 0.005). Lower values -- like 0.001 -- prioritize reconstruction quality, while higher values -- like 0.01 -- create a more structured latent space.
 3. Use `--learning_rate 0.0001` to control how quickly the model learns (default 0.0001). Too high might cause instability, but too low might make training super slow.
 4. Use `--batch_size 32` to deal with memory constraints (default 32). Smaller batches help with limited memory, but higher batches speed up training.
 5. Use `--epochs 100` to set the number of times the dataset is worked through (default 100). More epochs generally gives better results, but takes longer to train.
+
+
+## Run it as a job on the cluster
+
+Once you know how to run it interactively, you can just write all of this into shell code and submit it as a SLURM job.
+
+```
+sbatch job_car-VAE-na.sh
+```
