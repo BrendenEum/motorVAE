@@ -31,12 +31,26 @@ This implementation creates a variational autoencoder specifically designed for 
 
 ## To get started in an interactive job:
 
+```
+module load StdEnv/2020
+module load python/3.8.10
+module load cuda/11.0
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/cvmfs/soft.computecanada.ca/easybuild/software/2020/Core/cudacore/11.0.2/lib/"
+```
+
 The first time only, you need to create a virtual enviroment and install the necessary packages. Once this enviroment has been created the first time, you'll only need to run `source env/bin/activate`.
 
 ```
 virtualenv --no-download env
 source env/bin/activate
 pip install -r requirements.txt
+```
+
+If you have issues with installing the compute canada versions of the packages, then run this.
+
+```
+unset PIP_CONFIG_FILE
+unset PYTHONPATH
 ```
 
 Second, copy-pasta this line of code into the terminal to do all the things!
