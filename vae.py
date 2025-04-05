@@ -286,13 +286,10 @@ def train_vae(model, train_loader, optimizer, epochs, kld_weight=0.005, save_pat
     
     return train_losses
 
-def visualize_reconstructions(model, data_loader, num_images=10, save_dir="reconstructions_", dataset=""):
+def visualize_reconstructions(model, data_loader, num_images=10, save_dir="output"):
     """
     Visualize original images and their reconstructions
     """
-    if not os.path.exists(f"{save_dir}_{dataset}"):
-        os.makedirs(f"{save_dir}_{dataset}")
-
     model.eval()
     
     # Get a batch of images
@@ -320,17 +317,18 @@ def visualize_reconstructions(model, data_loader, num_images=10, save_dir="recon
         plt.axis('off')
     
     plt.tight_layout()
-    plt.savefig(os.path.join(f"{save_dir}_{dataset}", f"reconstructions.png"))
+    plt.savefig(os.path.join(save_dir, f"reconstructions.png"))
     plt.close()
-    print(f"Saved reconstructions to {save_dir}_{dataset}")
+    print(f"Saved reconstructions to {save_dir}")
 
-def visualize_latent_traversal(model, data_loader, dim=0, num_dims=5, save_dir="latent_traversal_", dataset=""):
+def visualize_latent_traversal(model, data_loader, dim=0, num_dims=5, save_dir="output"):
     """
     Visualize latent space traversal for multiple dimensions
     """
-    if not os.path.exists(f"{save_dir}_{dataset}"):
-        os.makedirs(f"{save_dir}_{dataset}")
-        
+    lt_dir = os.path.join(save_dir, "latent_traversals")
+    if not os.path.exists(lt_dir):
+        os.makedirs(lt_dir)
+
     model.eval()
     
     # Get a sample image
@@ -354,18 +352,15 @@ def visualize_latent_traversal(model, data_loader, dim=0, num_dims=5, save_dir="
         
         plt.suptitle(f"Latent Traversal - Dimension {d}")
         plt.tight_layout()
-        plt.savefig(os.path.join(f"{save_dir}_{dataset}", f"latent_traversal_dim_{d}.png"))
+        plt.savefig(os.path.join(lt_dir, f"latent_traversal_dim_{d}.png"))
         plt.close()
         
-    print(f"Saved latent traversal visualizations to {save_dir}_{dataset}")
+    print(f"Saved latent traversal visualizations to {lt_dir}")
 
-def extract_latent_vectors(model, data_loader, save_dir="latent_vectors", dataset=""):
+def extract_latent_vectors(model, data_loader, save_dir="output"):
     """
     Extract and save the latent vectors (mean and log variance) for all images
     """
-    if not os.path.exists(f"{save_dir}_{dataset}"):
-        os.makedirs(f"{save_dir}_{dataset}")
-        
     model.eval()
     
     all_mu = []
@@ -390,19 +385,28 @@ def extract_latent_vectors(model, data_loader, save_dir="latent_vectors", datase
     all_log_var = np.concatenate(all_log_var, axis=0)
     
     # Save as numpy arrays
-    np.save(os.path.join(f"{save_dir}_{dataset}", "mu_vectors.npy"), all_mu)
-    np.save(os.path.join(f"{save_dir}_{dataset}", "log_var_vectors.npy"), all_log_var)
+    np.save(os.path.join(save_dir, "latent_mu.npy"), all_mu)
+    np.save(os.path.join(save_dir, "latent_log_var.npy"), all_log_var)
     
     # Save filenames if available
     if all_filenames:
-        np.save(os.path.join(f"{save_dir}_{dataset}", "filenames.npy"), np.array(all_filenames))
+        np.save(os.path.join(save_dir, "filenames.npy"), np.array(all_filenames))
     
-    print(f"Saved latent vectors to {save_dir}_{dataset}")
+    print(f"Saved latent vectors to {save_dir}")
     print(f"mu shape: {all_mu.shape}, log_var shape: {all_log_var.shape}")
     
     return all_mu, all_log_var
 
 def main(args):
+
+    # Make the folder to save all outputs
+    if not os.path.exists("outputs"):
+        os.makedirs("outputs")
+    out_dir = os.path.join("outputs", f"{args.dataset}")
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+    
+
     # Data transformations
     transform = transforms.Compose([
         transforms.Resize((args.img_size, args.img_size)),
@@ -450,7 +454,7 @@ def main(args):
         plt.title('Training Loss')
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
-        plt.savefig('training_loss.png')
+        plt.savefig(os.path.join(out_dir, f'training_loss.png'))
         plt.close()
     
     # Load best model for evaluation
@@ -461,22 +465,16 @@ def main(args):
     
     if args.visualize:
         # Visualize reconstructions
-        visualize_reconstructions(model, train_loader, num_images=10, save_dir=args.reconstruct_dir, dataset=args.dataset)
+        visualize_reconstructions(model, train_loader, num_images=10, save_dir=out_dir)
         
         # Visualize latent space traversal
-        visualize_latent_traversal(
-            model, train_loader, dim=0, num_dims=args.latent_dim, 
-            save_dir=args.latent_traversal_dir, dataset=args.dataset)
+        visualize_latent_traversal(model, train_loader, dim=0, num_dims=args.latent_dim, save_dir=out_dir)
     
     if args.extract_latent:
         # Extract and save latent vectors
-        mu, log_var = extract_latent_vectors(model, train_loader, save_dir=args.latent_save_dir, dataset=args.dataset)
+        mu, log_var = extract_latent_vectors(model, train_loader, save_dir=out_dir)
     
     if args.sample:
-        # Make directory if it doesn't exist
-        samples_dir = f"samples_{args.dataset}"
-        if not os.path.exists(samples_dir):
-            os.makedirs(samples_dir)
         # Generate random samples
         with torch.no_grad():
             samples = model.sample(num_samples=25)
@@ -488,17 +486,17 @@ def main(args):
             plt.imshow(samples[i].cpu().squeeze().numpy(), cmap='gray')
             plt.axis('off')
         plt.tight_layout()
-        plt.savefig(os.path.join(samples_dir, 'samples.png'))
+        plt.savefig(os.path.join(out_dir, 'samples.png'))
         plt.close()
-        print(f"Saved random samples to {samples_dir}")
+        print(f"Saved random samples to {out_dir}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='VAE for Vehicle Images')
     
     # Data parameters
-    parser.add_argument('--data_dir', type=str, default='evox_64x64_1', help='Directory containing the dataset')
+    parser.add_argument('--data_dir', type=str, default='data/evox_256x256_1-3', help='Directory containing the dataset')
     parser.add_argument('--img_size', type=int, default=64, help='Image size')
-    parser.add_argument('--dataset', type=str, default='64x64_1', help='The properties describing evox')
+    parser.add_argument('--dataset', type=str, default='Unspecified-Dataset', help='The properties describing evox: e.g. 64x64_1')
     
     # Model parameters
     parser.add_argument('--latent_dim', type=int, default=128, help='Dimension of latent space')
@@ -513,9 +511,6 @@ if __name__ == "__main__":
     
     # Output parameters
     parser.add_argument('--model_path', type=str, default='checkpoints/vae_model.pth', help='Path to save/load model')
-    parser.add_argument('--reconstruct_dir', type=str, default='reconstructions_', help='Directory to save reconstructions')
-    parser.add_argument('--latent_save_dir', type=str, default='latents_', help='Directory to save latent vectors')
-    parser.add_argument('--latent_traversal_dir', type=str, default='latent_traversal_', help='Directory to save latent traversals')
     
     # Actions
     parser.add_argument('--visualize', action='store_true', help='Visualize reconstructions and latent space')

@@ -34,13 +34,13 @@ This implementation creates a variational autoencoder specifically designed for 
 Request an interactive session.
 
 ```
-salloc --account=def-webbr  --time=00:30:00 --gres=gpu:1 --mem=8000M --ntasks=1 --cpus-per-task=2
+cd /home/beum/scratch/motorVAE
+salloc --account=def-webbr  --time=00:30:00 --gres=gpu:1 --mem=8000M --ntasks=1 --cpus-per-task=4
 ```
 
 Load all the modules.
 
 ```
-cd /home/beum/scratch/motorVAE
 module load StdEnv/2020 python/3.9.6 cuda/11.4
 ```
 
@@ -52,17 +52,12 @@ source env/bin/activate
 #pip install -r requirements.txt
 ```
 
-If you have issues with installing the compute canada versions of the packages, then run this.
-
-```
-unset PIP_CONFIG_FILE
-unset PYTHONPATH
-```
+If you have issues with installing the Compute Canada versions of the packages, then you might want to try `unset PIP_CONFIG_FILE` and `unset PYTHONPATH` to download the libraries from PyPI instead of pulling from Compute Canada's database.
 
 Copy-pasta this line of code into the terminal to do all the things!
 
 ```
-python vae.py --data_dir data/evox_256x256_1-3 --dataset 256x256_1-3 --img_size 256 --model_path checkpoints/motorVAE_256x256_1-3.pth --train --visualize --extract_latent --latent_dim 128 --kld_weight 0.001 --learning_rate 0.0001 --batch_size 32 --epochs 100
+python vae.py --data_dir data/evox_256x256_1-3 --dataset 256x256_1-3 --img_size 256 --model_path checkpoints/motorVAE_256x256_1-3.pth --train --visualize --extract_latent --sample --latent_dim 128 --kld_weight 0.001 --learning_rate 0.0001 --batch_size 32 --epochs 100
 ```
 
 Key Arguments
@@ -74,8 +69,8 @@ Key Arguments
 
 What Do You Want To Do
 
-- Use `--train` to train the VAE.
-- Use `--resume` to resume training from last checkpoint. This must be used with `--train`.
+- Use `--train` to train the VAE from scratch.
+- Use `--resume` to resume training from last checkpoint. Cannot be used with `--train`.
 - Use `--visualize` to see reconstructions and latent space traversals. Only requires `--train` the first time.
 - Use `--extract_latent` to save latent vectors for external analysis. Only requires `--train` the first time.
 - Use `--sample` to generate random samples from the latent space. Only requires `--train` the first time.
