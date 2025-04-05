@@ -458,7 +458,7 @@ def main(args):
         visualize_reconstructions(model, train_loader, num_images=10, save_path="reconstructions.png")
         
         # Visualize latent space traversal
-        visualize_latent_traversal(model, train_loader, dim=0, num_dims=10, save_dir="latent_traversal")
+        visualize_latent_traversal(model, train_loader, dim=0, num_dims=args.latent_dim, save_dir="latent_traversal")
     
     if args.extract_latent:
         # Extract and save latent vectors
