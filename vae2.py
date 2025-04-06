@@ -438,8 +438,14 @@ def main(args):
         start_epoch = 0
     
     if args.train:
-        # Train the model
-        train_losses = train_vae(model, train_loader, optimizer, args.epochs, kld_weight=args.kld_weight, save_path=args.model_path)
+        # Train the model at 0 kld weight
+        train_losses = train_vae(model, train_loader, optimizer, args.epochs, kld_weight=0.0, save_path=args.model_path)
+
+        # Retrain again with higher weight
+        checkpoint = torch.load(args.model_path)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer = optim.Adam(model.parameters(), lr=args.learning_rate * 0.5)  # Often using lower LR for fine-tuning
+        train_losses = train_vae(model, train_loader, optimizer, args.epochs, kld_weight=0.05, save_path=args.model_path)
         
         # Plot training loss
         plt.figure(figsize=(10, 5))
