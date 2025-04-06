@@ -1,8 +1,11 @@
 # motorVAE: Variational Autoencoder for Vehicle Image Reconstruction with Disentangled Latent Space
 Author: Brenden Eum (2025)
 
-This implementation creates a variational autoencoder specifically designed for your pixel×pixel grayscale vehicle images. 
+![motorVAE architecture](<writing/motorVAE-architecture.png>)
 
+For more details on the architecture, see `network_architecture.md`. This README is only meant to help you get started with the code. I'm writing this as if you're a doofus with coding, which is what I am. 
+
+The code was written to run on Compute Canada's Cedar cluster with a V100 GPU (32GB memory) and 4 worker CPUs. My car dataset contains about 35,000 images at 256x256 pixels. With the settings in the example code below, it takes somewhere between 4-12 hours to train; I usually fall asleep before it finishes and keep forgetting to record training start and end times for an accurate estimate. My hunch is that it takes ~6 hours.
 
 ## Here's a breakdown of what it does:
 
@@ -44,15 +47,17 @@ Load all the modules.
 module load StdEnv/2020 python/3.9.6 cuda/11.4
 ```
 
-Activate the environment with `source env/bin/activate`. If it's your first time, you'll need to set up the virtual environment and install all the required libraries.
+>*First-time setup*: If it's your first time ever running this code, you'll need to set up the virtual environment and install all the required libraries with (1) `virtualenv --no-download env`, (2) `source env/bin/activate`, (3) `pip install -r requirements.txt`. I think `virtualenv` is different on Compute Canada, so you may want to use `venv` on a local computer.
+>
+>If you have issues with installing Compute Canada's versions of the packages, then you might want to run `unset PIP_CONFIG_FILE` and `unset PYTHONPATH` *right after loading the modules*. This tells Compute Canada to stop installing their own versions of these libraries, and instead downloads the libraries from PyPI.
+
+If it's not your first time, you can skip directly to activating the environment. 
 
 ```
-#virtualenv --no-download env
 source env/bin/activate
-#pip install -r requirements.txt
 ```
 
-If you have issues with installing the Compute Canada versions of the packages, then you might want to try `unset PIP_CONFIG_FILE` and `unset PYTHONPATH` to download the libraries from PyPI instead of pulling from Compute Canada's database.
+
 
 Copy-pasta this line of code into the terminal to do all the things!
 
@@ -74,13 +79,6 @@ What Do You Want To Do
 - Use `--visualize` to see reconstructions and latent space traversals. Only requires `--train` the first time.
 - Use `--extract_latent` to save latent vectors for external analysis. Only requires `--train` the first time.
 - Use `--sample` to generate random samples from the latent space. Only requires `--train` the first time.
-
-Other Arguments
-
-- Use `--reconstruct_dir {folder_name}` to set the directory to save reconstructions. No need to set this if you specify `--dataset`.
-- Use `--latent_save_dir {folder_name}` to set the directory to save latent vectors. No need to set this if you specify `--dataset`
-- Use `--latent_traversal_dir {folder_name}` to set the directory to save latent traversals. No need to set this if you specify `--dataset`
-
 
 Parameters
 
