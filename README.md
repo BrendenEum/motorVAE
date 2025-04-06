@@ -57,7 +57,7 @@ If you have issues with installing the Compute Canada versions of the packages, 
 Copy-pasta this line of code into the terminal to do all the things!
 
 ```
-python vae.py --data_dir data/evox_256x256_1-3 --dataset 256x256_1-3 --img_size 256 --model_path checkpoints/motorVAE_256x256_1-3.pth --train --visualize --extract_latent --sample --latent_dim 128 --kld_weight 0.001 --learning_rate 0.0001 --batch_size 32 --epochs 100
+python vae.py --data_dir data/evox_256x256_1-3 --dataset 256x256_1-3 --img_size 256 --model_path checkpoints/motorVAE_256x256_1-3.pth --train --visualize --extract_latent --sample --latent_dim 128 --kld_weight 0.005 --learning_rate 0.0001 --batch_size 32 --epochs 112
 ```
 
 Key Arguments
@@ -87,8 +87,8 @@ Parameters
 1. Use `--latent_dim 128` to control the size of your latent space (default is 128). Larger values capture more details but may be harder to train.
 2. Use `--kld_weight 0.005` to balance reconstruction quality versus latent space regularity (default is 0.005). Lower values -- like 0.001 -- prioritize reconstruction quality, while higher values -- like 0.01 -- create a more structured latent space.
 3. Use `--learning_rate 0.0001` to control how quickly the model learns (default 0.0001). Too high might cause instability, but too low might make training super slow.
-4. Use `--batch_size 32` to deal with memory constraints (default 32). Smaller batches help with limited memory, but higher batches speed up training.
-5. Use `--epochs 100` to set the number of times the dataset is worked through (default 100). More epochs generally gives better results, but takes longer to train.
+4. Use `--batch_size 128` to deal with memory constraints (default 32). Smaller batches help with limited memory, but higher batches speed up training.
+5. Use `--epochs 112` to set the number of times the dataset is worked through (default 100). More epochs generally gives better results, but takes longer to train.
 
 
 ## Run it as a job on the cluster
@@ -99,6 +99,6 @@ Once you know how to run it interactively, you can just write all of this into s
 sbatch job-motorVAE-evox_256x256_1-3.sh
 ```
 
-To stream the output, type `tail -f {job_log.out}`. 
+To stream the output, type `tail -f job-logs/{job#}.out`. 
 
 To check in on GPU usage, open up a separate terminal, ssh into the cluster, then ssh into the compute node (check the compute node address using `sq`). Then run `watch -n 1 nvidia-smi`.
