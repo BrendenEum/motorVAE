@@ -3,7 +3,7 @@ Author: Brenden Eum (2025)
 
 ![motorVAE architecture](<writing/motorVAE-architecture.png>)
 
-For more details on the architecture, see `network_architecture.md`. This README is only meant to help you get started with the code. I'm writing this as if you're a doofus with coding, which is what I am. 
+For more details on the architecture, see [this .md file](writing/network_architecture.md). This README is only meant to help you get started with the code. I'm writing this as if you're a doofus with coding, which is what I am. 
 
 The code was written to run on Compute Canada's Cedar cluster with a V100 GPU (32GB memory) and 4 worker CPUs. My car dataset contains about 35,000 images at 256x256 pixels. With the settings in the example code below, it takes somewhere between 4-12 hours to train; I usually fall asleep before it finishes and keep forgetting to record training start and end times for an accurate estimate. My hunch is that it takes ~6 hours.
 
