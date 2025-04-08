@@ -38,7 +38,7 @@ Request an interactive session.
 
 ```
 cd /home/beum/scratch/motorVAE
-salloc --account=def-webbr  --time=00:30:00 --gres=gpu:1 --mem=8000M --ntasks=1 --cpus-per-task=4
+salloc --account=def-webbr  --time=00:30:00 --gres=gpu:1 --mem=12000M --ntasks=1 --cpus-per-task=4
 ```
 
 Load all the modules.

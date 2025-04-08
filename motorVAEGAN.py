@@ -400,7 +400,14 @@ def train_vae_gan(vae_model, discriminator, train_loader, vae_optimizer, d_optim
             }, save_path)
             print(f"Checkpoint saved to {save_path}")
     
-    return train_losses
+    # Return all loss components for plotting
+    return {
+        'total': total_losses,
+        'recon': recon_losses,
+        'kld': kld_losses,
+        'adv': adv_losses,
+        'disc': disc_losses
+    }
 
 def visualize_reconstructions(model, data_loader, num_images=10, save_dir="output"):
     """
