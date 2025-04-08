@@ -575,7 +575,7 @@ def main(args):
     
     if args.train:
         # Train VAE-GAN
-        train_losses = train_vae_gan(
+        losses = train_vae_gan(
             vae_model, discriminator, train_loader, vae_optimizer, d_optimizer,
             args.epochs, kld_weight=args.kld_weight, adv_weight=args.adv_weight, 
             save_path=args.model_path

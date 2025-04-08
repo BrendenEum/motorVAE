@@ -84,9 +84,10 @@ Parameters
 
 1. Use `--latent_dim 128` to control the size of your latent space (default is 128). Larger values capture more details but may be harder to train.
 2. Use `--kld_weight 0.005` to balance reconstruction quality versus latent space regularity (default is 0.005). Lower values -- like 0.001 -- prioritize reconstruction quality, while higher values -- like 0.01 -- create a more structured latent space.
-3. Use `--learning_rate 0.0001` to control how quickly the model learns (default 0.0001). Too high might cause instability, but too low might make training super slow.
-4. Use `--batch_size 128` to deal with memory constraints (default 32). Smaller batches help with limited memory, but higher batches speed up training.
-5. Use `--epochs 112` to set the number of times the dataset is worked through (default 100). More epochs generally gives better results, but takes longer to train.
+3. Use `--adv_weight 1.0` to control the weight of the adversarial loss term in the loss function.
+4. Use `--learning_rate 0.0001` to control how quickly the model learns (default 0.0001). Too high might cause instability, but too low might make training super slow.
+5. Use `--batch_size 128` to deal with memory constraints (default 32). Smaller batches help with limited memory, but higher batches speed up training.
+6. Use `--epochs 112` to set the number of times the dataset is worked through (default 100). More epochs generally gives better results, but takes longer to train.
 
 
 ## Run it as a job on the cluster
