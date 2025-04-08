@@ -62,7 +62,7 @@ source env/bin/activate
 Copy-pasta this line of code into the terminal to do all the things!
 
 ```
-python vae.py --data_dir data/evox_256x256_1-3 --dataset 256x256_1-3 --img_size 256 --model_path checkpoints/motorVAE_256x256_1-3.pth --train --visualize --extract_latent --sample --latent_dim 128 --kld_weight 0.005 --learning_rate 0.0001 --batch_size 32 --epochs 112
+python motorVAEGAN.py --data_dir data/evox_256x256_1-3 --dataset motorVAEGAN_256x256_1-3 --img_size 256 --model_path checkpoints/motorVAEGAN_256x256_1-3.pth --train --visualize --extract_latent --sample --latent_dim 128 --kld_weight 0.005 --learning_rate 0.0001 --batch_size 256 --epochs 112
 ```
 
 Key Arguments
