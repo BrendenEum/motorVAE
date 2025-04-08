@@ -4,7 +4,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:v100l:1
 #SBATCH --mem=32000M
-#SBATCH --output=job-logs/%j.out
+#SBATCH --output=logs/%j.out
 
 # Go to project folder
 cd /home/beum/scratch/motorVAE
