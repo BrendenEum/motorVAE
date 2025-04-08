@@ -12,8 +12,8 @@ from tqdm import tqdm
 import argparse
 
 # Set random seeds for reproducibility
-torch.manual_seed(42)
-np.random.seed(42)
+torch.manual_seed(4)
+np.random.seed(4)
 
 # Check if GPU is available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -36,6 +36,27 @@ class VehicleDataset(Dataset):
             image = self.transform(image)
             
         return image
+    
+    def get_image_by_filename(self, filename):
+        """
+        Get an image by its filename
+        """
+        if filename in self.img_files:
+            img_path = os.path.join(self.img_dir, filename)
+            image = Image.open(img_path).convert('L')  # Convert to grayscale
+            
+            if self.transform:
+                image = self.transform(image)
+                
+            return image
+        else:
+            raise ValueError(f"File {filename} not found in dataset")
+            
+    def get_filenames(self):
+        """
+        Return all filenames in the dataset
+        """
+        return self.img_files
 
 class VAE(nn.Module):
     def __init__(self, img_size=64, latent_dim=128, hidden_dims=None):
@@ -148,7 +169,7 @@ class VAE(nn.Module):
     def forward(self, input, compute_loss=False):
         mu, log_var = self.encode(input)
         z = self.reparameterize(mu, log_var)
-        return self.decode(z), mu, log_var
+        return self.decode(z), mu, log_var, z  # Note: now also returning z
     
     def sample(self, num_samples):
         """
@@ -209,54 +230,83 @@ class VAE(nn.Module):
                 traversal_images.append(decoded.squeeze().cpu())
                 
             return traversal_images
+            
+    def interpolate(self, img1, img2, steps=10):
+        """
+        Performs latent space interpolation between two input images.
+        
+        Args:
+            img1: First input image
+            img2: Second input image
+            steps: Number of interpolation steps (including endpoints)
+            
+        Returns:
+            List of decoded images from the interpolation
+        """
+        with torch.no_grad():
+            # Encode both images to get their latent representations
+            mu1, _ = self.encode(img1.unsqueeze(0))
+            mu2, _ = self.encode(img2.unsqueeze(0))
+            
+            # Use means directly (no sampling) for smooth interpolation
+            z1 = mu1
+            z2 = mu2
+            
+            # Create interpolation steps
+            interpolation_images = []
+            alphas = np.linspace(0, 1, steps)
+            
+            # Generate and decode each interpolation point
+            for alpha in alphas:
+                z_interp = (1-alpha) * z1 + alpha * z2
+                decoded = self.decode(z_interp)
+                interpolation_images.append(decoded.squeeze().cpu())
+                
+            return interpolation_images
 
-# Discriminator class for GAN component
-class Discriminator(nn.Module):
-    def __init__(self, img_size=64, hidden_dims=None):
-        super(Discriminator, self).__init__()
+# Modified Discriminator class for latent space discrimination
+class LatentDiscriminator(nn.Module):
+    def __init__(self, latent_dim=128, hidden_dims=None):
+        super(LatentDiscriminator, self).__init__()
         
         # Default architecture if hidden_dims is not provided
         if hidden_dims is None:
-            hidden_dims = [32, 64, 128, 256, 512]  # Same as encoder for simplicity
+            hidden_dims = [256, 128, 64]  # Smaller network for latent space
         
-        modules = []
-        in_channels = 1  # Grayscale images
+        layers = []
+        in_dim = latent_dim
         
-        # Build discriminator network (similar to encoder but with different output)
+        # Build discriminator network as a series of fully connected layers
         for h_dim in hidden_dims:
-            modules.append(
+            layers.append(
                 nn.Sequential(
-                    nn.Conv2d(in_channels, out_channels=h_dim,
-                              kernel_size=3, stride=2, padding=1),
-                    nn.BatchNorm2d(h_dim),
-                    nn.LeakyReLU(0.2))
+                    nn.Linear(in_dim, h_dim),
+                    nn.LeakyReLU(0.2),
+                    nn.BatchNorm1d(h_dim)
+                )
             )
-            in_channels = h_dim
-        
-        self.features = nn.Sequential(*modules)
-        
-        # Calculate the size of the feature maps before flattening
-        encoder_output_size = img_size // (2 ** len(hidden_dims))
-        encoder_output_dim = hidden_dims[-1] * encoder_output_size * encoder_output_size
+            in_dim = h_dim
         
         # Final classification layer
-        self.classifier = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(encoder_output_dim, 1),
-            nn.Sigmoid()  # Output probability that the image is real
+        layers.append(
+            nn.Sequential(
+                nn.Linear(hidden_dims[-1], 1),
+                nn.Sigmoid()  # Output probability that the latent vector is from the prior
+            )
         )
         
-    def forward(self, img):
-        features = self.features(img)
-        validity = self.classifier(features)
+        self.model = nn.Sequential(*layers)
+        
+    def forward(self, z):
+        validity = self.model(z)
         return validity
 
-def vae_gan_loss(recon_x, x, mu, log_var, d_real, d_fake, kld_weight=0.005, adv_weight=1.0):
+def vae_gan_latent_loss(recon_x, x, mu, log_var, z, d_real, d_fake, kld_weight=0.005, adv_weight=1.0):
     """
-    VAE-GAN loss function with:
+    VAE-GAN loss function with latent space discrimination:
     - Reconstruction loss (MSE)
     - KL Divergence
-    - Adversarial loss from discriminator
+    - Adversarial loss from latent space discriminator
     """
     # Reconstruction loss
     recon_loss = F.mse_loss(recon_x, x, reduction='sum')
@@ -264,8 +314,9 @@ def vae_gan_loss(recon_x, x, mu, log_var, d_real, d_fake, kld_weight=0.005, adv_
     # KL Divergence loss
     kld_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
     
-    # Adversarial loss for generator
-    adv_loss = F.binary_cross_entropy(d_fake, torch.ones_like(d_fake)) # d_fake: 1 real, 0 fake
+    # Adversarial loss for generator (encoder)
+    # We want the discriminator to think our encoded latent vectors come from the prior
+    adv_loss = F.binary_cross_entropy(d_fake, torch.ones_like(d_fake))
     
     # Total loss for VAE (generator)
     vae_loss = recon_loss + kld_weight * kld_loss + adv_weight * adv_loss
@@ -282,10 +333,10 @@ def discriminator_loss(d_real, d_fake):
     
     return d_loss
 
-def train_vae_gan(vae_model, discriminator, train_loader, vae_optimizer, d_optimizer, 
-                  epochs, kld_weight=0.005, adv_weight=1.0, save_path="vae_gan_model.pth"):
+def train_vae_gan_latent(vae_model, discriminator, train_loader, vae_optimizer, d_optimizer, 
+                  epochs, kld_weight=0.005, adv_weight=1.0, save_path="vae_gan_latent_model.pth"):
     """
-    Train the VAE-GAN model
+    Train the VAE-GAN model with latent space discrimination
     """
     if not os.path.exists("checkpoints/"):
         os.makedirs("checkpoints/")
@@ -318,14 +369,15 @@ def train_vae_gan(vae_model, discriminator, train_loader, vae_optimizer, d_optim
             # ---------------------
             d_optimizer.zero_grad()
             
-            # Real images
-            d_real = discriminator(data)
+            # Real latent vectors from the prior distribution
+            z_real = torch.randn(batch_size, vae_model.latent_dim).to(device)
+            d_real = discriminator(z_real)
             
-            # Fake images (VAE reconstructions)
-            with torch.no_grad():  # Don't backprop through generator here
-                recon_batch, _, _ = vae_model(data)
+            # Fake latent vectors from the encoder
+            with torch.no_grad():  # Don't backprop through encoder here
+                _, _, _, z_fake = vae_model(data)
             
-            d_fake = discriminator(recon_batch.detach())  # Detach to avoid training generator
+            d_fake = discriminator(z_fake.detach())  # Detach to avoid training encoder
             
             # Discriminator loss
             d_loss = discriminator_loss(d_real, d_fake)
@@ -337,15 +389,15 @@ def train_vae_gan(vae_model, discriminator, train_loader, vae_optimizer, d_optim
             # ---------------------
             vae_optimizer.zero_grad()
             
-            # Generate reconstructed images
-            recon_batch, mu, log_var = vae_model(data)
+            # Generate reconstructed images and latent vectors
+            recon_batch, mu, log_var, z = vae_model(data)
             
-            # Discriminator output for reconstructed images
-            d_fake = discriminator(recon_batch)
+            # Discriminator output for encoded latent vectors
+            d_fake = discriminator(z)
             
-            # VAE-GAN loss
-            loss, recon_loss, kld_loss, adv_loss = vae_gan_loss(
-                recon_batch, data, mu, log_var, d_real, d_fake, kld_weight, adv_weight
+            # VAE-GAN loss with latent space discrimination
+            loss, recon_loss, kld_loss, adv_loss = vae_gan_latent_loss(
+                recon_batch, data, mu, log_var, z, d_real, d_fake, kld_weight, adv_weight
             )
             
             loss.backward()
@@ -480,6 +532,66 @@ def visualize_latent_traversal(model, data_loader, dim=0, num_dims=5, save_dir="
         
     print(f"Saved latent traversal visualizations to {lt_dir}")
 
+
+
+def visualize_interpolation_between_files(model, dataset, img1_file, img2_file, steps=10, save_dir="output"):
+    """
+    Visualize interpolation between two specific images identified by filename
+    
+    Args:
+        model: The VAE model
+        dataset: The dataset containing the images
+        img1_file: Filename of the first image
+        img2_file: Filename of the second image
+        steps: Number of interpolation steps
+        save_dir: Directory to save the visualization
+    """
+    model.eval()
+    
+    try:
+        # Get the two specified images
+        img1 = dataset.get_image_by_filename(img1_file).to(device)
+        img2 = dataset.get_image_by_filename(img2_file).to(device)
+        
+        # Generate interpolation
+        interp_images = model.interpolate(img1, img2, steps=steps)
+        
+        # Plot interpolation
+        plt.figure(figsize=(20, 4))
+        
+        # Add original images at the top with filenames
+        plt.subplot(2, steps, 1)
+        plt.imshow(img1.cpu().squeeze().numpy(), cmap='gray')
+        plt.title(f"Image 1\n{img1_file}")
+        plt.axis('off')
+        
+        plt.subplot(2, steps, steps)
+        plt.imshow(img2.cpu().squeeze().numpy(), cmap='gray')
+        plt.title(f"Image 2\n{img2_file}")
+        plt.axis('off')
+        
+        # Add interpolated images
+        for i, img in enumerate(interp_images):
+            ax = plt.subplot(2, steps, steps + i + 1)
+            plt.imshow(img.numpy(), cmap='gray')
+            plt.title(f"α={i/(steps-1):.1f}")
+            plt.axis('off')
+        
+        plt.suptitle(f"Latent Space Interpolation Between {img1_file} and {img2_file}")
+        plt.tight_layout()
+        output_name = f"interpolation_{os.path.splitext(img1_file)[0]}_{os.path.splitext(img2_file)[0]}.png"
+        plt.savefig(os.path.join(save_dir, output_name))
+        plt.close()
+        
+        print(f"Saved interpolation visualization to {os.path.join(save_dir, output_name)}")
+        
+    except ValueError as e:
+        print(f"Error: {e}")
+        print("Available files in the dataset:")
+        for i, filename in enumerate(dataset.get_filenames()):
+            print(f"{i}: {filename}")
+        return
+
 def extract_latent_vectors(model, data_loader, save_dir="output"):
     """
     Extract and save the latent vectors (mean and log variance) for all images
@@ -543,9 +655,9 @@ def main(args):
     # Create VAE model
     vae_model = VAE(img_size=args.img_size, latent_dim=args.latent_dim).to(device)
     
-    # Create Discriminator (always used since we're using VAE-GAN)
-    discriminator = Discriminator(img_size=args.img_size).to(device)
-    print("Using VAE-GAN architecture")
+    # Create Latent Space Discriminator
+    discriminator = LatentDiscriminator(latent_dim=args.latent_dim).to(device)
+    print("Using VAE-GAN architecture with latent space discrimination")
     
     # Count and print model parameters
     vae_params = sum(p.numel() for p in vae_model.parameters())
@@ -574,8 +686,8 @@ def main(args):
         start_epoch = 0
     
     if args.train:
-        # Train VAE-GAN
-        losses = train_vae_gan(
+        # Train VAE-GAN with latent space discrimination
+        losses = train_vae_gan_latent(
             vae_model, discriminator, train_loader, vae_optimizer, d_optimizer,
             args.epochs, kld_weight=args.kld_weight, adv_weight=args.adv_weight, 
             save_path=args.model_path
@@ -590,7 +702,7 @@ def main(args):
         plt.semilogy(losses['adv'], label='Adversarial Loss', alpha=0.7)
         plt.semilogy(losses['disc'], label='Discriminator Loss', alpha=0.7, linestyle='--')
         # Put it all together
-        plt.title('VAE-GAN Training Log-Losses')
+        plt.title('VAE-GAN Training Log-Losses (Latent Space Discrimination)')
         plt.xlabel('Epoch')
         plt.ylabel('Log-Loss')
         plt.legend()
@@ -611,6 +723,14 @@ def main(args):
         
         # Visualize latent space traversal
         visualize_latent_traversal(vae_model, train_loader, dim=0, num_dims=args.latent_dim, save_dir=out_dir)
+    
+    if args.interpolate:
+        # Visualize interpolation between specific files
+        visualize_interpolation_between_files(vae_model, train_dataset, 
+                                            args.interpolate[0], 
+                                            args.interpolate[1],
+                                            steps=args.interpolate_steps, 
+                                            save_dir=out_dir)
     
     if args.extract_latent:
         # Extract and save latent vectors
@@ -633,7 +753,7 @@ def main(args):
         print(f"Saved random samples to {out_dir}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='VAE-GAN for Vehicle Images')
+    parser = argparse.ArgumentParser(description='VAE-GAN for Vehicle Images with Latent Space Discrimination')
     
     # Data parameters
     parser.add_argument('--data_dir', type=str, default='data/evox_256x256_1-3', help='Directory containing the dataset')
@@ -653,12 +773,16 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     
     # Output parameters
-    parser.add_argument('--model_path', type=str, default='checkpoints/motorVAEGAN_256x256_1-3.pth', help='Path to save/load model')
+    parser.add_argument('--model_path', type=str, default='checkpoints/motorVAEGAN_latent_256x256_1-3.pth', help='Path to save/load model')
     
     # Actions
     parser.add_argument('--visualize', action='store_true', help='Visualize reconstructions and latent space')
     parser.add_argument('--extract_latent', action='store_true', help='Extract and save latent vectors')
     parser.add_argument('--sample', action='store_true', help='Generate random samples from the latent space')
+    parser.add_argument('--interpolate', nargs=2, metavar=('FILE1', 'FILE2'), 
+                        help='Specify two image filenames to interpolate between')
+    parser.add_argument('--interpolate_steps', type=int, default=10,
+                        help='Number of steps for interpolation (default: 10)')
     
     args = parser.parse_args()
     
