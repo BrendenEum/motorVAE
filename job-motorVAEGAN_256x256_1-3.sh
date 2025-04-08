@@ -16,5 +16,5 @@ module load StdEnv/2020 python/3.9.6 cuda/11.4
 source env/bin/activate
 
 # Train
-python motorVAEGAN.py --data_dir data/evox_256x256_1-3 --dataset motorVAEGAN_256x256_1-3 --img_size 256 --model_path checkpoints/motorVAEGAN_256x256_1-3.pth --train --visualize --extract_latent --sample --latent_dim 128 --kld_weight 0.005 --adv_weight 1.0 --learning_rate 0.0001 --batch_size 128 --epochs 112 --interpolate 2022_Chevrolet_BoltEUV_Premier_CUV_4Door_2.png 2022_Volkswagen_Tiguan_SE_CUV_4Door_3.png
+python motorVAEGAN.py --data_dir data/evox_256x256_1-3 --dataset motorVAEGAN_256x256_1-3 --img_size 256 --model_path checkpoints/motorVAEGAN_256x256_1-3.pth --train --visualize --extract_latent --sample --latent_dim 128 --kld_weight 0.02 --adv_weight 1.0 --recon_sample_weight 0.7 --learning_rate 0.0001 --batch_size 128 --epochs 112 --interpolate 2022_Chevrolet_BoltEUV_Premier_CUV_4Door_2.png 2022_Volkswagen_Tiguan_SE_CUV_4Door_3.png
 

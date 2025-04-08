@@ -62,15 +62,15 @@ source env/bin/activate
 Copy-pasta this line of code into the terminal to do all the things!
 
 ```
-python motorVAEGAN.py --data_dir data/evox_256x256_1-3 --dataset motorVAEGAN_256x256_1-3 --img_size 256 --model_path checkpoints/motorVAEGAN_256x256_1-3.pth --train --visualize --extract_latent --sample --latent_dim 128 --kld_weight 0.005 --adv_weight 1.0 --learning_rate 0.0001 --batch_size 128 --epochs 112 --interpolate 2022_Chevrolet_BoltEUV_Premier_CUV_4Door_2.png 2022_Volkswagen_Tiguan_SE_CUV_4Door_3.png
+python motorVAEGAN.py --data_dir data/evox_256x256_1-3 --dataset motorVAEGAN_256x256_1-3 --img_size 256 --model_path checkpoints/motorVAEGAN_256x256_1-3.pth --train --visualize --extract_latent --sample --latent_dim 128 --kld_weight 0.02 --adv_weight 1.0 --recon_sample_weight 0.7 --learning_rate 0.0001 --batch_size 128 --epochs 112 --interpolate 2022_Chevrolet_BoltEUV_Premier_CUV_4Door_2.png 2022_Volkswagen_Tiguan_SE_CUV_4Door_3.png
 ```
 
 Key Arguments
 
-1. Use `--data_dir {path}` to set the location of your training images (default evox_64x64_1).
-2. Use `--dataset {64x64_1}` to append the name of the dataset to the names of output folders.
-3. Use `--img_size 64` to set the final image resolution (default 64).
-4. Use `--model_path {path/fn.pth}` to save/load the model as a .pth file (default pwd/vae_model.pth).
+- Use `--data_dir {path}` to set the location of your training images (default evox_64x64_1).
+- Use `--dataset {64x64_1}` to append the name of the dataset to the names of output folders.
+- Use `--img_size 64` to set the final image resolution (default 64).
+- Use `--model_path {path/fn.pth}` to save/load the model as a .pth file (default pwd/vae_model.pth).
 
 What Do You Want To Do
 
@@ -83,12 +83,13 @@ What Do You Want To Do
 
 Parameters
 
-1. Use `--latent_dim 128` to control the size of your latent space (default is 128). Larger values capture more details but may be harder to train.
-2. Use `--kld_weight 0.005` to balance reconstruction quality versus latent space regularity (default is 0.005). Lower values -- like 0.001 -- prioritize reconstruction quality, while higher values -- like 0.01 -- create a more structured latent space.
-3. Use `--adv_weight 1.0` to control the weight of the adversarial loss term in the loss function.
-4. Use `--learning_rate 0.0001` to control how quickly the model learns (default 0.0001). Too high might cause instability, but too low might make training super slow.
-5. Use `--batch_size 128` to deal with memory constraints (default 32). Smaller batches help with limited memory, but higher batches speed up training.
-6. Use `--epochs 112` to set the number of times the dataset is worked through (default 100). More epochs generally gives better results, but takes longer to train.
+- Use `--latent_dim 128` to control the size of your latent space (default is 128). Larger values capture more details but may be harder to train.
+- Use `--kld_weight 0.005` to balance reconstruction quality versus latent space regularity (default is 0.005). Lower values -- like 0.001 -- prioritize reconstruction quality, while higher values -- like 0.01 -- create a more structured latent space.
+- Use `--adv_weight 1.0` to control the weight of the adversarial loss term in the loss function.
+- Use `--recon_sample_weight 0.7` to adjust weight for reconstruction vs sample discrimination (reconstruction w, sample 1-w).
+- Use `--learning_rate 0.0001` to control how quickly the model learns (default 0.0001). Too high might cause instability, but too low might make training super slow.
+- Use `--batch_size 128` to deal with memory constraints (default 32). Smaller batches help with limited memory, but higher batches speed up training.
+- Use `--epochs 112` to set the number of times the dataset is worked through (default 100). More epochs generally gives better results, but takes longer to train.
 
 
 ## Run it as a job on the cluster

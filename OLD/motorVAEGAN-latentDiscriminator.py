@@ -12,8 +12,8 @@ from tqdm import tqdm
 import argparse
 
 # Set random seeds for reproducibility
-torch.manual_seed(42)
-np.random.seed(42)
+torch.manual_seed(4)
+np.random.seed(4)
 
 # Check if GPU is available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -169,7 +169,7 @@ class VAE(nn.Module):
     def forward(self, input, compute_loss=False):
         mu, log_var = self.encode(input)
         z = self.reparameterize(mu, log_var)
-        return self.decode(z), mu, log_var, z  # Also return z
+        return self.decode(z), mu, log_var, z  # Note: now also returning z
     
     def sample(self, num_samples):
         """
@@ -264,64 +264,49 @@ class VAE(nn.Module):
                 
             return interpolation_images
 
-# Discriminator class for GAN component (from script B - pixel-space discriminator)
-class Discriminator(nn.Module):
-    def __init__(self, img_size=64, hidden_dims=None):
-        super(Discriminator, self).__init__()
+# Modified Discriminator class for latent space discrimination
+class LatentDiscriminator(nn.Module):
+    def __init__(self, latent_dim=128, hidden_dims=None):
+        super(LatentDiscriminator, self).__init__()
         
         # Default architecture if hidden_dims is not provided
         if hidden_dims is None:
-            hidden_dims = [32, 64, 128, 256, 512]  # Same as encoder for simplicity
+            hidden_dims = [256, 128, 64]  # Smaller network for latent space
         
-        modules = []
-        in_channels = 1  # Grayscale images
+        layers = []
+        in_dim = latent_dim
         
-        # Build discriminator network (similar to encoder but with different output)
+        # Build discriminator network as a series of fully connected layers
         for h_dim in hidden_dims:
-            modules.append(
+            layers.append(
                 nn.Sequential(
-                    nn.Conv2d(in_channels, out_channels=h_dim,
-                              kernel_size=3, stride=2, padding=1),
-                    nn.BatchNorm2d(h_dim),
-                    nn.LeakyReLU(0.2))
+                    nn.Linear(in_dim, h_dim),
+                    nn.LeakyReLU(0.2),
+                    nn.BatchNorm1d(h_dim)
+                )
             )
-            in_channels = h_dim
-        
-        self.features = nn.Sequential(*modules)
-        
-        # Calculate the size of the feature maps before flattening
-        encoder_output_size = img_size // (2 ** len(hidden_dims))
-        encoder_output_dim = hidden_dims[-1] * encoder_output_size * encoder_output_size
+            in_dim = h_dim
         
         # Final classification layer
-        self.classifier = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(encoder_output_dim, 1),
-            nn.Sigmoid()  # Output probability that the image is real
+        layers.append(
+            nn.Sequential(
+                nn.Linear(hidden_dims[-1], 1),
+                nn.Sigmoid()  # Output probability that the latent vector is from the prior
+            )
         )
         
-    def forward(self, img):
-        features = self.features(img)
-        validity = self.classifier(features)
+        self.model = nn.Sequential(*layers)
+        
+    def forward(self, z):
+        validity = self.model(z)
         return validity
 
-def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples, kld_weight=0.005, adv_weight=1.0, recon_sample_weight=0.5):
+def vae_gan_latent_loss(recon_x, x, mu, log_var, z, d_real, d_fake, kld_weight=0.005, adv_weight=1.0):
     """
-    VAE-GAN loss function with:
+    VAE-GAN loss function with latent space discrimination:
     - Reconstruction loss (MSE)
     - KL Divergence
-    - Adversarial loss from discriminator (weighted between reconstructions and samples)
-    
-    Args:
-        recon_x: Reconstructed images
-        x: Original images
-        mu: Mean vector from encoder
-        log_var: Log variance vector from encoder
-        d_recon: Discriminator output for reconstructions
-        d_samples: Discriminator output for samples from random noise
-        kld_weight: Weight for KL divergence term
-        adv_weight: Weight for adversarial loss term
-        recon_sample_weight: Weight for reconstruction (1-weight for samples) in adversarial loss
+    - Adversarial loss from latent space discriminator
     """
     # Reconstruction loss
     recon_loss = F.mse_loss(recon_x, x, reduction='sum')
@@ -329,54 +314,29 @@ def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples, kld_weight=0.005, 
     # KL Divergence loss
     kld_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
     
-    # Adversarial loss for generator with weighted reconstructions vs samples
-    adv_recon_loss = F.binary_cross_entropy(d_recon, torch.ones_like(d_recon))
-    adv_samples_loss = F.binary_cross_entropy(d_samples, torch.ones_like(d_samples))
-    adv_loss = recon_sample_weight * adv_recon_loss + (1.0 - recon_sample_weight) * adv_samples_loss
+    # Adversarial loss for generator (encoder)
+    # We want the discriminator to think our encoded latent vectors come from the prior
+    adv_loss = F.binary_cross_entropy(d_fake, torch.ones_like(d_fake))
     
     # Total loss for VAE (generator)
     vae_loss = recon_loss + kld_weight * kld_loss + adv_weight * adv_loss
     
     return vae_loss, recon_loss, kld_loss, adv_loss
 
-def discriminator_loss(d_real, d_fake_recon, d_fake_samples, recon_sample_weight=0.5):
+def discriminator_loss(d_real, d_fake):
     """
-    Extended GAN discriminator loss that handles both reconstructions and samples
-    with configurable weighting
-    
-    Args:
-        d_real: Discriminator output for real images
-        d_fake_recon: Discriminator output for reconstructed images
-        d_fake_samples: Discriminator output for samples from random noise
-        recon_sample_weight: Weight for reconstruction (1-weight for samples) in fake loss
+    Standard GAN discriminator loss
     """
     real_loss = F.binary_cross_entropy(d_real, torch.ones_like(d_real))
-    fake_recon_loss = F.binary_cross_entropy(d_fake_recon, torch.zeros_like(d_fake_recon))
-    fake_samples_loss = F.binary_cross_entropy(d_fake_samples, torch.zeros_like(d_fake_samples))
-    
-    # Weighted fake loss
-    fake_loss = recon_sample_weight * fake_recon_loss + (1.0 - recon_sample_weight) * fake_samples_loss
-    d_loss = real_loss + fake_loss
+    fake_loss = F.binary_cross_entropy(d_fake, torch.zeros_like(d_fake))
+    d_loss = (real_loss + fake_loss) / 2
     
     return d_loss
 
-def train_vae_gan(vae_model, discriminator, train_loader, vae_optimizer, d_optimizer, 
-                  epochs, kld_weight=0.005, adv_weight=1.0, recon_sample_weight=0.5,
-                  save_path="vae_gan_model.pth"):
+def train_vae_gan_latent(vae_model, discriminator, train_loader, vae_optimizer, d_optimizer, 
+                  epochs, kld_weight=0.005, adv_weight=1.0, save_path="vae_gan_latent_model.pth"):
     """
-    Train the VAE-GAN model with both reconstruction and random sample discrimination
-    
-    Args:
-        vae_model: The VAE model
-        discriminator: The discriminator model
-        train_loader: DataLoader for training data
-        vae_optimizer: Optimizer for VAE
-        d_optimizer: Optimizer for discriminator
-        epochs: Number of training epochs
-        kld_weight: Weight for KL divergence term
-        adv_weight: Weight for adversarial loss term
-        recon_sample_weight: Weight for reconstruction vs sample discrimination (0-1)
-        save_path: Path to save model checkpoints
+    Train the VAE-GAN model with latent space discrimination
     """
     if not os.path.exists("checkpoints/"):
         os.makedirs("checkpoints/")
@@ -390,8 +350,6 @@ def train_vae_gan(vae_model, discriminator, train_loader, vae_optimizer, d_optim
     kld_losses = []
     adv_losses = []
     disc_losses = []
-    
-    print(f"Training with reconstruction-sample weight: {recon_sample_weight:.2f}")
     
     for epoch in range(epochs):
         epoch_vae_loss = 0
@@ -411,24 +369,18 @@ def train_vae_gan(vae_model, discriminator, train_loader, vae_optimizer, d_optim
             # ---------------------
             d_optimizer.zero_grad()
             
-            # Real images
-            d_real = discriminator(data)
+            # Real latent vectors from the prior distribution
+            z_real = torch.randn(batch_size, vae_model.latent_dim).to(device)
+            d_real = discriminator(z_real)
             
-            # Fake images - both reconstructions and samples from random noise
-            with torch.no_grad():  # Don't backprop through generator here
-                # Get reconstructions
-                recon_batch, _, _, _ = vae_model(data)
-                
-                # Get samples from random noise
-                z_random = torch.randn(batch_size, vae_model.latent_dim).to(device)
-                fake_samples = vae_model.decode(z_random)
+            # Fake latent vectors from the encoder
+            with torch.no_grad():  # Don't backprop through encoder here
+                _, _, _, z_fake = vae_model(data)
             
-            # Evaluate both types of fake images
-            d_fake_recon = discriminator(recon_batch.detach())
-            d_fake_samples = discriminator(fake_samples.detach())
+            d_fake = discriminator(z_fake.detach())  # Detach to avoid training encoder
             
-            # Discriminator loss with weighting
-            d_loss = discriminator_loss(d_real, d_fake_recon, d_fake_samples, recon_sample_weight)
+            # Discriminator loss
+            d_loss = discriminator_loss(d_real, d_fake)
             d_loss.backward()
             d_optimizer.step()
             
@@ -437,21 +389,15 @@ def train_vae_gan(vae_model, discriminator, train_loader, vae_optimizer, d_optim
             # ---------------------
             vae_optimizer.zero_grad()
             
-            # Generate reconstructed images
-            recon_batch, mu, log_var, _ = vae_model(data)
+            # Generate reconstructed images and latent vectors
+            recon_batch, mu, log_var, z = vae_model(data)
             
-            # Generate samples from random noise
-            z_random = torch.randn(batch_size, vae_model.latent_dim).to(device)
-            fake_samples = vae_model.decode(z_random)
+            # Discriminator output for encoded latent vectors
+            d_fake = discriminator(z)
             
-            # Discriminator output for both types of generated images
-            d_fake_recon = discriminator(recon_batch)
-            d_fake_samples = discriminator(fake_samples)
-            
-            # VAE-GAN loss with weighting
-            loss, recon_loss, kld_loss, adv_loss = vae_gan_loss(
-                recon_batch, data, mu, log_var, d_fake_recon, d_fake_samples, 
-                kld_weight, adv_weight, recon_sample_weight
+            # VAE-GAN loss with latent space discrimination
+            loss, recon_loss, kld_loss, adv_loss = vae_gan_latent_loss(
+                recon_batch, data, mu, log_var, z, d_real, d_fake, kld_weight, adv_weight
             )
             
             loss.backward()
@@ -503,7 +449,6 @@ def train_vae_gan(vae_model, discriminator, train_loader, vae_optimizer, d_optim
                 'vae_optimizer_state_dict': vae_optimizer.state_dict(),
                 'd_optimizer_state_dict': d_optimizer.state_dict(),
                 'loss': avg_vae_loss,
-                'recon_sample_weight': recon_sample_weight
             }, save_path)
             print(f"Checkpoint saved to {save_path}")
     
@@ -586,6 +531,8 @@ def visualize_latent_traversal(model, data_loader, dim=0, num_dims=5, save_dir="
         plt.close()
         
     print(f"Saved latent traversal visualizations to {lt_dir}")
+
+
 
 def visualize_interpolation_between_files(model, dataset, img1_file, img2_file, steps=10, save_dir="output"):
     """
@@ -708,9 +655,9 @@ def main(args):
     # Create VAE model
     vae_model = VAE(img_size=args.img_size, latent_dim=args.latent_dim).to(device)
     
-    # Create Discriminator (pixel-space from script B)
-    discriminator = Discriminator(img_size=args.img_size).to(device)
-    print("Using VAE-GAN architecture with pixel-space discrimination")
+    # Create Latent Space Discriminator
+    discriminator = LatentDiscriminator(latent_dim=args.latent_dim).to(device)
+    print("Using VAE-GAN architecture with latent space discrimination")
     
     # Count and print model parameters
     vae_params = sum(p.numel() for p in vae_model.parameters())
@@ -739,11 +686,10 @@ def main(args):
         start_epoch = 0
     
     if args.train:
-        # Train VAE-GAN with weighted reconstruction vs sample discrimination
-        losses = train_vae_gan(
+        # Train VAE-GAN with latent space discrimination
+        losses = train_vae_gan_latent(
             vae_model, discriminator, train_loader, vae_optimizer, d_optimizer,
             args.epochs, kld_weight=args.kld_weight, adv_weight=args.adv_weight, 
-            recon_sample_weight=args.recon_sample_weight,
             save_path=args.model_path
         )
         
@@ -756,7 +702,7 @@ def main(args):
         plt.semilogy(losses['adv'], label='Adversarial Loss', alpha=0.7)
         plt.semilogy(losses['disc'], label='Discriminator Loss', alpha=0.7, linestyle='--')
         # Put it all together
-        plt.title('VAE-GAN Training Log-Losses')
+        plt.title('VAE-GAN Training Log-Losses (Latent Space Discrimination)')
         plt.xlabel('Epoch')
         plt.ylabel('Log-Loss')
         plt.legend()
@@ -807,7 +753,7 @@ def main(args):
         print(f"Saved random samples to {out_dir}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='VAE-GAN for Vehicle Images with weighted reconstruction vs sample discrimination')
+    parser = argparse.ArgumentParser(description='VAE-GAN for Vehicle Images with Latent Space Discrimination')
     
     # Data parameters
     parser.add_argument('--data_dir', type=str, default='data/evox_256x256_1-3', help='Directory containing the dataset')
@@ -818,8 +764,6 @@ if __name__ == "__main__":
     parser.add_argument('--latent_dim', type=int, default=128, help='Dimension of latent space')
     parser.add_argument('--kld_weight', type=float, default=0.005, help='Weight of KLD loss term')
     parser.add_argument('--adv_weight', type=float, default=1.0, help='Weight of adversarial loss term')
-    parser.add_argument('--recon_sample_weight', type=float, default=0.7, 
-                        help='Weight for reconstruction vs sample discrimination (default: 0.7, meaning 70% focus on reconstructions, 30% on samples)')
     
     # Training parameters
     parser.add_argument('--train', action='store_true', help='Train the model')
@@ -829,7 +773,7 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     
     # Output parameters
-    parser.add_argument('--model_path', type=str, default='checkpoints/motorVAEGAN_combined_256x256_1-3.pth', help='Path to save/load model')
+    parser.add_argument('--model_path', type=str, default='checkpoints/motorVAEGAN_latent_256x256_1-3.pth', help='Path to save/load model')
     
     # Actions
     parser.add_argument('--visualize', action='store_true', help='Visualize reconstructions and latent space')
