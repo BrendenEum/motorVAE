@@ -582,7 +582,7 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
                 'kld_weight': current_kld_weight,
                 'recon_sample_weight': recon_sample_weight
             }, os.path.join("checkpoints", checkpoint_path))
-            print(f"Checkpoint saved to {os.path.join("checkpoints", checkpoint_path)}")
+            print(f"Checkpoint saved to checkpoints/")
     
     # Return all loss components and KLD weights for plotting
     return {
