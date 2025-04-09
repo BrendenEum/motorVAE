@@ -1,7 +1,7 @@
-# motorVAE: Variational Autoencoder for Vehicle Image Reconstruction with Disentangled Latent Space
+# motorVAEGAN: Variational Autoencoder for Vehicle Image Reconstruction with Disentangled Latent Space
 Author: Brenden Eum (2025)
 
-![motorVAE architecture](<writing/motorVAEGAN-architecture.png>)
+![motorVAEGAN architecture](<writing/motorVAEGAN-architecture.png>)
 
 For more details on the architecture, see [this .md file](writing/network_architecture.md). This README is only meant to help you get started with the code. I'm writing this as if you're a doofus with coding, which is what I am. 
 
