@@ -568,7 +568,7 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
         
         # Track reconstruction of target image at the current epoch
         if target_recon_img != "-unspecified-":
-            track_reconstruction_across_epochs(vae_model, dataset, target_recon_img, epoch+1)
+            track_reconstruction_across_epochs(vae_model, dataset, target_recon_img, epoch+1, save_dir=recon_path)
         
         # Save model checkpoint
         if (epoch + 1) % 5 == 0 or epoch == epochs - 1:
