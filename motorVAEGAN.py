@@ -1,4 +1,5 @@
 import os
+import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -789,6 +790,9 @@ def extract_latent_vectors(model, data_loader, save_dir="output"):
     return all_mu, all_log_var
 
 def main(args):
+    # Start timing
+    start_time = time.time()
+
     # Make the folder to save all outputs
     if not os.path.exists("outputs"):
         os.makedirs("outputs")
@@ -944,6 +948,13 @@ def main(args):
         plt.savefig(os.path.join(out_dir, 'samples.png'))
         plt.close()
         print(f"Saved random samples to {out_dir}")
+
+    # End timer and print execution time
+    end_time = time.time()
+    execution_time = end_time - start_time
+    hours, remainder = divmod(execution_time, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    print(f"\nTotal execution time: {int(hours)} hours, {int(minutes)} minutes, {seconds:.2f} seconds")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='VAE-GAN for Vehicle Images with KL divergence weight scheduling')
