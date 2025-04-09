@@ -425,7 +425,8 @@ def kld_weight_scheduler(epoch, total_epochs=112, min_weight=0.01, max_weight=0.
 
 def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_img, 
                   vae_optimizer, d_optimizer, epochs, kld_scheduler_fn, kld_scheduler_params, 
-                  adv_weight=1.0, recon_sample_weight=0.7, save_path="vae_gan_model.pth", save_dir="output"):
+                  adv_weight=1.0, recon_sample_weight=0.7, 
+                  checkpoint_path="unspecified_model.pth", recon_path="outputs/unspecified"):
     """
     Train the VAE-GAN model with KLD weight scheduling and track reconstruction of a specific image
     
@@ -442,8 +443,8 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
         kld_scheduler_params: Parameters for the KLD scheduler function
         adv_weight: Weight for adversarial loss term
         recon_sample_weight: Weight for reconstruction vs sample discrimination
-        save_path: Path to save model checkpoints
-        save_dir: Directory to save visualizations
+        checkpoint_path: Path to save model checkpoints
+        recon_path: Path to save reconstructions each epoch
     """
     if not os.path.exists("checkpoints/"):
         os.makedirs("checkpoints/")
@@ -567,7 +568,7 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
         
         # Track reconstruction of target image at the current epoch
         if target_recon_img != "-unspecified-":
-            track_reconstruction_across_epochs(vae_model, dataset, target_recon_img, epoch+1, save_dir)
+            track_reconstruction_across_epochs(vae_model, dataset, target_recon_img, epoch+1)
         
         # Save model checkpoint
         if (epoch + 1) % 5 == 0 or epoch == epochs - 1:
@@ -580,8 +581,8 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
                 'loss': avg_vae_loss,
                 'kld_weight': current_kld_weight,
                 'recon_sample_weight': recon_sample_weight
-            }, save_path)
-            print(f"Checkpoint saved to {save_path}")
+            }, os.path.join("checkpoints", checkpoint_path))
+            print(f"Checkpoint saved to {os.path.join("checkpoints", checkpoint_path)}")
     
     # Return all loss components and KLD weights for plotting
     return {
@@ -796,7 +797,7 @@ def extract_latent_vectors(model, data_loader, save_dir="output"):
     
     return all_mu, all_log_var
 
-def track_reconstruction_across_epochs(vae_model, dataset, img_name, epoch, save_dir="output"):
+def track_reconstruction_across_epochs(vae_model, dataset, img_name, epoch, save_dir="outputs"):
     """
     Save reconstruction of a specific image at the current epoch
     
@@ -938,7 +939,7 @@ def main(args):
             vae_model, discriminator, train_loader, train_dataset, args.track_reconstruction,
             vae_optimizer, d_optimizer, args.epochs, kld_weight_scheduler, kld_scheduler_params,
             adv_weight=args.adv_weight, recon_sample_weight=args.recon_sample_weight,
-            save_path=model_path)
+            checkpoint_path=model_path, recon_path=out_dir)
         
         # Plot training losses with KLD weight overlay and separate discriminator loss
         plt.figure(figsize=(12, 12))  # Increased figure height to accommodate 3 subplots
