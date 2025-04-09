@@ -72,7 +72,8 @@ What Do You Want To Do
 
 - Use `--train` to train the VAE from scratch.
 - Use `--resume` to resume training from last checkpoint. Cannot be used with `--train`.
-- Use `--visualize` to see reconstructions and latent space traversals. Only requires `--train` the first time.
+- Use `--reconstructions` to see reconstructions. Only requires `--train` the first time.
+- Use `--traversals` to see latent space traversals. Only requires `--train` the first time.
 - Use `--extract_latent` to save latent vectors for external analysis. Only requires `--train` the first time.
 - Use `--sample` to generate random samples from the latent space. Only requires `--train` the first time.
 - Use `--interpolate {img1} {img2}` to interpolate between the two images. Use `--interpolate_steps {#}` with this to specify how many steps you'd like to take between image 1 (z1 in latent space) to image 2 (z2 in latent space).

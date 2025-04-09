@@ -423,7 +423,7 @@ def kld_weight_scheduler(epoch, total_epochs=112, min_weight=0.01, max_weight=0.
     return weight
 
 def train_vae_gan_with_kld_schedule(vae_model, discriminator, train_loader, vae_optimizer, d_optimizer, 
-                  epochs, kld_scheduler, adv_weight=1.0, recon_sample_weight=0.7,
+                  epochs, kld_scheduler_fn, kld_scheduler_params, adv_weight=1.0, recon_sample_weight=0.7,
                   save_path="vae_gan_model.pth"):
     """
     Train the VAE-GAN model with KLD weight scheduling
@@ -435,7 +435,8 @@ def train_vae_gan_with_kld_schedule(vae_model, discriminator, train_loader, vae_
         vae_optimizer: Optimizer for VAE
         d_optimizer: Optimizer for discriminator
         epochs: Number of training epochs
-        kld_scheduler: Function that returns KLD weight for a given epoch
+        kld_scheduler_fn: Function that calculates KLD weight
+        kld_scheduler_params: Parameters for the KLD scheduler function
         adv_weight: Weight for adversarial loss term
         recon_sample_weight: Weight for reconstruction vs sample discrimination
         save_path: Path to save model checkpoints
@@ -455,8 +456,8 @@ def train_vae_gan_with_kld_schedule(vae_model, discriminator, train_loader, vae_
     kld_weights = []  # Track the KLD weights used
     
     for epoch in range(epochs):
-        # Get the scheduled KLD weight for this epoch
-        current_kld_weight = kld_weight_scheduler(epoch, total_epochs=epochs)
+        # Get the scheduled KLD weight for this epoch by passing all parameters
+        current_kld_weight = kld_scheduler_fn(epoch, **kld_scheduler_params)
         kld_weights.append(current_kld_weight)
         
         print(f"\nEpoch {epoch+1}/{epochs}, KLD weight: {current_kld_weight:.5f}")
@@ -659,7 +660,7 @@ def visualize_reconstructions(model, data_loader, num_images=10, save_dir="outpu
     plt.close()
     print(f"Saved reconstructions to {save_dir}")
 
-def visualize_latent_traversal(model, data_loader, dim=0, num_dims=5, save_dir="output"):
+def visualize_latent_traversal(model, data_loader, img_name, dim=0, num_dims=5, save_dir="output"):
     """
     Visualize latent space traversal for multiple dimensions
     """
@@ -669,9 +670,12 @@ def visualize_latent_traversal(model, data_loader, dim=0, num_dims=5, save_dir="
 
     model.eval()
     
-    # Get a sample image
-    dataiter = iter(data_loader)
-    image = next(dataiter)[0].to(device)
+    # Get a random sample image
+    #dataiter = iter(data_loader)
+    #image = next(dataiter)[0].to(device)
+
+    # Get a specific sample image
+    image = dataset.get_image_by_filename(img_name).to(device)
     
     # For multiple dimensions
     for d in range(dim, dim + num_dims):
@@ -797,9 +801,23 @@ def main(args):
     # Make the folder to save all outputs
     if not os.path.exists("outputs"):
         os.makedirs("outputs")
-    out_dir = os.path.join("outputs", f"{args.dataset}")
+
+    # If out_dir is "-unspecified-", generate it from parameters
+    if args.out_dir == "-unspecified-":
+        subfolder = (f"motorVAEGAN_res{args.img_size}_lat{args.latent_dim}_"
+            f"epo{args.epochs}_bat{args.batch_size}_lrn{args.learning_rate}_" 
+            f"kld{args.max_kld_weight}_adv{args.adv_weight}_rec{args.recon_sample_weight}")
+    out_dir = os.path.join("outputs", subfolder)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
+        print(f"Auto-generated output directory: {subfolder}")
+
+    # Set model path the same way you set output directory
+    model_path = args.model_path
+    if model_path == "-unspecified-":
+        model_path = (f"motorVAEGAN_res{args.img_size}_lat{args.latent_dim}_"
+            f"epo{args.epochs}_bat{args.batch_size}_lrn{args.learning_rate}_" 
+            f"kld{args.max_kld_weight}_adv{args.adv_weight}_rec{args.recon_sample_weight}.pth")
     
     # Data transformations
     transform = transforms.Compose([
@@ -831,8 +849,8 @@ def main(args):
     
     # If resuming from checkpoint
     start_epoch = 0
-    if args.resume and os.path.exists(args.model_path):
-        checkpoint = torch.load(args.model_path)
+    if args.resume and os.path.exists(model_path):
+        checkpoint = torch.load(model_path)
         
         # Load VAE-GAN checkpoint
         vae_model.load_state_dict(checkpoint['vae_model_state_dict'])
@@ -844,63 +862,68 @@ def main(args):
         print(f"Resuming from epoch {start_epoch}")
     
     if args.train:
-        # Define the KLD weight scheduler
-        def kld_scheduler(epoch):
-            return kld_weight_scheduler(
-                epoch, 
-                total_epochs=args.epochs,
-                min_weight=0.01,          # Start with small but non-zero weight
-                max_weight=0.4,           # Target weight for good random samples
-                warmup_epochs=28,         # Allow initial focus on reconstruction
-                schedule_type="linear"    # Use linear schedule for simplicity
-            )
+        # Set up your desired KLD scheduler parameters
+        kld_scheduler_params = {
+            'total_epochs': args.epochs,
+            'min_weight': 0.01,
+            'max_weight': args.max_kld_weight,
+            'warmup_epochs': 28,
+            'schedule_type': "linear"
+        }
         
         # Train with KLD weight scheduling
         losses = train_vae_gan_with_kld_schedule(
             vae_model, discriminator, train_loader, vae_optimizer, d_optimizer,
-            args.epochs, kld_scheduler, adv_weight=args.adv_weight, 
-            recon_sample_weight=args.recon_sample_weight,
-            save_path=args.model_path
+            args.epochs, kld_weight_scheduler, kld_scheduler_params, 
+            adv_weight=args.adv_weight, recon_sample_weight=args.recon_sample_weight,
+            save_path=model_path
         )
         
-        # Plot training losses with KLD weight overlay
-        plt.figure(figsize=(12, 8))
-        
-        # Create two subplots - one for losses, one for KLD weight
-        plt.subplot(2, 1, 1)
+        # Plot training losses with KLD weight overlay and separate discriminator loss
+        plt.figure(figsize=(12, 12))  # Increased figure height to accommodate 3 subplots
+
+        # Create three subplots - one for VAE losses, one for discriminator loss, one for KLD weight
+        plt.subplot(3, 1, 1)
         plt.semilogy(losses['total'], label='Total Loss', linewidth=2.5, color='black')
         plt.semilogy(losses['recon'], label='Reconstruction Loss', alpha=0.7)
         plt.semilogy(losses['kld'], label='KL Divergence Loss', alpha=0.7)
         plt.semilogy(losses['adv'], label='Adversarial Loss', alpha=0.7)
-        plt.semilogy(losses['disc'], label='Discriminator Loss', alpha=0.7, linestyle='--')
-        plt.title('VAE-GAN Training Log-Losses')
+        plt.title('VAE-GAN VAE Losses')
         plt.ylabel('Log-Loss')
         plt.legend()
         plt.grid(True, alpha=0.3)
-        
-        plt.subplot(2, 1, 2)
+
+        plt.subplot(3, 1, 2)
+        plt.semilogy(losses['disc'], label='Discriminator Loss', linewidth=2.5, color='purple')
+        plt.title('Discriminator Loss')
+        plt.ylabel('Log-Loss')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+
+        plt.subplot(3, 1, 3)
         plt.plot(losses['kld_weights'], linewidth=2, color='red')
         plt.title('KL Divergence Weight Schedule')
         plt.xlabel('Epoch')
         plt.ylabel('KLD Weight')
         plt.grid(True, alpha=0.3)
-        
+
         plt.tight_layout()
         plt.savefig(os.path.join(out_dir, f'training_losses_with_kld_schedule.png'), dpi=300)
         plt.close()
     
     # Load best model for evaluation
-    if os.path.exists(args.model_path):
-        checkpoint = torch.load(args.model_path)
+    if os.path.exists(model_path):
+        checkpoint = torch.load(model_path)
         vae_model.load_state_dict(checkpoint['vae_model_state_dict'])
-        print(f"Loaded model from {args.model_path}")
+        print(f"Loaded model from {model_path}")
     
-    if args.visualize:
+    if args.reconstructions:
         # Visualize reconstructions
         visualize_reconstructions(vae_model, train_loader, num_images=10, save_dir=out_dir)
         
+    if args.traversals:
         # Visualize latent space traversal
-        visualize_latent_traversal(vae_model, train_loader, dim=0, num_dims=args.latent_dim, save_dir=out_dir)
+        visualize_latent_traversal(vae_model, train_loader, args.traversals[0], dim=0, num_dims=args.latent_dim, save_dir=out_dir)
     
     if args.interpolate:
         # Visualize interpolation between specific files
@@ -936,14 +959,13 @@ if __name__ == "__main__":
     # Data parameters
     parser.add_argument('--data_dir', type=str, default='data/evox_256x256_1-3', help='Directory containing the dataset')
     parser.add_argument('--img_size', type=int, default=64, help='Image size')
-    parser.add_argument('--dataset', type=str, default='Unspecified-Dataset', help='The properties describing evox: e.g. 64x64_1')
     
     # Model parameters
     parser.add_argument('--latent_dim', type=int, default=128, help='Dimension of latent space')
-    parser.add_argument('--kld_weight', type=float, default=0.005, help='Weight of KLD loss term (if not using scheduler)')
+    parser.add_argument('--max_kld_weight', type=float, default=0.5, help='Maximum weight for KLD loss term in the scheduler. KLD loss weight starts at 0.01 to focus on reconstruction first.')
     parser.add_argument('--adv_weight', type=float, default=1.0, help='Weight of adversarial loss term')
     parser.add_argument('--recon_sample_weight', type=float, default=0.7, 
-                        help='Weight for reconstruction vs sample discrimination (default: 0.7, meaning 70% focus on reconstructions, 30% on samples)')
+                        help='Weight for reconstruction vs sample discrimination. Default: 0.7, meaning 70% focus on reconstructions, 30% on samples.')
     
     # Training parameters
     parser.add_argument('--train', action='store_true', help='Train the model')
@@ -953,10 +975,13 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     
     # Output parameters
-    parser.add_argument('--model_path', type=str, default='checkpoints/motorVAEGAN_combined_256x256_1-3.pth', help='Path to save/load model')
+    parser.add_argument('--out_dir', type=str, default='-unspecified-', help='The output subfolder. Leaving this blank will automatically give you a detailed subfolder name.')
+    parser.add_argument('--model_path', type=str, default='-unspecified-', help='Path to save/load model. Leaving this blank will automatically give you a detailed file name.')
     
     # Actions
-    parser.add_argument('--visualize', action='store_true', help='Visualize reconstructions and latent space')
+    parser.add_argument('--reconstructions', action='store_true', help='Visualize reconstructions')
+    parser.add_argument('--traversals', nargs=1, metavar=('FILE1'), 
+                        help='Visualize latent space traversals. Specify which .png file.')
     parser.add_argument('--extract_latent', action='store_true', help='Extract and save latent vectors')
     parser.add_argument('--sample', action='store_true', help='Generate random samples from the latent space')
     parser.add_argument('--interpolate', nargs=2, metavar=('FILE1', 'FILE2'), 
