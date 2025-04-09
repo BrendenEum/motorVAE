@@ -456,7 +456,7 @@ def train_vae_gan_with_kld_schedule(vae_model, discriminator, train_loader, vae_
     
     for epoch in range(epochs):
         # Get the scheduled KLD weight for this epoch
-        current_kld_weight = kld_scheduler(epoch, total_epochs=epochs)
+        current_kld_weight = kld_weight_scheduler(epoch, total_epochs=epochs)
         kld_weights.append(current_kld_weight)
         
         print(f"\nEpoch {epoch+1}/{epochs}, KLD weight: {current_kld_weight:.5f}")
