@@ -660,7 +660,7 @@ def visualize_reconstructions(model, data_loader, num_images=10, save_dir="outpu
     plt.close()
     print(f"Saved reconstructions to {save_dir}")
 
-def visualize_latent_traversal(model, data_loader, img_name, dim=0, num_dims=5, save_dir="output"):
+def visualize_latent_traversal(model, dataset, img_name, dim=0, num_dims=5, save_dir="output"):
     """
     Visualize latent space traversal for multiple dimensions
     """
@@ -774,11 +774,6 @@ def extract_latent_vectors(model, data_loader, save_dir="output"):
             
             all_mu.append(mu.cpu().numpy())
             all_log_var.append(log_var.cpu().numpy())
-            
-            # Get filenames for this batch (if available in your dataset)
-            # Note: This assumes your dataloader provides filenames. Modify according to your implementation.
-            # all_filenames.extend([data_loader.dataset.img_files[i] for i in range(batch_idx*data_loader.batch_size, 
-            #                       min((batch_idx+1)*data_loader.batch_size, len(data_loader.dataset)))])
     
     # Concatenate all batches
     all_mu = np.concatenate(all_mu, axis=0)
@@ -787,10 +782,6 @@ def extract_latent_vectors(model, data_loader, save_dir="output"):
     # Save as numpy arrays
     np.save(os.path.join(save_dir, "latent_mu.npy"), all_mu)
     np.save(os.path.join(save_dir, "latent_log_var.npy"), all_log_var)
-    
-    # Save filenames if available
-    if all_filenames:
-        np.save(os.path.join(save_dir, "filenames.npy"), np.array(all_filenames))
     
     print(f"Saved latent vectors to {save_dir}")
     print(f"mu shape: {all_mu.shape}, log_var shape: {all_log_var.shape}")
@@ -803,7 +794,8 @@ def main(args):
         os.makedirs("outputs")
 
     # If out_dir is "-unspecified-", generate it from parameters
-    if args.out_dir == "-unspecified-":
+    subfolder = args.out_dir
+    if subfolder == "-unspecified-":
         subfolder = (f"motorVAEGAN_res{args.img_size}_lat{args.latent_dim}_"
             f"epo{args.epochs}_bat{args.batch_size}_lrn{args.learning_rate}_" 
             f"kld{args.max_kld_weight}_adv{args.adv_weight}_rec{args.recon_sample_weight}")
@@ -923,7 +915,7 @@ def main(args):
         
     if args.traversals:
         # Visualize latent space traversal
-        visualize_latent_traversal(vae_model, train_loader, args.traversals[0], dim=0, num_dims=args.latent_dim, save_dir=out_dir)
+        visualize_latent_traversal(vae_model, train_dataset, args.traversals[0], dim=0, num_dims=args.latent_dim, save_dir=out_dir)
     
     if args.interpolate:
         # Visualize interpolation between specific files
