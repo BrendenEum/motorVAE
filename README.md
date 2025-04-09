@@ -58,7 +58,7 @@ source env/bin/activate
 Copy-pasta this line of code into the terminal to do all the things!
 
 ```
-python motorVAEGAN.py --data_dir data/evox_256x256_1-3 --img_size 256 --latent_dim 128 --max_kld_weight 0.5 --adv_weight 1.0 --recon_sample_weight 0.5 --learning_rate 0.0001 --epochs 112 --batch_size 128 --train --reconstructions --extract_latent --sample --traversals 2022_Toyota_RAV4Hybrid_SE_CUV_4Door_1.png --interpolate 2022_Chevrolet_BoltEUV_Premier_CUV_4Door_2.png 2022_Volkswagen_Tiguan_SE_CUV_4Door_3.png
+python motorVAEGAN.py --data_dir data/evox_256x256_1-3 --img_size 256 --latent_dim 128 --max_kld_weight 0.5 --adv_weight 1.0 --recon_sample_weight 0.5 --learning_rate 0.0001 --epochs 112 --batch_size 128 --train --reconstructions --extract_latent --sample --traversals 2022_Toyota_RAV4Hybrid_SE_CUV_4Door_1.png --interpolate 2022_Chevrolet_BoltEUV_Premier_CUV_4Door_2.png 2022_Volkswagen_Tiguan_SE_CUV_4Door_3.png --track_reconstruction 2022_Toyota_RAV4Hybrid_SE_CUV_4Door_1.png
 ```
 
 Key Arguments

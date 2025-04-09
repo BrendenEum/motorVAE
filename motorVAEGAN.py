@@ -423,16 +423,18 @@ def kld_weight_scheduler(epoch, total_epochs=112, min_weight=0.01, max_weight=0.
     
     return weight
 
-def train_vae_gan_with_kld_schedule(vae_model, discriminator, train_loader, vae_optimizer, d_optimizer, 
-                  epochs, kld_scheduler_fn, kld_scheduler_params, adv_weight=1.0, recon_sample_weight=0.7,
-                  save_path="vae_gan_model.pth"):
+def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_img, 
+                  vae_optimizer, d_optimizer, epochs, kld_scheduler_fn, kld_scheduler_params, 
+                  adv_weight=1.0, recon_sample_weight=0.7, save_path="vae_gan_model.pth", save_dir="output"):
     """
-    Train the VAE-GAN model with KLD weight scheduling
+    Train the VAE-GAN model with KLD weight scheduling and track reconstruction of a specific image
     
     Args:
         vae_model: The VAE model
         discriminator: The discriminator model
         train_loader: DataLoader for training data
+        dataset: The dataset object for accessing specific images
+        target_img: Filename of the image to track across epochs
         vae_optimizer: Optimizer for VAE
         d_optimizer: Optimizer for discriminator
         epochs: Number of training epochs
@@ -441,6 +443,7 @@ def train_vae_gan_with_kld_schedule(vae_model, discriminator, train_loader, vae_
         adv_weight: Weight for adversarial loss term
         recon_sample_weight: Weight for reconstruction vs sample discrimination
         save_path: Path to save model checkpoints
+        save_dir: Directory to save visualizations
     """
     if not os.path.exists("checkpoints/"):
         os.makedirs("checkpoints/")
@@ -561,6 +564,10 @@ def train_vae_gan_with_kld_schedule(vae_model, discriminator, train_loader, vae_
         print(f"Average KLD Loss: {avg_kld_loss:.4f} (raw: {avg_kld_loss/current_kld_weight:.4f})")
         print(f"Average Adversarial Loss: {avg_adv_loss:.4f}")
         print(f"Average Discriminator Loss: {avg_d_loss:.4f}")
+        
+        # Track reconstruction of target image at the current epoch
+        if target_recon_img != "-unspecified-":
+            track_reconstruction_across_epochs(vae_model, dataset, target_recon_img, epoch+1, save_dir)
         
         # Save model checkpoint
         if (epoch + 1) % 5 == 0 or epoch == epochs - 1:
@@ -789,6 +796,65 @@ def extract_latent_vectors(model, data_loader, save_dir="output"):
     
     return all_mu, all_log_var
 
+def track_reconstruction_across_epochs(vae_model, dataset, img_name, epoch, save_dir="output"):
+    """
+    Save reconstruction of a specific image at the current epoch
+    
+    Args:
+        vae_model: The VAE model
+        dataset: The dataset containing the image
+        img_name: Filename of the image to reconstruct
+        epoch: Current epoch number
+        save_dir: Directory to save the reconstruction
+    """
+    # Create the reconstructions directory if it doesn't exist
+    recon_dir = os.path.join(save_dir, "reconstructions_epochs")
+    if not os.path.exists(recon_dir):
+        os.makedirs(recon_dir)
+    
+    # Set model to evaluation mode
+    vae_model.eval()
+    
+    try:
+        # Get the specified image
+        image = dataset.get_image_by_filename(img_name).to(device)
+        
+        # Generate reconstruction
+        with torch.no_grad():
+            recon_image, _, _, _ = vae_model.reconstruct(image.unsqueeze(0))
+        
+        # Plot original and reconstructed images side by side
+        plt.figure(figsize=(8, 4))
+        
+        # Original image
+        plt.subplot(1, 2, 1)
+        plt.imshow(image.cpu().squeeze().numpy(), cmap='gray')
+        plt.title(f"Original\n{img_name}")
+        plt.axis('off')
+        
+        # Reconstructed image
+        plt.subplot(1, 2, 2)
+        plt.imshow(recon_image.cpu().squeeze().numpy(), cmap='gray')
+        plt.title(f"Reconstruction\nEpoch {epoch}")
+        plt.axis('off')
+        
+        plt.suptitle(f"Epoch {epoch} Reconstruction")
+        plt.tight_layout()
+        
+        # Save with epoch number in filename
+        output_name = f"epoch_{epoch:03d}_recon_{os.path.splitext(img_name)[0]}.png"
+        plt.savefig(os.path.join(recon_dir, output_name))
+        plt.close()
+        
+        print(f"Saved epoch {epoch} reconstruction to {os.path.join(recon_dir, output_name)}")
+        
+    except ValueError as e:
+        print(f"Error: {e}")
+        print("Available files in the dataset:")
+        for i, filename in enumerate(dataset.get_filenames()[:10]):
+            print(f"{i}: {filename}")
+        return
+
 def main(args):
     # Start timing
     start_time = time.time()
@@ -866,14 +932,13 @@ def main(args):
             'warmup_epochs': 28,
             'schedule_type': "linear"
         }
-        
+
         # Train with KLD weight scheduling
-        losses = train_vae_gan_with_kld_schedule(
-            vae_model, discriminator, train_loader, vae_optimizer, d_optimizer,
-            args.epochs, kld_weight_scheduler, kld_scheduler_params, 
+        losses = train_vaegan(
+            vae_model, discriminator, train_loader, train_dataset, args.track_reconstruction,
+            vae_optimizer, d_optimizer, args.epochs, kld_weight_scheduler, kld_scheduler_params,
             adv_weight=args.adv_weight, recon_sample_weight=args.recon_sample_weight,
-            save_path=model_path
-        )
+            save_path=model_path)
         
         # Plot training losses with KLD weight overlay and separate discriminator loss
         plt.figure(figsize=(12, 12))  # Increased figure height to accommodate 3 subplots
@@ -919,7 +984,7 @@ def main(args):
         
     if args.traversals:
         # Visualize latent space traversal
-        visualize_latent_traversal(vae_model, train_dataset, args.traversals[0], dim=0, num_dims=args.latent_dim, save_dir=out_dir)
+        visualize_latent_traversal(vae_model, train_dataset, args.traversals, dim=0, num_dims=args.latent_dim, save_dir=out_dir)
     
     if args.interpolate:
         # Visualize interpolation between specific files
@@ -983,7 +1048,7 @@ if __name__ == "__main__":
     
     # Actions
     parser.add_argument('--reconstructions', action='store_true', help='Visualize reconstructions')
-    parser.add_argument('--traversals', nargs=1, metavar=('FILE1'), 
+    parser.add_argument('--traversals', type=str, metavar='FILE1', 
                         help='Visualize latent space traversals. Specify which .png file.')
     parser.add_argument('--extract_latent', action='store_true', help='Extract and save latent vectors')
     parser.add_argument('--sample', action='store_true', help='Generate random samples from the latent space')
@@ -991,6 +1056,8 @@ if __name__ == "__main__":
                         help='Specify two image filenames to interpolate between')
     parser.add_argument('--interpolate_steps', type=int, default=10,
                         help='Number of steps for interpolation (default: 10)')
+    parser.add_argument('--track_reconstruction', type=str, default='-unspecified-', metavar='FILE', 
+                        help='Track reconstruction of a specific image across training epochs. Only works if --train.')
     
     args = parser.parse_args()
     
