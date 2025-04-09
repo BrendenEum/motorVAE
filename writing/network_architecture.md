@@ -1,7 +1,7 @@
-# motorVAE
+# motorVAEGAN
 Author: Brenden Eum (2025)
 
-![alt text](<motorVAE-architecture.png>)
+![alt text](<motorVAEGAN-architecture.png>)
 
 ## Encoder
 
@@ -45,10 +45,26 @@ Author: Brenden Eum (2025)
         * Uses Conv2d to go from 256x256x32 to 256x256x1
         * nn.Sigmoid to ensure values in [0,1]
 * Output
-    * 64x64x1 greyscale reconstruction
+    * 256x256x1 greyscale reconstruction
+
+## Discriminator
+
+* Input
+    * 256x256x1 greyscale reconstruction
+    * 256x256x1 original image
+    * 256x256x1 randomly generated image from prior
+* 5 convolutional layers with increasing channels
+    * [128x128x32, 64x64x64, 32x32x128, 16x16x256, 8x8x512]
+* Final layer
+    * Linear mapping from flattened 8x8x512 tensor to probability value using sigmoid function
+* Output
+    * A singular probability of being a real or fake image
 
 ## Loss Function
 
-* Reconstruction loss: MSE(image, reconstruction)
-* $\beta$-weighted KL divergence: sum over all dimensions in latent distribution their deviation from std norm
-    * 2-stage training: (stage 1) $\beta \approx 0$, (stage 2) $\beta = 0.05$
+* VAE Loss
+    * Reconstruction loss: MSE(image, reconstruction)
+    * $\beta$-weighted KL divergence: sum over all dimensions in latent distribution their deviation from std norm
+    * Failing to trick discriminator with reconstructed or sample images
+* Discriminator Loss
+    * Incorrectly identifying real versus reconstructed or sample images

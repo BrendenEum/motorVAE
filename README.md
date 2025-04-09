@@ -1,7 +1,7 @@
 # motorVAE: Variational Autoencoder for Vehicle Image Reconstruction with Disentangled Latent Space
 Author: Brenden Eum (2025)
 
-![motorVAE architecture](<writing/motorVAE-architecture.png>)
+![motorVAE architecture](<writing/motorVAEGAN-architecture.png>)
 
 For more details on the architecture, see [this .md file](writing/network_architecture.md). This README is only meant to help you get started with the code. I'm writing this as if you're a doofus with coding, which is what I am. 
 
@@ -27,10 +27,6 @@ The code was written to run on Compute Canada's Cedar cluster with a V100 GPU (3
 4. Optimization: Uses Adam optimizer and a combination of reconstruction loss (MSE) and KL divergence loss, with a configurable weight parameter to balance the two.
 
 5. Command-line Interface: The script provides a flexible CLI with various options.
-    ```
-    python vae.py --data_dir evox_64x64_1 --train --visualize --extract_latent
-    ```
-
 
 ## To get started in an interactive job:
 
