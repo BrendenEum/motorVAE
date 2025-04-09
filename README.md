@@ -64,29 +64,33 @@ python motorVAEGAN.py --data_dir data/evox_256x256_1-3 --img_size 256 --latent_d
 Key Arguments
 
 - Use `--data_dir {path}` to set the location of your training images (default evox_64x64_1).
-- Use `--dataset {64x64_1}` to append the name of the dataset to the names of output folders.
 - Use `--img_size 64` to set the final image resolution (default 64).
-- Use `--model_path {path/fn.pth}` to save/load the model as a .pth file (default pwd/vae_model.pth).
 
 What Do You Want To Do
 
 - Use `--train` to train the VAE from scratch.
 - Use `--resume` to resume training from last checkpoint. Cannot be used with `--train`.
-- Use `--reconstructions` to see reconstructions. Only requires `--train` the first time.
-- Use `--traversals` to see latent space traversals. Only requires `--train` the first time.
-- Use `--extract_latent` to save latent vectors for external analysis. Only requires `--train` the first time.
-- Use `--sample` to generate random samples from the latent space. Only requires `--train` the first time.
-- Use `--interpolate {img1} {img2}` to interpolate between the two images. Use `--interpolate_steps {#}` with this to specify how many steps you'd like to take between image 1 (z1 in latent space) to image 2 (z2 in latent space).
+- Use `--reconstructions` to save visualizations of reconstructions. Randomly selects 10 images to reconstruct, and saves as one file. Only requires `--train` the first time.
+- Use `--traversals {img.png}` to see visualization of latent space traversals. Specify the image you'd like to do this with. Saves in latent_traversals/ subfolder, with one file per dimension. Only requires `--train` the first time.
+- Use `--extract_latent` to save latent vectors for external analysis. Latent vectors are actually matricies: rows are latent dimensions, columns are for each image in dataset. Saves two numpy files: mean and log_variance. Only requires `--train` the first time.
+- Use `--sample` to generate 25 images using random samples from the latent space. Saves as one file. Only requires `--train` the first time.
+- Use `--interpolate {img1.png} {img2.png}` to interpolate between the two images. Use `--interpolate_steps {#}` with this to specify how many steps you'd like to take between image 1 (z1 in latent space) to image 2 (z2 in latent space). Saves as one file.
 
 Parameters
 
 - Use `--latent_dim 128` to control the size of your latent space (default is 128). Larger values capture more details but may be harder to train.
-- Use `--kld_weight 0.005` to balance reconstruction quality versus latent space regularity (default is 0.005). Lower values -- like 0.001 -- prioritize reconstruction quality, while higher values -- like 0.01 -- create a more structured latent space.
+- Use `--max_kld_weight 0.5` to balance reconstruction quality versus latent space regularity. We are using a scheduler, so KLD weight starts at 0.01 (to focus on reconstruction), then increases linearly to 0.5 (to emphasize latent space structure).
 - Use `--adv_weight 1.0` to control the weight of the adversarial loss term in the loss function.
 - Use `--recon_sample_weight 0.7` to adjust weight for reconstruction vs sample discrimination (reconstruction w, sample 1-w).
 - Use `--learning_rate 0.0001` to control how quickly the model learns (default 0.0001). Too high might cause instability, but too low might make training super slow.
 - Use `--batch_size 128` to deal with memory constraints (default 32). Smaller batches help with limited memory, but higher batches speed up training.
 - Use `--epochs 112` to set the number of times the dataset is worked through (default 100). More epochs generally gives better results, but takes longer to train.
+
+Optional Arguments
+
+- Use `--out_dir {output subfolder}` to name the subfolder in outputs/. Leaving this blank will automatically give you a detailed subfolder name.
+- Use `--model_path {path/fn.pth}` to save/load the model as a .pth file. Leaving this blank will automatically give you a detailed file name.
+
 
 
 ## Run it as a job on the cluster
