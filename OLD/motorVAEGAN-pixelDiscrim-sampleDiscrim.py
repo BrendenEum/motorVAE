@@ -360,73 +360,11 @@ def discriminator_loss(d_real, d_fake_recon, d_fake_samples, recon_sample_weight
     
     return d_loss
 
-def kld_weight_scheduler(epoch, total_epochs=112, min_weight=0.01, max_weight=0.2, 
-                    warmup_epochs=15, schedule_type="linear"):
-    """
-    A flexible KL divergence weight scheduler.
-    
-    Args:
-        epoch: Current training epoch
-        total_epochs: Total number of training epochs
-        min_weight: Starting KLD weight
-        max_weight: Maximum KLD weight to reach
-        warmup_epochs: Number of epochs to maintain initial low weight
-        schedule_type: Type of schedule ("linear", "step", "exp", or "cyclical")
-        
-    Returns:
-        KLD weight for the current epoch
-    """
-    # Initial warmup period - keep weight low to establish good reconstruction
-    if epoch < warmup_epochs:
-        return min_weight
-    
-    # Calculate progress after warmup period
-    progress = (epoch - warmup_epochs) / (total_epochs - warmup_epochs)
-    progress = min(max(progress, 0.0), 1.0)  # Clamp between 0 and 1
-    
-    if schedule_type == "linear":
-        # Linear increase from min to max
-        weight = min_weight + progress * (max_weight - min_weight)
-        
-    elif schedule_type == "step":
-        # Step increase at 25%, 50%, and 75% of training
-        if progress < 0.25:
-            weight = min_weight
-        elif progress < 0.5:
-            weight = min_weight + (max_weight - min_weight) * 0.33
-        elif progress < 0.75:
-            weight = min_weight + (max_weight - min_weight) * 0.66
-        else:
-            weight = max_weight
-            
-    elif schedule_type == "exp":
-        # Exponential increase (slower at first, faster later)
-        weight = min_weight + (max_weight - min_weight) * (progress ** 2)
-        
-    elif schedule_type == "cyclical":
-        # Cyclical schedule with 4 cycles
-        cycles = 4
-        cycle_length = (total_epochs - warmup_epochs) / cycles
-        cycle_position = ((epoch - warmup_epochs) % cycle_length) / cycle_length
-        
-        if cycle_position < 0.5:
-            # First half of cycle: linear increase
-            cycle_progress = cycle_position * 2
-            weight = min_weight + (max_weight - min_weight) * cycle_progress
-        else:
-            # Second half of cycle: maintain high weight
-            weight = max_weight
-    
-    else:
-        raise ValueError(f"Unknown schedule type: {schedule_type}")
-    
-    return weight
-
-def train_vae_gan_with_kld_schedule(vae_model, discriminator, train_loader, vae_optimizer, d_optimizer, 
-                  epochs, kld_scheduler, adv_weight=1.0, recon_sample_weight=0.7,
+def train_vae_gan(vae_model, discriminator, train_loader, vae_optimizer, d_optimizer, 
+                  epochs, kld_weight=0.005, adv_weight=1.0, recon_sample_weight=0.5,
                   save_path="vae_gan_model.pth"):
     """
-    Train the VAE-GAN model with KLD weight scheduling
+    Train the VAE-GAN model with both reconstruction and random sample discrimination
     
     Args:
         vae_model: The VAE model
@@ -435,9 +373,9 @@ def train_vae_gan_with_kld_schedule(vae_model, discriminator, train_loader, vae_
         vae_optimizer: Optimizer for VAE
         d_optimizer: Optimizer for discriminator
         epochs: Number of training epochs
-        kld_scheduler: Function that returns KLD weight for a given epoch
+        kld_weight: Weight for KL divergence term
         adv_weight: Weight for adversarial loss term
-        recon_sample_weight: Weight for reconstruction vs sample discrimination
+        recon_sample_weight: Weight for reconstruction vs sample discrimination (0-1)
         save_path: Path to save model checkpoints
     """
     if not os.path.exists("checkpoints/"):
@@ -452,15 +390,10 @@ def train_vae_gan_with_kld_schedule(vae_model, discriminator, train_loader, vae_
     kld_losses = []
     adv_losses = []
     disc_losses = []
-    kld_weights = []  # Track the KLD weights used
+    
+    print(f"Training with reconstruction-sample weight: {recon_sample_weight:.2f}")
     
     for epoch in range(epochs):
-        # Get the scheduled KLD weight for this epoch
-        current_kld_weight = kld_scheduler(epoch, total_epochs=epochs)
-        kld_weights.append(current_kld_weight)
-        
-        print(f"\nEpoch {epoch+1}/{epochs}, KLD weight: {current_kld_weight:.5f}")
-        
         epoch_vae_loss = 0
         epoch_recon_loss = 0
         epoch_kld_loss = 0
@@ -515,10 +448,10 @@ def train_vae_gan_with_kld_schedule(vae_model, discriminator, train_loader, vae_
             d_fake_recon = discriminator(recon_batch)
             d_fake_samples = discriminator(fake_samples)
             
-            # VAE-GAN loss with dynamic KLD weighting
+            # VAE-GAN loss with weighting
             loss, recon_loss, kld_loss, adv_loss = vae_gan_loss(
                 recon_batch, data, mu, log_var, d_fake_recon, d_fake_samples, 
-                current_kld_weight, adv_weight, recon_sample_weight
+                kld_weight, adv_weight, recon_sample_weight
             )
             
             loss.backward()
@@ -554,9 +487,10 @@ def train_vae_gan_with_kld_schedule(vae_model, discriminator, train_loader, vae_
         adv_losses.append(avg_adv_loss)
         disc_losses.append(avg_d_loss)
         
+        print(f"Epoch {epoch+1}/{epochs}")
         print(f"Average VAE Loss: {avg_vae_loss:.4f}")
         print(f"Average Reconstruction Loss: {avg_recon_loss:.4f}")
-        print(f"Average KLD Loss: {avg_kld_loss:.4f} (raw: {avg_kld_loss/current_kld_weight:.4f})")
+        print(f"Average KLD Loss: {avg_kld_loss:.4f}")
         print(f"Average Adversarial Loss: {avg_adv_loss:.4f}")
         print(f"Average Discriminator Loss: {avg_d_loss:.4f}")
         
@@ -569,60 +503,18 @@ def train_vae_gan_with_kld_schedule(vae_model, discriminator, train_loader, vae_
                 'vae_optimizer_state_dict': vae_optimizer.state_dict(),
                 'd_optimizer_state_dict': d_optimizer.state_dict(),
                 'loss': avg_vae_loss,
-                'kld_weight': current_kld_weight,
                 'recon_sample_weight': recon_sample_weight
             }, save_path)
             print(f"Checkpoint saved to {save_path}")
     
-    # Return all loss components and KLD weights for plotting
+    # Return all loss components for plotting
     return {
         'total': total_losses,
         'recon': recon_losses,
         'kld': kld_losses,
         'adv': adv_losses,
-        'disc': disc_losses,
-        'kld_weights': kld_weights
+        'disc': disc_losses
     }
-
-# Create a visualization function for the KLD weight schedules
-def visualize_kld_schedules(epochs=112):
-    """
-    Visualize different KLD weight schedules
-    """
-    import matplotlib.pyplot as plt
-    import numpy as np
-    
-    # Define schedules to visualize
-    schedules = {
-        "Linear": lambda e: kld_weight_scheduler(e, schedule_type="linear"),
-        "Step": lambda e: kld_weight_scheduler(e, schedule_type="step"),
-        "Exponential": lambda e: kld_weight_scheduler(e, schedule_type="exp"),
-        "Cyclical": lambda e: kld_weight_scheduler(e, schedule_type="cyclical")
-    }
-    
-    # Calculate weights for each schedule
-    x = np.arange(epochs)
-    weights = {}
-    
-    for name, schedule_fn in schedules.items():
-        weights[name] = [schedule_fn(e) for e in x]
-    
-    # Plot all schedules
-    plt.figure(figsize=(12, 6))
-    
-    for name, values in weights.items():
-        plt.plot(x, values, label=name)
-    
-    plt.title("KL Divergence Weight Schedules")
-    plt.xlabel("Epoch")
-    plt.ylabel("KLD Weight")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig("kld_weight_schedules.png")
-    plt.close()
-    
-    return "kld_weight_schedules.png"
 
 def visualize_reconstructions(model, data_loader, num_images=10, save_dir="output"):
     """
@@ -794,6 +686,7 @@ def extract_latent_vectors(model, data_loader, save_dir="output"):
     return all_mu, all_log_var
 
 def main(args):
+
     # Make the folder to save all outputs
     if not os.path.exists("outputs"):
         os.makedirs("outputs")
@@ -801,6 +694,7 @@ def main(args):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     
+
     # Data transformations
     transform = transforms.Compose([
         transforms.Resize((args.img_size, args.img_size)),
@@ -814,7 +708,7 @@ def main(args):
     # Create VAE model
     vae_model = VAE(img_size=args.img_size, latent_dim=args.latent_dim).to(device)
     
-    # Create Discriminator
+    # Create Discriminator (pixel-space from script B)
     discriminator = Discriminator(img_size=args.img_size).to(device)
     print("Using VAE-GAN architecture with pixel-space discrimination")
     
@@ -830,7 +724,6 @@ def main(args):
     d_optimizer = optim.Adam(discriminator.parameters(), lr=args.learning_rate * 0.5)
     
     # If resuming from checkpoint
-    start_epoch = 0
     if args.resume and os.path.exists(args.model_path):
         checkpoint = torch.load(args.model_path)
         
@@ -842,51 +735,34 @@ def main(args):
             
         start_epoch = checkpoint['epoch'] + 1
         print(f"Resuming from epoch {start_epoch}")
+    else:
+        start_epoch = 0
     
     if args.train:
-        # Define the KLD weight scheduler
-        def kld_scheduler(epoch):
-            return kld_weight_scheduler(
-                epoch, 
-                total_epochs=args.epochs,
-                min_weight=0.01,          # Start with small but non-zero weight
-                max_weight=0.4,           # Target weight for good random samples
-                warmup_epochs=28,         # Allow initial focus on reconstruction
-                schedule_type="linear"    # Use linear schedule for simplicity
-            )
-        
-        # Train with KLD weight scheduling
-        losses = train_vae_gan_with_kld_schedule(
+        # Train VAE-GAN with weighted reconstruction vs sample discrimination
+        losses = train_vae_gan(
             vae_model, discriminator, train_loader, vae_optimizer, d_optimizer,
-            args.epochs, kld_scheduler, adv_weight=args.adv_weight, 
+            args.epochs, kld_weight=args.kld_weight, adv_weight=args.adv_weight, 
             recon_sample_weight=args.recon_sample_weight,
             save_path=args.model_path
         )
         
-        # Plot training losses with KLD weight overlay
-        plt.figure(figsize=(12, 8))
-        
-        # Create two subplots - one for losses, one for KLD weight
-        plt.subplot(2, 1, 1)
+        # Plot all training losses
+        plt.figure(figsize=(12, 7))
+        # Plot total loss with thicker line and different color and component losses on log scale
         plt.semilogy(losses['total'], label='Total Loss', linewidth=2.5, color='black')
         plt.semilogy(losses['recon'], label='Reconstruction Loss', alpha=0.7)
         plt.semilogy(losses['kld'], label='KL Divergence Loss', alpha=0.7)
         plt.semilogy(losses['adv'], label='Adversarial Loss', alpha=0.7)
         plt.semilogy(losses['disc'], label='Discriminator Loss', alpha=0.7, linestyle='--')
+        # Put it all together
         plt.title('VAE-GAN Training Log-Losses')
+        plt.xlabel('Epoch')
         plt.ylabel('Log-Loss')
         plt.legend()
         plt.grid(True, alpha=0.3)
-        
-        plt.subplot(2, 1, 2)
-        plt.plot(losses['kld_weights'], linewidth=2, color='red')
-        plt.title('KL Divergence Weight Schedule')
-        plt.xlabel('Epoch')
-        plt.ylabel('KLD Weight')
-        plt.grid(True, alpha=0.3)
-        
         plt.tight_layout()
-        plt.savefig(os.path.join(out_dir, f'training_losses_with_kld_schedule.png'), dpi=300)
+        plt.savefig(os.path.join(out_dir, f'training_losses.png'), dpi=300)
         plt.close()
     
     # Load best model for evaluation
@@ -931,7 +807,7 @@ def main(args):
         print(f"Saved random samples to {out_dir}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='VAE-GAN for Vehicle Images with KL divergence weight scheduling')
+    parser = argparse.ArgumentParser(description='VAE-GAN for Vehicle Images with weighted reconstruction vs sample discrimination')
     
     # Data parameters
     parser.add_argument('--data_dir', type=str, default='data/evox_256x256_1-3', help='Directory containing the dataset')
@@ -940,7 +816,7 @@ if __name__ == "__main__":
     
     # Model parameters
     parser.add_argument('--latent_dim', type=int, default=128, help='Dimension of latent space')
-    parser.add_argument('--kld_weight', type=float, default=0.005, help='Weight of KLD loss term (if not using scheduler)')
+    parser.add_argument('--kld_weight', type=float, default=0.005, help='Weight of KLD loss term')
     parser.add_argument('--adv_weight', type=float, default=1.0, help='Weight of adversarial loss term')
     parser.add_argument('--recon_sample_weight', type=float, default=0.7, 
                         help='Weight for reconstruction vs sample discrimination (default: 0.7, meaning 70% focus on reconstructions, 30% on samples)')
