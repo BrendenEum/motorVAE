@@ -16,4 +16,4 @@ module load StdEnv/2020 python/3.9.6 cuda/11.4
 source env/bin/activate
 
 # Train
-python motorVAEGAN.py --data_dir data/evox_256x256_1-3 --img_size 256 --latent_dim 128 --max_kld_weight 0.75 --adv_weight 1.0 --recon_sample_weight 0.4 --learning_rate 0.0001 --epochs 150 --batch_size 128 --train --reconstructions --extract_latent --sample --traversals 2021_Toyota_CamryHybrid_XLE_sedan_4Door_2.png --interpolate 2022_Toyota_CorollaCross_LE_CUV_4Door_1.png 2025_Hyundai_Ioniq5N_nan_CUV_4Door_2.png --track_reconstruction 2022_BMW_3-Series_330e_sedan_4Door_1.png
+python motorVAEGAN.py --data_dir data/evox_256x256_1-3 --img_size 256 --latent_dim 128 --max_kld_weight 0.75 --adv_weight 1.0 --recon_sample_weight 0.5 --learning_rate 0.0001 --epochs 200 --batch_size 128 --train --reconstructions --extract_latent --sample --traversals 2021_Toyota_CamryHybrid_XLE_sedan_4Door_2.png --interpolate 2022_Toyota_CorollaCross_LE_CUV_4Door_1.png 2025_Hyundai_Ioniq5N_nan_CUV_4Door_2.png --track_reconstruction 2014_Nissan_GT-R_Premium_coupe_2Door_1.png
