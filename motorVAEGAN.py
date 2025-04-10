@@ -839,7 +839,6 @@ def track_reconstruction_across_epochs(vae_model, dataset, img_name, epoch, save
         plt.title(f"Reconstruction\nEpoch {epoch}")
         plt.axis('off')
         
-        plt.suptitle(f"Epoch {epoch} Reconstruction")
         plt.tight_layout()
         
         # Save with epoch number in filename
