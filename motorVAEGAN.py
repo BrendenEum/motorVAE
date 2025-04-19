@@ -619,7 +619,7 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
             progress_bar.set_postfix({
                 'vae_loss': loss.item() / batch_size,
                 'recon_loss': recon_loss.item() / batch_size,
-                'kld_loss': kld_loss.item() / batch_size
+                'kld_loss': kld_loss.item() / batch_size,
                 'mi_loss': mi_loss.item() / batch_size,
                 'tc_loss': tc_loss.item() / batch_size,
                 'dwkl_loss': dwkl_loss.item() / batch_size,

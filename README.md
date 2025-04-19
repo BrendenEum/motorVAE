@@ -79,12 +79,16 @@ What Do You Want To Do
 Parameters
 
 - Use `--latent_dim 128` to control the size of your latent space (default is 128). Larger values capture more details but may be harder to train.
-- Use `--max_kld_weight 0.5` to balance reconstruction quality versus latent space regularity. We are using a scheduler, so KLD weight starts at 0.01 (to focus on reconstruction), then increases linearly to 0.5 (to emphasize latent space structure).
+- The weight for L1 reconstruction loss is normalized to 1.0.
+- Use `--max_kld_weight 0.5` to balance reconstruction quality versus latent space regularity. We are using a scheduler, so KLD weight starts at 0.01 (to focus on reconstruction), then increases linearly to max_kld_weight (to emphasize latent space structure).
+- Use `--mi_weight 1.0` to set the weight for mutual information loss in total KLD loss. This is to reduce the amount of information about x stored in z. Defaults to 1.0.
+- Use `--tc_weight 1.0` to set the weight for total correlation loss in total KLD loss. This is to make latent variables z as independent as possible. Defaults to 1.0.
+- Use `--dwkl_weight 1.0` to set the weight for dimension-wise KLD loss in total KLD loss. This is to ensure each latent dimension does not deviate from prior (Gaussian). Defaults to 1.0.
+- Use `--epochs 112` to set the number of times the dataset is worked through (default 100). More epochs generally gives better results, but takes longer to train.
 - Use `--adv_weight 1.0` to control the weight of the adversarial loss term in the loss function.
 - Use `--recon_sample_weight 0.7` to adjust weight for reconstruction vs sample discrimination (reconstruction w, sample 1-w).
 - Use `--learning_rate 0.0001` to control how quickly the model learns (default 0.0001). Too high might cause instability, but too low might make training super slow.
 - Use `--batch_size 128` to deal with memory constraints (default 32). Smaller batches help with limited memory, but higher batches speed up training.
-- Use `--epochs 112` to set the number of times the dataset is worked through (default 100). More epochs generally gives better results, but takes longer to train.
 
 Optional Arguments
 
