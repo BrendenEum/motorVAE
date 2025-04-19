@@ -163,6 +163,7 @@ class VAE(nn.Module):
         """
         Reparameterization trick to sample from N(mu, var) from N(0,1).
         """
+        log_var = torch.clamp(log_var, min=-88, max=88)  # prevent exp overflow/underflow
         std = torch.exp(0.5 * log_var)
         eps = torch.randn_like(std)
         return mu + eps * std
@@ -318,13 +319,13 @@ def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples,
         3. Dimension-wise KL Divergence Loss
     - Adversarial loss from discriminator
     """
+    batch_size = x.size(0)
+    tiny_amt = 1e-8 # for numerical stability
+
     ######################
     # 1. Reconstruction loss: Absolute error loss is more robust to outliers than L2 (MSE).
     ######################
     recon_loss = F.l1_loss(recon_x, x, reduction='sum')
-    
-    # Batch size
-    batch_size = x.size(0)
     
     ######################
     # 2a. Mutual Information Loss - I(x,z)
@@ -334,12 +335,13 @@ def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples,
     # In practice, we use a minibatch estimate of q(z)
     
     # Reparameterization trick: Sample z from q(z|x)
+    log_var = torch.clamp(log_var, min=-88, max=88)  # prevent exp overflow/underflow
     std = torch.exp(0.5 * log_var)
     eps = torch.randn_like(std)
     z = mu + eps * std
     
     # Compute log q(z|x) for each data point
-    log_qz_x = -0.5 * torch.sum(log_var + torch.pow(z - mu, 2) / torch.exp(log_var), dim=1)
+    log_qz_x = -0.5 * torch.sum(log_var + torch.pow(z - mu, 2) / (torch.exp(log_var) + tiny_amt), dim=1)
     
     # Compute log q(z) as log of average of q(z|x) over batch
     # First, compute q(z|x) for each combination of z and mu/log_var in the batch
@@ -349,9 +351,7 @@ def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples,
     
     # Compute log q(z|x) for each combination
     log_qz_cross = -0.5 * torch.sum(
-        logvar_expanded + torch.pow(z_expanded - mu_expanded, 2) / torch.exp(logvar_expanded),
-        dim=2
-    )  # Shape: [B, B]
+        logvar_expanded + torch.pow(z_expanded - mu_expanded, 2) / (torch.exp(logvar_expanded) + tiny_amt), dim=2)  # Shape: [B, B]
     
     # Compute log q(z) as logsumexp over batch dimension - log(mean(q(z|x)))
     log_qz = torch.logsumexp(log_qz_cross, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
@@ -379,7 +379,7 @@ def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples,
     logvar_perm = log_var.repeat(batch_size, 1)  # [B*B, D]
     
     # Compute log q(z_j|x_i) for all combinations - for each dimension separately
-    log_qzj_xi = -0.5 * (logvar_perm + torch.pow(z_perm - mu_perm, 2) / torch.exp(logvar_perm))  # [B*B, D]
+    log_qzj_xi = -0.5 * (logvar_perm + torch.pow(z_perm - mu_perm, 2) / (torch.exp(logvar_perm) + tiny_amt))  # [B*B, D]
     log_qzj_xi = log_qzj_xi.reshape(batch_size, batch_size, -1)  # [B, B, D]
     
     # Compute log q(z_j) by averaging over all data points
@@ -407,6 +407,10 @@ def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples,
     ######################
     # 3. Adversarial loss for generator with weighted reconstructions vs samples
     ######################
+    # Clip discriminator outputs slightly away from 0 and 1 for stability
+    d_recon = torch.clamp(d_recon, min=tiny_amt, max=1-tiny_amt)
+    d_samples = torch.clamp(d_samples, min=tiny_amt, max=1-tiny_amt)
+
     adv_recon_loss = F.binary_cross_entropy(d_recon, torch.ones_like(d_recon))
     adv_samples_loss = F.binary_cross_entropy(d_samples, torch.ones_like(d_samples))
     adv_loss = recon_sample_weight * adv_recon_loss + (1.0 - recon_sample_weight) * adv_samples_loss
@@ -429,6 +433,12 @@ def discriminator_loss(d_real, d_fake_recon, d_fake_samples, recon_sample_weight
         d_fake_samples: Discriminator output for samples from random noise
         recon_sample_weight: Weight for reconstruction (1-weight for samples) in fake loss
     """
+    # Clamp values slightly away from 0 and 1
+    tiny_amt = 1e-8
+    d_real = torch.clamp(d_real, min=tiny_amt, max=1-tiny_amt)
+    d_fake_recon = torch.clamp(d_fake_recon, min=tiny_amt, max=1-tiny_amt)
+    d_fake_samples = torch.clamp(d_fake_samples, min=tiny_amt, max=1-tiny_amt)
+
     real_loss = F.binary_cross_entropy(d_real, torch.ones_like(d_real))
     fake_recon_loss = F.binary_cross_entropy(d_fake_recon, torch.zeros_like(d_fake_recon))
     fake_samples_loss = F.binary_cross_entropy(d_fake_samples, torch.zeros_like(d_fake_samples))
