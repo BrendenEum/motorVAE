@@ -306,39 +306,117 @@ class Discriminator(nn.Module):
         validity = self.classifier(features)
         return validity
 
-def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples, kld_weight=0.005, adv_weight=1.0, recon_sample_weight=0.5):
+def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples, 
+                kld_weight=0.005, adv_weight=1.0, recon_sample_weight=0.5,
+                mi_weight=1.0, tc_weight=1.0, dwkl_weight=1.0):
     """
-    VAE-GAN loss function with:
-    - Reconstruction loss (MSE)
-    - KL Divergence
-    - Adversarial loss from discriminator (weighted between reconstructions and samples)
-    
-    Args:
-        recon_x: Reconstructed images
-        x: Original images
-        mu: Mean vector from encoder
-        log_var: Log variance vector from encoder
-        d_recon: Discriminator output for reconstructions
-        d_samples: Discriminator output for samples from random noise
-        kld_weight: Weight for KL divergence term
-        adv_weight: Weight for adversarial loss term
-        recon_sample_weight: Weight for reconstruction (1-weight for samples) in adversarial loss
+    VAE-GAN loss function with decomposed KL divergence:
+    - Reconstruction loss (L1)
+    - KL Divergence decomposed into three terms:
+        1. Mutual Information Loss
+        2. Total Correlation Loss
+        3. Dimension-wise KL Divergence Loss
+    - Adversarial loss from discriminator
     """
-    # Reconstruction loss
-    recon_loss = F.mse_loss(recon_x, x, reduction='sum')
+    ######################
+    # 1. Reconstruction loss: Absolute error loss is more robust to outliers than L2 (MSE).
+    ######################
+    recon_loss = F.l1_loss(recon_x, x, reduction='sum')
     
-    # KL Divergence loss
-    kld_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
+    # Batch size
+    batch_size = x.size(0)
     
-    # Adversarial loss for generator with weighted reconstructions vs samples
+    ######################
+    # 2a. Mutual Information Loss - I(x,z)
+    ######################
+    # This encourages the latent code to contain information about the input
+    # Approximated as the KL between conditional q(z|x) and marginal q(z)
+    # In practice, we use a minibatch estimate of q(z)
+    
+    # Reparameterization trick: Sample z from q(z|x)
+    std = torch.exp(0.5 * log_var)
+    eps = torch.randn_like(std)
+    z = mu + eps * std
+    
+    # Compute log q(z|x) for each data point
+    log_qz_x = -0.5 * torch.sum(log_var + torch.pow(z - mu, 2) / torch.exp(log_var), dim=1)
+    
+    # Compute log q(z) as log of average of q(z|x) over batch
+    # First, compute q(z|x) for each combination of z and mu/log_var in the batch
+    z_expanded = z.unsqueeze(1)  # Shape: [B, 1, D]
+    mu_expanded = mu.unsqueeze(0)  # Shape: [1, B, D]
+    logvar_expanded = log_var.unsqueeze(0)  # Shape: [1, B, D]
+    
+    # Compute log q(z|x) for each combination
+    log_qz_cross = -0.5 * torch.sum(
+        logvar_expanded + torch.pow(z_expanded - mu_expanded, 2) / torch.exp(logvar_expanded),
+        dim=2
+    )  # Shape: [B, B]
+    
+    # Compute log q(z) as logsumexp over batch dimension - log(mean(q(z|x)))
+    log_qz = torch.logsumexp(log_qz_cross, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
+    
+    # Mutual information loss is E_q(z|x)[log q(z|x) - log q(z)]
+    mi_loss = torch.mean(log_qz_x - log_qz)
+    
+    ######################
+    # 2b. Total Correlation Loss - measures dependence between dimensions
+    ######################
+    # Computed as KL[q(z)||∏_j q(z_j)]
+    # First, we need marginal entropies for each dimension
+    
+    # For the numerator, we already have log q(z)
+    # For the denominator, we need to compute log ∏_j q(z_j) = ∑_j log q(z_j)
+    
+    # Compute q(z_j) for each dimension by marginalizing
+    # This requires additional computation to estimate the marginals
+    z_perm = z.reshape(batch_size, -1, 1)  # [B, D, 1]
+    z_perm = z_perm.expand(-1, -1, batch_size)  # [B, D, B]
+    z_perm = z_perm.transpose(0, 2)  # [B, D, B]
+    z_perm = z_perm.reshape(batch_size * batch_size, -1)  # [B*B, D]
+    
+    mu_perm = mu.repeat(batch_size, 1)  # [B*B, D]
+    logvar_perm = log_var.repeat(batch_size, 1)  # [B*B, D]
+    
+    # Compute log q(z_j|x_i) for all combinations - for each dimension separately
+    log_qzj_xi = -0.5 * (logvar_perm + torch.pow(z_perm - mu_perm, 2) / torch.exp(logvar_perm))  # [B*B, D]
+    log_qzj_xi = log_qzj_xi.reshape(batch_size, batch_size, -1)  # [B, B, D]
+    
+    # Compute log q(z_j) by averaging over all data points
+    log_qzj = torch.logsumexp(log_qzj_xi, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))  # [B, D]
+    
+    # Sum log q(z_j) over dimensions to get log ∏_j q(z_j)
+    log_qz_product = torch.sum(log_qzj, dim=1)  # [B]
+    
+    # Total correlation loss is E_q(z)[log q(z) - log ∏_j q(z_j)]
+    tc_loss = torch.mean(log_qz - log_qz_product)
+    
+    ######################
+    # 2c. Dimension-wise KL Divergence - KL between q(z_j) and p(z_j)
+    ######################
+    # Each dimension is compared with the prior separately
+    log_pz = -0.5 * torch.sum(torch.pow(z, 2), dim=1)  # Log p(z) under standard normal
+    log_pz_product = -0.5 * torch.sum(torch.pow(z, 2), dim=1)  # Log ∏_j p(z_j) is the same for standard normal
+    
+    # The dimension-wise KL is E_q(z)[log ∏_j q(z_j) - log ∏_j p(z_j)]
+    dwkl_loss = torch.mean(log_qz_product - log_pz_product)
+    
+    # Weighted sum of the three KL terms
+    kld_loss = mi_weight * mi_loss + tc_weight * tc_loss + dwkl_weight * dwkl_loss
+    
+    ######################
+    # 3. Adversarial loss for generator with weighted reconstructions vs samples
+    ######################
     adv_recon_loss = F.binary_cross_entropy(d_recon, torch.ones_like(d_recon))
     adv_samples_loss = F.binary_cross_entropy(d_samples, torch.ones_like(d_samples))
     adv_loss = recon_sample_weight * adv_recon_loss + (1.0 - recon_sample_weight) * adv_samples_loss
     
+    ######################
     # Total loss for VAE (generator)
+    ######################
     vae_loss = recon_loss + kld_weight * kld_loss + adv_weight * adv_loss
     
-    return vae_loss, recon_loss, kld_loss, adv_loss
+    return vae_loss, recon_loss, kld_loss, mi_loss, tc_loss, dwkl_loss, adv_loss
 
 def discriminator_loss(d_real, d_fake_recon, d_fake_samples, recon_sample_weight=0.5):
     """
@@ -522,10 +600,10 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
             d_fake_samples = discriminator(fake_samples)
             
             # VAE-GAN loss with dynamic KLD weighting
-            loss, recon_loss, kld_loss, adv_loss = vae_gan_loss(
+            loss, recon_loss, kld_loss, mi_loss, tc_loss, dwkl_loss, adv_loss = vae_gan_loss(
                 recon_batch, data, mu, log_var, d_fake_recon, d_fake_samples, 
-                current_kld_weight, adv_weight, recon_sample_weight
-            )
+                current_kld_weight, adv_weight, recon_sample_weight,
+                mi_weight=args.mi_weight, tc_weight=args.tc_weight, dwkl_weight=args.dwkl_weight)
             
             loss.backward()
             vae_optimizer.step()
@@ -541,7 +619,10 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
             progress_bar.set_postfix({
                 'vae_loss': loss.item() / batch_size,
                 'recon_loss': recon_loss.item() / batch_size,
-                'kld_loss': kld_loss.item() / batch_size,
+                'kld_loss': kld_loss.item() / batch_size
+                'mi_loss': mi_loss.item() / batch_size,
+                'tc_loss': tc_loss.item() / batch_size,
+                'dwkl_loss': dwkl_loss.item() / batch_size,
                 'adv_loss': adv_loss.item() / batch_size,
                 'd_loss': d_loss.item() / batch_size
             })
@@ -1024,29 +1105,50 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='VAE-GAN for Vehicle Images with KL divergence weight scheduling')
     
+    #################
     # Data parameters
+    #################
     parser.add_argument('--data_dir', type=str, default='data/evox_256x256_1-3', help='Directory containing the dataset')
     parser.add_argument('--img_size', type=int, default=64, help='Image size')
     
+    #################
     # Model parameters
+    #################
     parser.add_argument('--latent_dim', type=int, default=128, help='Dimension of latent space')
-    parser.add_argument('--max_kld_weight', type=float, default=0.5, help='Maximum weight for KLD loss term in the scheduler. KLD loss weight starts at 0.01 to focus on reconstruction first.')
-    parser.add_argument('--adv_weight', type=float, default=1.0, help='Weight of adversarial loss term')
+    # Reconstruction loss weight is normalized to 1.
+    # KLD loss weight is on a scheduler. KLD loss is decomposed into 3 terms: mutual information, total correlation between dimensions, and dimension-wise KL divergence.
+    parser.add_argument('--max_kld_weight', type=float, default=1.0, 
+                        help='Maximum weight for KLD loss term in the scheduler. KLD loss weight starts at 0.01 to focus on reconstruction first.')
+    parser.add_argument('--mi_weight', type=float, default=1.0, 
+                   help='Weight for mutual information loss term in KLD Loss')
+    parser.add_argument('--tc_weight', type=float, default=1.0, 
+                    help='Weight for total correlation loss term in KLD Loss')
+    parser.add_argument('--dwkl_weight', type=float, default=1.0, 
+                    help='Weight for dimension-wise KL divergence loss term in KLD Loss')
+    # Adversarial loss. You can adjust the weight on mistakes from reconstructions vs samples.
+    parser.add_argument('--adv_weight', type=float, default=1.0, 
+                        help='Weight of adversarial loss term')
     parser.add_argument('--recon_sample_weight', type=float, default=0.7, 
                         help='Weight for reconstruction vs sample discrimination. Default: 0.7, meaning 70% focus on reconstructions, 30% on samples.')
     
+    #################
     # Training parameters
+    #################
     parser.add_argument('--train', action='store_true', help='Train the model')
     parser.add_argument('--resume', action='store_true', help='Resume training from checkpoint')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
     parser.add_argument('--learning_rate', type=float, default=1e-4, help='Learning rate')
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     
+    #################
     # Output parameters
+    #################
     parser.add_argument('--out_dir', type=str, default='-unspecified-', help='The output subfolder. Leaving this blank will automatically give you a detailed subfolder name.')
     parser.add_argument('--model_path', type=str, default='-unspecified-', help='Path to save/load model. Leaving this blank will automatically give you a detailed file name.')
     
+    #################
     # Actions
+    #################
     parser.add_argument('--reconstructions', action='store_true', help='Visualize reconstructions')
     parser.add_argument('--traversals', type=str, metavar='FILE1', 
                         help='Visualize latent space traversals. Specify which .png file.')
