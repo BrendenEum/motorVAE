@@ -948,8 +948,10 @@ def main(args):
     subfolder = args.out_dir
     if subfolder == "-unspecified-":
         subfolder = (f"motorVAEGAN_res{args.img_size}_lat{args.latent_dim}_"
-            f"epo{args.epochs}_bat{args.batch_size}_lrn{args.learning_rate}_" 
-            f"kld{args.max_kld_weight}_adv{args.adv_weight}_rec{args.recon_sample_weight}")
+            f"epo{args.epochs}_bat{args.batch_size}_" 
+            f"kld{args.max_kld_weight}x"
+            f"(mi{args.mi_weight}_tc{args.tc_weight}_dwkl{args.dwkl_weight})_"
+            f"adv{args.adv_weight}_rec{args.recon_sample_weight}")
     out_dir = os.path.join("outputs", subfolder)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -959,8 +961,10 @@ def main(args):
     model_path = args.model_path
     if model_path == "-unspecified-":
         model_path = (f"motorVAEGAN_res{args.img_size}_lat{args.latent_dim}_"
-            f"epo{args.epochs}_bat{args.batch_size}_lrn{args.learning_rate}_" 
-            f"kld{args.max_kld_weight}_adv{args.adv_weight}_rec{args.recon_sample_weight}.pth")
+            f"epo{args.epochs}_bat{args.batch_size}_" 
+            f"kld{args.max_kld_weight}x"
+            f"(mi{args.mi_weight}_tc{args.tc_weight}_dwkl{args.dwkl_weight})_"
+            f"adv{args.adv_weight}_rec{args.recon_sample_weight}.pth")
     
     # Data transformations
     transform = transforms.Compose([
