@@ -65,11 +65,27 @@ class SupervisedVehicleDataset(Dataset):
         return image, labels
     
     def get_label_index(self, col_name, value):
-        """Convert string label to numerical index"""
+        """Convert string label to numerical index with robust matching"""
         # Get all unique values for this column
-        unique_values = self.labels_df[col_name].unique()
-        # Return index of the value in the sorted list of unique values
-        return np.where(sorted(unique_values) == value)[0][0]
+        unique_values = sorted(self.labels_df[col_name].unique())
+        
+        # Convert to strings and normalize for comparison if values are strings
+        if isinstance(value, str):
+            value_norm = value.strip().lower()
+            unique_values_norm = [str(v).strip().lower() for v in unique_values]
+            indices = [i for i, v in enumerate(unique_values_norm) if v == value_norm]
+            
+            if indices:
+                return indices[0]
+                
+        # Try direct comparison if normalization didn't work or values aren't strings
+        indices = np.where(np.array(unique_values) == value)[0]
+        
+        if len(indices) == 0:
+            print(f"Warning: Value '{value}' not found in column '{col_name}'. Unique values: {unique_values}")
+            return 0  # Return first class as fallback
+        
+        return indices[0]
     
     def get_num_classes(self, col_name):
         """Get number of unique classes for a specific label column"""
