@@ -1,5 +1,6 @@
 import os
 import time
+import csv
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -21,11 +22,65 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 class VehicleDataset(Dataset):
-    def __init__(self, img_dir, transform=None):
+    def __init__(self, img_dir, transform=None, labels_file=None):
         self.img_dir = img_dir
         self.transform = transform
         self.img_files = [f for f in os.listdir(img_dir) if f.endswith('.png')]
+        self.labels = {}
+        self.label_columns = []  # Store the names of label columns
         
+        # Dictionary to map string labels to integers for each label type
+        self.label_mappings = {}
+        
+        # Load labels if a labels file is provided
+        if labels_file and os.path.exists(labels_file):
+            # First, read the header to get label column names
+            with open(labels_file, 'r') as f:
+                reader = csv.reader(f)
+                header = next(reader)
+                # Skip the filename column (index 0)
+                self.label_columns = header[1:]
+                
+                # Initialize label mappings for each column
+                for col in self.label_columns:
+                    self.label_mappings[col] = {}
+                
+                # Read all rows to collect unique label values
+                all_rows = list(reader)
+                
+                # First pass: collect all unique label values for each column
+                for row in all_rows:
+                    if len(row) <= 1:
+                        continue
+                    
+                    filename = row[0]
+                    self.labels[filename] = {}
+                    
+                    for i, col in enumerate(self.label_columns):
+                        if i + 1 < len(row) and row[i + 1].strip():  # Check if label exists
+                            label_value = row[i + 1].strip()
+                            if label_value not in self.label_mappings[col]:
+                                self.label_mappings[col][label_value] = len(self.label_mappings[col])
+                
+                # Second pass: convert string labels to integers
+                for row in all_rows:
+                    if len(row) <= 1:
+                        continue
+                    
+                    filename = row[0]
+                    
+                    for i, col in enumerate(self.label_columns):
+                        if i + 1 < len(row) and row[i + 1].strip():  # Check if label exists
+                            label_value = row[i + 1].strip()
+                            self.labels[filename][col] = self.label_mappings[col][label_value]
+                        else:
+                            self.labels[filename][col] = -1  # Missing label
+            
+            print(f"Loaded {len(self.labels)} items with labels")
+            print(f"Label columns: {self.label_columns}")
+            for col in self.label_columns:
+                print(f"  {col}: {len(self.label_mappings[col])} unique values")
+    
     def __len__(self):
         return len(self.img_files)
     
@@ -35,29 +90,64 @@ class VehicleDataset(Dataset):
         
         if self.transform:
             image = self.transform(image)
+        
+        # Get labels for this image
+        filename = self.img_files[idx]
+        
+        # Create a list of labels for each label column
+        # If the file has no labels, use -1 for each label type
+        labels = []
+        if filename in self.labels:
+            for col in self.label_columns:
+                labels.append(self.labels[filename].get(col, -1))
+        else:
+            labels = [-1] * len(self.label_columns)
             
-        return image
+        return image, torch.tensor(labels)
     
     def get_image_by_filename(self, filename):
-        """
-        Get an image by its filename
-        """
-        if filename in self.img_files:
-            img_path = os.path.join(self.img_dir, filename)
-            image = Image.open(img_path).convert('L')  # Convert to grayscale
-            
-            if self.transform:
-                image = self.transform(image)
-                
-            return image
-        else:
-            raise ValueError(f"File {filename} not found in dataset")
-            
+        """Get an image by its filename"""
+        if filename not in self.img_files:
+            raise ValueError(f"Image {filename} not found in dataset")
+        
+        idx = self.img_files.index(filename)
+        image, _ = self.__getitem__(idx)
+        return image
+
     def get_filenames(self):
-        """
-        Return all filenames in the dataset
-        """
+        """Return list of all image filenames"""
         return self.img_files
+    
+    def get_num_classes(self, label_idx=None):
+        """
+        Returns the number of unique classes for each label type
+        If label_idx is provided, returns the number of classes for that specific label
+        """
+        if label_idx is not None and 0 <= label_idx < len(self.label_columns):
+            col = self.label_columns[label_idx]
+            return len(self.label_mappings[col])
+        
+        # Return a list of class counts for all label types
+        return [len(self.label_mappings[col]) for col in self.label_columns]
+    
+    def get_label_names(self):
+        """Returns the names of the label columns"""
+        return self.label_columns
+    
+    def get_class_mapping(self, label_idx=None):
+        """
+        Returns the mapping from integer to original string label
+        If label_idx is provided, returns the mapping for that specific label type
+        """
+        if label_idx is not None and 0 <= label_idx < len(self.label_columns):
+            col = self.label_columns[label_idx]
+            return {v: k for k, v in self.label_mappings[col].items()}
+        
+        # Return mappings for all label types
+        result = {}
+        for col in self.label_columns:
+            result[col] = {v: k for k, v in self.label_mappings[col].items()}
+        return result
 
 class VAE(nn.Module):
     def __init__(self, img_size=64, latent_dim=128, hidden_dims=None):
@@ -307,23 +397,54 @@ class Discriminator(nn.Module):
         validity = self.classifier(features)
         return validity
     
-class LatentClassifier(nn.Module):
-    def __init__(self, latent_dim, num_classes):
-        super(LatentClassifier, self).__init__()
+class MultiLabelClassifier(nn.Module):
+    def __init__(self, latent_dim, num_classes_per_label):
+        """
+        A classifier that handles multiple label types from the latent space
         
-        # Input is mu and log_var concatenated (2*latent_dim)
-        self.network = nn.Sequential(
-            nn.Linear(2 * latent_dim, 4),   # First layer with 4 neurons
+        Args:
+            latent_dim: Dimension of the latent space
+            num_classes_per_label: List containing the number of classes for each label type
+        """
+        super(MultiLabelClassifier, self).__init__()
+        
+        self.num_label_types = len(num_classes_per_label)
+        self.num_classes_per_label = num_classes_per_label
+        
+        # Shared feature extractor - combines mu and log_var
+        self.feature_extractor = nn.Sequential(
+            nn.Linear(2 * latent_dim, 512),
             nn.ReLU(),
-            nn.Linear(4, 4),                # Second layer with 4 neurons
-            nn.ReLU(),
-            nn.Linear(4, num_classes)       # Output layer
+            nn.Linear(512, 256),
+            nn.ReLU()
         )
+        
+        # Separate classifier head for each label type
+        self.classifier_heads = nn.ModuleList([
+            nn.Linear(256, num_classes) for num_classes in num_classes_per_label
+        ])
     
     def forward(self, mu, log_var):
+        """
+        Forward pass of the multi-label classifier
+        
+        Args:
+            mu: Mean vectors from the encoder
+            log_var: Log variance vectors from the encoder
+            
+        Returns:
+            List of logits for each label type
+        """
         # Concatenate mu and log_var to form input
         latent_features = torch.cat([mu, log_var], dim=1)
-        return self.network(latent_features)
+        
+        # Extract shared features
+        shared_features = self.feature_extractor(latent_features)
+        
+        # Get logits for each label type
+        logits = [head(shared_features) for head in self.classifier_heads]
+        
+        return logits
 
 def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples, 
                 kld_weight=0.005, adv_weight=1.0, recon_sample_weight=0.5,
@@ -436,12 +557,44 @@ def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples,
     adv_loss = recon_sample_weight * adv_recon_loss + (1.0 - recon_sample_weight) * adv_samples_loss
 
     ######################
-    # 4. Classification loss (if provided)
+    # 4. Classification loss for multiple labels (if provided)
     ######################
     cls_loss = torch.tensor(0.0, device=device)
+    
     if cls_logits is not None and labels is not None:
-        cls_criterion = nn.CrossEntropyLoss()
-        cls_loss = cls_criterion(cls_logits, labels)
+        # For multi-label classification
+        if isinstance(cls_logits, list):
+            num_label_types = len(cls_logits)
+            cls_losses = []
+            
+            for i in range(num_label_types):
+                # Get the logits and labels for this label type
+                logits = cls_logits[i]
+                label = labels[:, i]  # Each column is a different label type
+                
+                # Skip samples with invalid labels (-1)
+                valid_mask = (label != -1)
+                if valid_mask.any():
+                    valid_logits = logits[valid_mask]
+                    valid_labels = label[valid_mask]
+                    
+                    # Calculate loss for this label type
+                    criterion = nn.CrossEntropyLoss()
+                    current_loss = criterion(valid_logits, valid_labels)
+                    cls_losses.append(current_loss)
+            
+            # Sum the losses across all label types (if any valid losses)
+            if cls_losses:
+                cls_loss = torch.stack(cls_losses).sum()
+        
+        # For single-label classification (backwards compatibility)
+        else:
+            cls_criterion = nn.CrossEntropyLoss()
+            valid_mask = (labels != -1)
+            if valid_mask.any():
+                valid_logits = cls_logits[valid_mask]
+                valid_labels = labels[valid_mask]
+                cls_loss = cls_criterion(valid_logits, valid_labels)
     
     ######################
     # Total loss for motorVAEGAN
@@ -542,16 +695,18 @@ def kld_weight_scheduler(epoch, total_epochs=112, min_weight=0.01, max_weight=0.
     
     return weight
 
-def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_img, 
-                  vae_optimizer, d_optimizer, epochs, kld_scheduler_fn, kld_scheduler_params, 
-                  adv_weight=1.0, recon_sample_weight=0.7, 
-                  checkpoint_path="unspecified_model.pth", recon_path="outputs/unspecified"):
+def train_vaegan(vae_model, discriminator, classifier, train_loader, dataset, target_recon_img, 
+                vae_optimizer, d_optimizer, epochs, kld_scheduler_fn, kld_scheduler_params, 
+                adv_weight=1.0, recon_sample_weight=0.7, cls_weight=1.0, has_labels=False,
+                checkpoint_path="unspecified_model.pth", recon_path="outputs/unspecified", 
+                args=None):
     """
-    Train the VAE-GAN model with KLD weight scheduling and track reconstruction of a specific image
+    Train the VAE-GAN model with KLD weight scheduling, classification, and track reconstruction
     
     Args:
         vae_model: The VAE model
         discriminator: The discriminator model
+        classifier: The classifier model (can be None if no labels)
         train_loader: DataLoader for training data
         dataset: The dataset object for accessing specific images
         target_img: Filename of the image to track across epochs
@@ -562,6 +717,8 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
         kld_scheduler_params: Parameters for the KLD scheduler function
         adv_weight: Weight for adversarial loss term
         recon_sample_weight: Weight for reconstruction vs sample discrimination
+        cls_weight: Weight for classification loss term
+        has_labels: Whether the dataset has labels
         checkpoint_path: Path to save model checkpoints
         recon_path: Path to save reconstructions each epoch
     """
@@ -570,6 +727,8 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
 
     vae_model.train()
     discriminator.train()
+    if classifier is not None:
+        classifier.train()
     
     # Lists to track all loss components
     total_losses = []
@@ -577,6 +736,7 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
     kld_losses = []
     adv_losses = []
     disc_losses = []
+    cls_losses = []  # Track classification losses
     kld_weights = []  # Track the KLD weights used
     
     for epoch in range(epochs):
@@ -591,10 +751,25 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
         epoch_kld_loss = 0
         epoch_adv_loss = 0
         epoch_d_loss = 0
+        epoch_cls_loss = 0
         
         progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), desc=f"Epoch {epoch+1}/{epochs}")
         
-        for batch_idx, data in progress_bar:
+        for batch_idx, data_with_labels in progress_bar:
+            # Unpack data and labels if we have them
+            if has_labels:
+                data, all_labels = data_with_labels
+                all_labels = all_labels.to(device)
+                
+                # Check if we have any valid labels (not -1)
+                any_valid = torch.any(all_labels != -1, dim=0)
+                if not any_valid.any():
+                    # If no valid labels in batch for any label type
+                    all_labels = None
+            else:
+                data = data_with_labels[0] if isinstance(data_with_labels, list) else data_with_labels
+                all_labels = None
+                
             batch_size = data.size(0)
             data = data.to(device)
             
@@ -632,8 +807,11 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
             # Generate reconstructed images
             recon_batch, mu, log_var, _ = vae_model(data)
 
-            # Get classifier output
-            cls_logits = classifier(mu, log_var)
+            # Get classifier output if we have labels
+            if has_labels and all_labels is not None and classifier is not None:
+                cls_logits = classifier(mu, log_var)
+            else:
+                cls_logits = None
             
             # Generate samples from random noise
             z_random = torch.randn(batch_size, vae_model.latent_dim).to(device)
@@ -648,7 +826,7 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
                 recon_batch, data, mu, log_var, d_fake_recon, d_fake_samples,
                 current_kld_weight, adv_weight, recon_sample_weight,
                 mi_weight=args.mi_weight, tc_weight=args.tc_weight, dwkl_weight=args.dwkl_weight,
-                cls_logits=cls_logits, labels=labels, cls_weight=args.cls_weight)
+                cls_logits=cls_logits, labels=all_labels, cls_weight=cls_weight)
 
             loss.backward()
             vae_optimizer.step()
@@ -659,9 +837,10 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
             epoch_kld_loss += kld_loss.item()
             epoch_adv_loss += adv_loss.item()
             epoch_d_loss += d_loss.item()
+            epoch_cls_loss += cls_loss.item() if cls_loss is not None else 0
             
             # Update progress bar
-            progress_bar.set_postfix({
+            progress_dict = {
                 'vae_loss': loss.item() / batch_size,
                 'recon_loss': recon_loss.item() / batch_size,
                 'kld_loss': kld_loss.item() / batch_size,
@@ -670,7 +849,12 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
                 'dwkl_loss': dwkl_loss.item() / batch_size,
                 'adv_loss': adv_loss.item() / batch_size,
                 'd_loss': d_loss.item() / batch_size
-            })
+            }
+            
+            if cls_loss is not None:
+                progress_dict['cls_loss'] = cls_loss.item() / batch_size
+                
+            progress_bar.set_postfix(progress_dict)
         
         # Average losses for the epoch
         avg_vae_loss = epoch_vae_loss / len(train_loader.dataset)
@@ -678,6 +862,7 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
         avg_kld_loss = epoch_kld_loss / len(train_loader.dataset)
         avg_adv_loss = epoch_adv_loss / len(train_loader.dataset)
         avg_d_loss = epoch_d_loss / len(train_loader.dataset)
+        avg_cls_loss = epoch_cls_loss / len(train_loader.dataset) if epoch_cls_loss > 0 else 0
 
         # Store all loss components
         total_losses.append(avg_vae_loss)
@@ -685,12 +870,16 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
         kld_losses.append(avg_kld_loss)
         adv_losses.append(avg_adv_loss)
         disc_losses.append(avg_d_loss)
+        cls_losses.append(avg_cls_loss)
         
+        # Print metrics
         print(f"Average VAE Loss: {avg_vae_loss:.4f}")
         print(f"Average Reconstruction Loss: {avg_recon_loss:.4f}")
         print(f"Average KLD Loss: {avg_kld_loss:.4f} (raw: {avg_kld_loss/current_kld_weight:.4f})")
         print(f"Average Adversarial Loss: {avg_adv_loss:.4f}")
         print(f"Average Discriminator Loss: {avg_d_loss:.4f}")
+        if epoch_cls_loss > 0:
+            print(f"Average Classification Loss: {avg_cls_loss:.4f}")
         
         # Track reconstruction of target image at the current epoch
         if target_recon_img != "-unspecified-":
@@ -717,6 +906,7 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
         'kld': kld_losses,
         'adv': adv_losses,
         'disc': disc_losses,
+        'cls': cls_losses,
         'kld_weights': kld_weights
     }
 
@@ -903,8 +1093,8 @@ def extract_latent_vectors(model, data_loader, save_dir="output"):
     all_filenames = []
     
     with torch.no_grad():
-        for batch_idx, (data) in tqdm(enumerate(data_loader), total=len(data_loader), desc="Extracting latent vectors"):
-            data = data.to(device)
+        for batch_idx, batch_data in tqdm(enumerate(data_loader), total=len(data_loader)):
+            data = batch_data[0] if isinstance(batch_data, list) or isinstance(batch_data, tuple) else batch_data
             mu, log_var = model.encode(data)
             
             all_mu.append(mu.cpu().numpy())
@@ -1011,14 +1201,17 @@ def main(args):
             f"(mi{args.mi_weight}_tc{args.tc_weight}_dwkl{args.dwkl_weight})_"
             f"adv{args.adv_weight}_rec{args.recon_sample_weight}.pth")
     
-    # Data transformations
+    # Load dataset with labels
     transform = transforms.Compose([
         transforms.Resize((args.img_size, args.img_size)),
         transforms.ToTensor(),
     ])
     
-    # Load dataset
-    train_dataset = VehicleDataset(img_dir=args.data_dir, transform=transform)
+    train_dataset = VehicleDataset(
+        img_dir=args.data_dir, 
+        transform=transform,
+        labels_file=args.labels_file
+    )
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
     
     # Create VAE model
@@ -1026,20 +1219,36 @@ def main(args):
     
     # Create Discriminator
     discriminator = Discriminator(img_size=args.img_size).to(device)
-    print("Using VAE-GAN architecture with pixel-space discrimination")
-
-    # Create Classifier
-    classifier = LatentClassifier(latent_dim=args.latent_dim, num_classes=num_classes).to(device)
     
-    # Count and print model parameters
-    vae_params = sum(p.numel() for p in vae_model.parameters())
-    disc_params = sum(p.numel() for p in discriminator.parameters())
-    print(f"Total number of VAE parameters: {vae_params:,}")
-    print(f"Total number of Discriminator parameters: {disc_params:,}")
-    print(f"Total model parameters: {vae_params + disc_params:,}")
+    # Create Multi-Label Classifier if labels are provided
+    has_labels = args.labels_file is not None
+    if has_labels:
+        # Get number of classes for each label type
+        num_classes_per_label = train_dataset.get_num_classes()
+        label_names = train_dataset.get_label_names()
+        
+        print(f"Creating multi-label classifier with {len(num_classes_per_label)} label types:")
+        for i, (name, num_classes) in enumerate(zip(label_names, num_classes_per_label)):
+            print(f"  {i}: {name} - {num_classes} classes")
+        
+        # Create the classifier
+        classifier = MultiLabelClassifier(
+            latent_dim=args.latent_dim, 
+            num_classes_per_label=num_classes_per_label
+        ).to(device)
+    else:
+        classifier = None
+        print("No labels provided, skipping classification")
     
-    # Define optimizers
-    vae_optimizer = optim.Adam(list(vae_model.parameters()) + list(classifier.parameters()), lr=args.learning_rate)
+    # Define optimizers - include classifier parameters if it exists
+    if has_labels:
+        vae_optimizer = optim.Adam(
+            list(vae_model.parameters()) + list(classifier.parameters()), 
+            lr=args.learning_rate
+        )
+    else:
+        vae_optimizer = optim.Adam(vae_model.parameters(), lr=args.learning_rate)
+        
     d_optimizer = optim.Adam(discriminator.parameters(), lr=args.learning_rate * 0.5)
     
     # If resuming from checkpoint
@@ -1067,11 +1276,15 @@ def main(args):
         }
 
         # Train with KLD weight scheduling
-        losses = train_vaegan(
-            vae_model, discriminator, train_loader, train_dataset, args.track_reconstruction,
-            vae_optimizer, d_optimizer, args.epochs, kld_weight_scheduler, kld_scheduler_params,
-            adv_weight=args.adv_weight, recon_sample_weight=args.recon_sample_weight,
-            checkpoint_path=model_path, recon_path=out_dir)
+        losses = train_vaegan(vae_model, discriminator, classifier, train_loader,
+                      train_dataset, args.track_reconstruction,
+                      vae_optimizer, d_optimizer, args.epochs, 
+                      kld_weight_scheduler, kld_scheduler_params,
+                      adv_weight=args.adv_weight, 
+                      recon_sample_weight=args.recon_sample_weight,
+                      cls_weight=args.cls_weight, has_labels=has_labels,
+                      checkpoint_path=model_path, recon_path=out_dir,
+                      args=args)
         
         # Plot training losses with KLD weight overlay and separate discriminator loss
         plt.figure(figsize=(12, 12))  # Increased figure height to accommodate 3 subplots
