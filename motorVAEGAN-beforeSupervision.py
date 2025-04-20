@@ -306,29 +306,10 @@ class Discriminator(nn.Module):
         features = self.features(img)
         validity = self.classifier(features)
         return validity
-    
-class LatentClassifier(nn.Module):
-    def __init__(self, latent_dim, num_classes):
-        super(LatentClassifier, self).__init__()
-        
-        # Input is mu and log_var concatenated (2*latent_dim)
-        self.network = nn.Sequential(
-            nn.Linear(2 * latent_dim, 4),   # First layer with 4 neurons
-            nn.ReLU(),
-            nn.Linear(4, 4),                # Second layer with 4 neurons
-            nn.ReLU(),
-            nn.Linear(4, num_classes)       # Output layer
-        )
-    
-    def forward(self, mu, log_var):
-        # Concatenate mu and log_var to form input
-        latent_features = torch.cat([mu, log_var], dim=1)
-        return self.network(latent_features)
 
 def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples, 
                 kld_weight=0.005, adv_weight=1.0, recon_sample_weight=0.5,
-                mi_weight=1.0, tc_weight=1.0, dwkl_weight=1.0,
-                cls_logits=None, labels=None, cls_weight=1.0):
+                mi_weight=1.0, tc_weight=1.0, dwkl_weight=1.0):
     """
     VAE-GAN loss function with decomposed KL divergence:
     - Reconstruction loss (L1)
@@ -337,7 +318,6 @@ def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples,
         2. Total Correlation Loss
         3. Dimension-wise KL Divergence Loss
     - Adversarial loss from discriminator
-    - Classification loss
     """
     batch_size = x.size(0)
     tiny_amt = 1e-8 # for numerical stability
@@ -434,24 +414,13 @@ def vae_gan_loss(recon_x, x, mu, log_var, d_recon, d_samples,
     adv_recon_loss = F.binary_cross_entropy(d_recon, torch.ones_like(d_recon))
     adv_samples_loss = F.binary_cross_entropy(d_samples, torch.ones_like(d_samples))
     adv_loss = recon_sample_weight * adv_recon_loss + (1.0 - recon_sample_weight) * adv_samples_loss
-
-    ######################
-    # 4. Classification loss (if provided)
-    ######################
-    cls_loss = torch.tensor(0.0, device=device)
-    if cls_logits is not None and labels is not None:
-        cls_criterion = nn.CrossEntropyLoss()
-        cls_loss = cls_criterion(cls_logits, labels)
     
     ######################
-    # Total loss for motorVAEGAN
+    # Total loss for VAE (generator)
     ######################
-    vae_loss = (recon_loss + 
-                kld_weight * kld_loss + 
-                adv_weight * adv_loss + 
-                cls_weight * cls_loss)
+    vae_loss = recon_loss + kld_weight * kld_loss + adv_weight * adv_loss
     
-    return vae_loss, recon_loss, kld_loss, mi_loss, tc_loss, dwkl_loss, adv_loss, cls_loss
+    return vae_loss, recon_loss, kld_loss, mi_loss, tc_loss, dwkl_loss, adv_loss
 
 def discriminator_loss(d_real, d_fake_recon, d_fake_samples, recon_sample_weight=0.5):
     """
@@ -625,15 +594,12 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
             d_optimizer.step()
             
             # ---------------------
-            # Train VAE (Encoder, Decoder, and Classifier)
+            # Train VAE (Generator)
             # ---------------------
             vae_optimizer.zero_grad()
             
             # Generate reconstructed images
             recon_batch, mu, log_var, _ = vae_model(data)
-
-            # Get classifier output
-            cls_logits = classifier(mu, log_var)
             
             # Generate samples from random noise
             z_random = torch.randn(batch_size, vae_model.latent_dim).to(device)
@@ -643,13 +609,12 @@ def train_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_i
             d_fake_recon = discriminator(recon_batch)
             d_fake_samples = discriminator(fake_samples)
             
-            # VAE-GAN loss with dynamic KLD weighting and classification
-            loss, recon_loss, kld_loss, mi_loss, tc_loss, dwkl_loss, adv_loss, cls_loss = vae_gan_loss(
-                recon_batch, data, mu, log_var, d_fake_recon, d_fake_samples,
+            # VAE-GAN loss with dynamic KLD weighting
+            loss, recon_loss, kld_loss, mi_loss, tc_loss, dwkl_loss, adv_loss = vae_gan_loss(
+                recon_batch, data, mu, log_var, d_fake_recon, d_fake_samples, 
                 current_kld_weight, adv_weight, recon_sample_weight,
-                mi_weight=args.mi_weight, tc_weight=args.tc_weight, dwkl_weight=args.dwkl_weight,
-                cls_logits=cls_logits, labels=labels, cls_weight=args.cls_weight)
-
+                mi_weight=args.mi_weight, tc_weight=args.tc_weight, dwkl_weight=args.dwkl_weight)
+            
             loss.backward()
             vae_optimizer.step()
             
@@ -1027,9 +992,6 @@ def main(args):
     # Create Discriminator
     discriminator = Discriminator(img_size=args.img_size).to(device)
     print("Using VAE-GAN architecture with pixel-space discrimination")
-
-    # Create Classifier
-    classifier = LatentClassifier(latent_dim=args.latent_dim, num_classes=num_classes).to(device)
     
     # Count and print model parameters
     vae_params = sum(p.numel() for p in vae_model.parameters())
@@ -1039,7 +1001,7 @@ def main(args):
     print(f"Total model parameters: {vae_params + disc_params:,}")
     
     # Define optimizers
-    vae_optimizer = optim.Adam(list(vae_model.parameters()) + list(classifier.parameters()), lr=args.learning_rate)
+    vae_optimizer = optim.Adam(vae_model.parameters(), lr=args.learning_rate)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=args.learning_rate * 0.5)
     
     # If resuming from checkpoint
