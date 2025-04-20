@@ -58,7 +58,7 @@ source env/bin/activate
 Copy-pasta this line of code into the terminal to do all the things!
 
 ```
-python motorVAEGAN.py --data_dir data/evox_256x256_1-3 --img_size 256 --latent_dim 128 --max_kld_weight 1.0 --adv_weight 1.0 --recon_sample_weight 0.5 --learning_rate 0.0001 --epochs 100 --batch_size 128 --train --reconstructions --extract_latent --sample
+python motorVAEGAN.py --data_dir data/evox_256x256_1-4 --img_size 256 --latent_dim 128 --max_kld_weight 1.0 --adv_weight 1.0 --recon_sample_weight 0.5 --learning_rate 0.0001 --epochs 100 --batch_size 128 --train --reconstructions --extract_latent --sample
 ```
 
 Key Arguments
