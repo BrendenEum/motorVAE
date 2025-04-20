@@ -1,0 +1,6 @@
+setup.py
+evox/evox_client.py
+evox.egg-info/PKG-INFO
+evox.egg-info/SOURCES.txt
+evox.egg-info/dependency_links.txt
+evox.egg-info/top_level.txt
