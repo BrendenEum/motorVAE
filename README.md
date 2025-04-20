@@ -34,13 +34,13 @@ Request an interactive session.
 
 ```
 cd /home/beum/scratch/motorVAE
-salloc --account=def-webbr  --time=00:59:00 --gres=gpu:1 --mem=32000M --ntasks=1 --cpus-per-task=4
+salloc --account=def-webbr --time=00:59:00 --gres=gpu:v100l:1 --mem=32000M --ntasks=1 --cpus-per-task=4
 ```
 
 Load all the modules.
 
 ```
-module load StdEnv/2020 python/3.9.6 cuda/11.4
+module load StdEnv/2020 python/3.9.6 cuda/11.4 scipy-stack/2021a
 ```
 
 >*First-time setup*: If it's your first time ever running this code, you'll need to set up the virtual environment and install all the required libraries with (1) `virtualenv --no-download env`, (2) `source env/bin/activate`, (3) `pip install -r requirements.txt`. I think `virtualenv` is different on Compute Canada, so you may want to use `venv` on a local computer.

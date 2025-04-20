@@ -7,15 +7,15 @@
 *.pdf
 *.eps
 
-!data/labels_*.csv
-
-data/*
-analysis/temp/*
-experiment/*
-env/
-OLD/
-__pycache__/
-.idea/
+/data/*
+/analysis/temp/*
+/experiment/*
+/env/
+/OLD/
+/__pycache__/
+/.idea/
 
 ._.DS_Store
 .DS_Store
+
+!data/labels_evox_256x256_1-4.csv
