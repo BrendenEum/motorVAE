@@ -34,7 +34,7 @@ Request an interactive session.
 
 ```
 cd /home/beum/scratch/motorVAE
-salloc --account=def-webbr  --time=00:30:00 --gres=gpu:1 --mem=12000M --ntasks=1 --cpus-per-task=4
+salloc --account=def-webbr  --time=00:59:00 --gres=gpu:1 --mem=32000M --ntasks=1 --cpus-per-task=4
 ```
 
 Load all the modules.
@@ -58,7 +58,17 @@ source env/bin/activate
 Copy-pasta this line of code into the terminal to do all the things!
 
 ```
-python motorVAEGAN.py --data_dir data/evox_256x256_1-4 --img_size 256 --latent_dim 128 --max_kld_weight 1.0 --adv_weight 1.0 --recon_sample_weight 0.5 --learning_rate 0.0001 --epochs 100 --batch_size 128 --train --reconstructions --extract_latent --sample
+python motorVAEGAN-beforeSupervision.py \
+    --data_dir data/evox_256x256_1-4 --img_size 256 \
+    --latent_dim 100 \
+    --max_kld_weight 1.0 --tc_weight 50.0 \
+    --adv_weight 1.0 --recon_sample_weight 0.5 \
+    --cls_weight 1.0 --label_file data/labels_evox_256x256_1-4.csv --label_cols Year,Brand,Body,Door \
+    --learning_rate 0.0001 --epochs 200 --batch_size 128 \
+    --train --reconstructions --extract_latent --sample \
+    --traversals 2021_Toyota_CamryHybrid_XLE_sedan_4Door_2.png \
+    --interpolate 2007_Toyota_PriusHybrid_nan_hatchback_5Door_3.png 2025_Hyundai_Ioniq5N_nan_CUV_4Door_2.png \
+    --track_reconstruction 2016_Subaru_Outback_3.6RLimited_wagon_5Door_2.png
 ```
 
 Key Arguments

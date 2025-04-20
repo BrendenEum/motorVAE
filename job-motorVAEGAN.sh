@@ -16,7 +16,16 @@ module load StdEnv/2020 python/3.9.6 cuda/11.4
 source env/bin/activate
 
 # Train
-python motorVAEGAN-beforeSupervision.py --data_dir data/evox_256x256_1-4 --img_size 256 --latent_dim 64 --max_kld_weight 1.0 --tc_weight 50.0 --adv_weight 1.0 --recon_sample_weight 0.5 --learning_rate 0.0001 --epochs 200 --batch_size 128 --train --reconstructions --extract_latent --sample --traversals 2021_Toyota_CamryHybrid_XLE_sedan_4Door_2.png --interpolate 2007_Toyota_PriusHybrid_nan_hatchback_5Door_3.png 2025_Hyundai_Ioniq5N_nan_CUV_4Door_2.png --track_reconstruction 2016_Subaru_Outback_3.6RLimited_wagon_5Door_2.png
+python motorVAEGAN-beforeSupervision.py \
+    --data_dir data/evox_256x256_1-4 --img_size 256 \
+    --latent_dim 100 \
+    --max_kld_weight 1.0 --tc_weight 50.0 \
+    --adv_weight 1.0 --recon_sample_weight 0.5 \
+    --learning_rate 0.0001 --epochs 200 --batch_size 128 \
+    --train --reconstructions --extract_latent --sample \
+    --traversals 2021_Toyota_CamryHybrid_XLE_sedan_4Door_2.png \
+    --interpolate 2007_Toyota_PriusHybrid_nan_hatchback_5Door_3.png 2025_Hyundai_Ioniq5N_nan_CUV_4Door_2.png \
+    --track_reconstruction 2016_Subaru_Outback_3.6RLimited_wagon_5Door_2.png
 
 # Notes
-# 200 epochs takes approx 13 hrs.
+# 200 epochs takes approx 12.5 hrs.
