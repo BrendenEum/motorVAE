@@ -42,7 +42,17 @@ class SupervisedVehicleDataset(Dataset):
         else:  # Default to all label columns except filename
             self.label_cols = [col for col in self.labels_df.columns if col != 'Filename']
         
+        # Create mappings between label values and indices
+        self.label_mappings = {}
+        for col in self.label_cols:
+            unique_values = sorted(self.labels_df[col].unique())
+            self.label_mappings[col] = {val: idx for idx, val in enumerate(unique_values)}
+        
         print(f"Dataset initialized with {len(self.img_files)} images and {len(self.label_cols)} labels: {self.label_cols}")
+        
+        # Verify label mappings
+        for col in self.label_cols:
+            print(f"Label '{col}' has {len(self.label_mappings[col])} unique values")
         
     def __len__(self):
         return len(self.img_files)
@@ -59,37 +69,22 @@ class SupervisedVehicleDataset(Dataset):
         label_row = self.labels_df[self.labels_df['Filename'] == img_file]
         label_values = label_row[self.label_cols].values[0]
         
-        # Convert string labels to numerical indices using label encoders
-        labels = torch.tensor([self.get_label_index(col, val) for col, val in zip(self.label_cols, label_values)], dtype=torch.long)
+        # Convert string labels to numerical indices using mappings
+        labels = []
+        for col, val in zip(self.label_cols, label_values):
+            try:
+                label_idx = self.label_mappings[col].get(val, 0)  # Default to 0 if not found
+                labels.append(label_idx)
+            except Exception as e:
+                print(f"Error processing label '{col}' with value '{val}': {e}")
+                print(f"Known values for this label: {list(self.label_mappings[col].keys())[:5]}...")
+                labels.append(0)  # Default to first class as fallback
         
-        return image, labels
-    
-    def get_label_index(self, col_name, value):
-        """Convert string label to numerical index with robust matching"""
-        # Get all unique values for this column
-        unique_values = sorted(self.labels_df[col_name].unique())
-        
-        # Convert to strings and normalize for comparison if values are strings
-        if isinstance(value, str):
-            value_norm = value.strip().lower()
-            unique_values_norm = [str(v).strip().lower() for v in unique_values]
-            indices = [i for i, v in enumerate(unique_values_norm) if v == value_norm]
-            
-            if indices:
-                return indices[0]
-                
-        # Try direct comparison if normalization didn't work or values aren't strings
-        indices = np.where(np.array(unique_values) == value)[0]
-        
-        if len(indices) == 0:
-            print(f"Warning: Value '{value}' not found in column '{col_name}'. Unique values: {unique_values}")
-            return 0  # Return first class as fallback
-        
-        return indices[0]
+        return image, torch.tensor(labels, dtype=torch.long)
     
     def get_num_classes(self, col_name):
         """Get number of unique classes for a specific label column"""
-        return len(self.labels_df[col_name].unique())
+        return len(self.label_mappings[col_name])
     
     def get_all_num_classes(self):
         """Get number of unique classes for each label column"""
@@ -111,6 +106,10 @@ class SupervisedVehicleDataset(Dataset):
     def get_filenames(self):
         """Return all filenames in the dataset"""
         return self.img_files
+
+    def get_class_mapping(self, col_name):
+        """Get the mapping between raw values and class indices for a column"""
+        return self.label_mappings[col_name]
 
 class VAEWithClassifier(nn.Module):
     def __init__(self, img_size=64, latent_dim=128, hidden_dims=None, num_classes_dict=None):
@@ -344,7 +343,7 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     recon_loss = F.l1_loss(recon_x, x, reduction='sum')
     
     ######################
-    # 2. KL Divergence components (same as before)
+    # 2. KL Divergence components
     ######################
     # Reparameterization trick: Sample z from q(z|x)
     log_var = torch.clamp(log_var, min=-88, max=88)  # prevent exp overflow/underflow
@@ -398,7 +397,7 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     kld_loss = mi_weight * mi_loss + tc_weight * tc_loss + dwkl_weight * dwkl_loss
     
     ######################
-    # 3. Adversarial loss (same as before)
+    # 3. Adversarial loss
     ######################
     d_recon = torch.clamp(d_recon, min=tiny_amt, max=1-tiny_amt)
     d_samples = torch.clamp(d_samples, min=tiny_amt, max=1-tiny_amt)
@@ -408,7 +407,7 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     adv_loss = recon_sample_weight * adv_recon_loss + (1.0 - recon_sample_weight) * adv_samples_loss
     
     ######################
-    # 4. Classification loss (NEW)
+    # 4. Classification loss
     ######################
     cls_loss = 0
     cls_losses = {}
@@ -416,6 +415,13 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     for i, (label_name, pred) in enumerate(logits.items()):
         # Get label for this class type
         label = labels[:, i]
+        
+        # Ensure labels are valid (within range of classes)
+        num_classes = pred.size(1)
+        if torch.any(label >= num_classes) or torch.any(label < 0):
+            # Clamp out-of-range indices
+            print(f"WARNING: Found out-of-range label indices for {label_name}. Clamping to valid range.")
+            label = torch.clamp(label, 0, num_classes - 1)
         
         # Calculate cross-entropy loss
         loss = F.cross_entropy(pred, label)
