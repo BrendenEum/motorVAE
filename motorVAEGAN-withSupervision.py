@@ -31,16 +31,16 @@ class SupervisedVehicleDataset(Dataset):
         self.labels_df = pd.read_csv(label_file)
         
         # Filter to only include images that exist in the directory
-        self.labels_df = self.labels_df[self.labels_df['filename'].isin(self.img_files)]
+        self.labels_df = self.labels_df[self.labels_df['Filename'].isin(self.img_files)]
         
         # Keep only existing image files that have labels
-        self.img_files = [f for f in self.img_files if f in self.labels_df['filename'].values]
+        self.img_files = [f for f in self.img_files if f in self.labels_df['Filename'].values]
         
         # Select which label columns to use for classification
         if label_cols:
             self.label_cols = label_cols
         else:  # Default to all label columns except filename
-            self.label_cols = [col for col in self.labels_df.columns if col != 'filename']
+            self.label_cols = [col for col in self.labels_df.columns if col != 'Filename']
         
         print(f"Dataset initialized with {len(self.img_files)} images and {len(self.label_cols)} labels: {self.label_cols}")
         
@@ -56,7 +56,7 @@ class SupervisedVehicleDataset(Dataset):
             image = self.transform(image)
         
         # Get labels for this image
-        label_row = self.labels_df[self.labels_df['filename'] == img_file]
+        label_row = self.labels_df[self.labels_df['Filename'] == img_file]
         label_values = label_row[self.label_cols].values[0]
         
         # Convert string labels to numerical indices using label encoders
