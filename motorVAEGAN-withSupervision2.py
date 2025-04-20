@@ -31,16 +31,16 @@ class SupervisedVehicleDataset(Dataset):
         self.labels_df = pd.read_csv(label_file)
         
         # Filter to only include images that exist in the directory
-        self.labels_df = self.labels_df[self.labels_df['Filename'].isin(self.img_files)]
+        self.labels_df = self.labels_df[self.labels_df['filename'].isin(self.img_files)]
         
         # Keep only existing image files that have labels
-        self.img_files = [f for f in self.img_files if f in self.labels_df['Filename'].values]
+        self.img_files = [f for f in self.img_files if f in self.labels_df['filename'].values]
         
         # Select which label columns to use for classification
         if label_cols:
             self.label_cols = label_cols
         else:  # Default to all label columns except filename
-            self.label_cols = [col for col in self.labels_df.columns if col != 'Filename']
+            self.label_cols = [col for col in self.labels_df.columns if col != 'filename']
         
         print(f"Dataset initialized with {len(self.img_files)} images and {len(self.label_cols)} labels: {self.label_cols}")
         
@@ -56,7 +56,7 @@ class SupervisedVehicleDataset(Dataset):
             image = self.transform(image)
         
         # Get labels for this image
-        label_row = self.labels_df[self.labels_df['Filename'] == img_file]
+        label_row = self.labels_df[self.labels_df['filename'] == img_file]
         label_values = label_row[self.label_cols].values[0]
         
         # Convert string labels to numerical indices using label encoders
@@ -179,9 +179,10 @@ class VAEWithClassifier(nn.Module):
         if num_classes_dict:
             for label_name, num_classes in num_classes_dict.items():
                 self.classifiers[label_name] = nn.Sequential(
-                    nn.Linear(latent_dim * 2, 4),  # Use both mu and log_var for classification
+                    nn.Linear(latent_dim * 2, 256),  # Use both mu and log_var for classification
                     nn.ReLU(),
-                    nn.Linear(4, num_classes)
+                    nn.Dropout(0.3),
+                    nn.Linear(256, num_classes)
                 )
         
     def encode(self, input):
@@ -391,7 +392,7 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     adv_loss = recon_sample_weight * adv_recon_loss + (1.0 - recon_sample_weight) * adv_samples_loss
     
     ######################
-    # 4. Classification loss 
+    # 4. Classification loss (NEW)
     ######################
     cls_loss = 0
     cls_losses = {}
@@ -806,6 +807,191 @@ def track_reconstruction_across_epochs(vae_model, dataset, img_name, epoch, save
             print(f"{i}: {filename}")
         return
 
+def visualize_reconstructions(model, data_loader, num_images=10, save_dir="output"):
+    """
+    Visualize original images and their reconstructions
+    """
+    model.eval()
+    
+    # Get a batch of images
+    dataiter = iter(data_loader)
+    images, _ = next(dataiter)  # Ignore labels
+    images = images[:num_images].to(device)
+    
+    with torch.no_grad():
+        recon_images, _, _, _ = model.forward(images)[:4]  # Ignore logits
+    
+    # Plot original and reconstructed images
+    plt.figure(figsize=(20, 4))
+    
+    # Original images
+    for i in range(num_images):
+        ax = plt.subplot(2, num_images, i + 1)
+        plt.imshow(images[i].cpu().squeeze().numpy(), cmap='gray')
+        plt.title("Original")
+        plt.axis('off')
+    
+    # Reconstructed images
+    for i in range(num_images):
+        ax = plt.subplot(2, num_images, i + num_images + 1)
+        plt.imshow(recon_images[i].cpu().squeeze().numpy(), cmap='gray')
+        plt.title("Reconstructed")
+        plt.axis('off')
+    
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"reconstructions.png"))
+    plt.close()
+    print(f"Saved reconstructions to {save_dir}")
+
+def visualize_latent_traversal(model, dataset, img_name, dim=0, num_dims=5, save_dir="output"):
+    """
+    Visualize latent space traversal for multiple dimensions
+    """
+    lt_dir = os.path.join(save_dir, "latent_traversals")
+    if not os.path.exists(lt_dir):
+        os.makedirs(lt_dir)
+
+    model.eval()
+    
+    # Get a specific sample image
+    image = dataset.get_image_by_filename(img_name).to(device)
+    
+    # For multiple dimensions
+    for d in range(dim, dim + num_dims):
+        if d >= model.latent_dim:
+            break
+            
+        # Get the mean and log_var for this image
+        with torch.no_grad():
+            mu, log_var = model.encode(image.unsqueeze(0))
+            z = mu  # Use mean for traversal (no sampling)
+            
+            # Create a list to store the traversal images
+            traversal_images = []
+            
+            # Create values for traversal
+            values = np.linspace(-3, 3, 10)
+            
+            # Loop through each value and decode
+            for value in values:
+                z_new = z.clone()
+                z_new[0, d] = value
+                decoded = model.decode(z_new)
+                traversal_images.append(decoded.squeeze().cpu())
+        
+        # Plot traversal
+        plt.figure(figsize=(20, 3))
+        for i, img in enumerate(traversal_images):
+            ax = plt.subplot(1, len(traversal_images), i + 1)
+            plt.imshow(img.numpy(), cmap='gray')
+            plt.title(f"z_{d}={-3 + i*0.6:.1f}")
+            plt.axis('off')
+        
+        plt.suptitle(f"Latent Traversal - Dimension {d}")
+        plt.tight_layout()
+        plt.savefig(os.path.join(lt_dir, f"latent_traversal_dim_{d}.png"))
+        plt.close()
+        
+    print(f"Saved latent traversal visualizations to {lt_dir}")
+
+def visualize_interpolation_between_files(model, dataset, img1_file, img2_file, steps=10, save_dir="output"):
+    """
+    Visualize interpolation between two specific images identified by filename
+    """
+    model.eval()
+    
+    try:
+        # Get the two specified images
+        img1 = dataset.get_image_by_filename(img1_file).to(device)
+        img2 = dataset.get_image_by_filename(img2_file).to(device)
+        
+        # Generate interpolation
+        with torch.no_grad():
+            # Encode both images to get their latent representations
+            mu1, _ = model.encode(img1.unsqueeze(0))
+            mu2, _ = model.encode(img2.unsqueeze(0))
+            
+            # Use means directly (no sampling) for smooth interpolation
+            z1 = mu1
+            z2 = mu2
+            
+            # Create interpolation steps
+            interpolation_images = []
+            alphas = np.linspace(0, 1, steps)
+            
+            # Generate and decode each interpolation point
+            for alpha in alphas:
+                z_interp = (1-alpha) * z1 + alpha * z2
+                decoded = model.decode(z_interp)
+                interpolation_images.append(decoded.squeeze().cpu())
+        
+        # Plot interpolation
+        plt.figure(figsize=(20, 4))
+        
+        # Add original images at the top with filenames
+        plt.subplot(2, steps, 1)
+        plt.imshow(img1.cpu().squeeze().numpy(), cmap='gray')
+        plt.title(f"Image 1\n{img1_file}")
+        plt.axis('off')
+        
+        plt.subplot(2, steps, steps)
+        plt.imshow(img2.cpu().squeeze().numpy(), cmap='gray')
+        plt.title(f"Image 2\n{img2_file}")
+        plt.axis('off')
+        
+        # Add interpolated images
+        for i, img in enumerate(interpolation_images):
+            ax = plt.subplot(2, steps, steps + i + 1)
+            plt.imshow(img.numpy(), cmap='gray')
+            plt.title(f"α={i/(steps-1):.1f}")
+            plt.axis('off')
+        
+        plt.suptitle(f"Latent Space Interpolation Between {img1_file} and {img2_file}")
+        plt.tight_layout()
+        output_name = f"interpolation_{os.path.splitext(img1_file)[0]}_{os.path.splitext(img2_file)[0]}.png"
+        plt.savefig(os.path.join(save_dir, output_name))
+        plt.close()
+        
+        print(f"Saved interpolation visualization to {os.path.join(save_dir, output_name)}")
+        
+    except ValueError as e:
+        print(f"Error: {e}")
+        print("Available files in the dataset:")
+        for i, filename in enumerate(dataset.get_filenames()):
+            print(f"{i}: {filename}")
+        return
+
+def extract_latent_vectors(model, data_loader, save_dir="output"):
+    """
+    Extract and save the latent vectors (mean and log variance) for all images
+    """
+    model.eval()
+    
+    all_mu = []
+    all_log_var = []
+    all_filenames = []
+    
+    with torch.no_grad():
+        for batch_idx, (data, _) in tqdm(enumerate(data_loader), total=len(data_loader), desc="Extracting latent vectors"):
+            data = data.to(device)
+            mu, log_var = model.encode(data)
+            
+            all_mu.append(mu.cpu().numpy())
+            all_log_var.append(log_var.cpu().numpy())
+    
+    # Concatenate all batches
+    all_mu = np.concatenate(all_mu, axis=0)
+    all_log_var = np.concatenate(all_log_var, axis=0)
+    
+    # Save as numpy arrays
+    np.save(os.path.join(save_dir, "latent_mu.npy"), all_mu)
+    np.save(os.path.join(save_dir, "latent_log_var.npy"), all_log_var)
+    
+    print(f"Saved latent vectors to {save_dir}")
+    print(f"mu shape: {all_mu.shape}, log_var shape: {all_log_var.shape}")
+    
+    return all_mu, all_log_var
+
 def visualize_feature_attribution(model, dataset, samples=5, save_dir="outputs"):
     """
     Visualize which latent dimensions contribute most to specific classification labels
@@ -967,8 +1153,7 @@ def main(args):
             f"epo{args.epochs}_bat{args.batch_size}_" 
             f"kld{args.max_kld_weight}_cls{args.cls_weight}_"
             f"(mi{args.mi_weight}_tc{args.tc_weight}_dwkl{args.dwkl_weight})_"
-            f"adv{args.adv_weight}_rec{args.recon_sample_weight}_"
-            f"cls{args.cls_weight}_{args.label_cols}")
+            f"adv{args.adv_weight}_rec{args.recon_sample_weight}")
     out_dir = os.path.join("outputs", subfolder)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -981,8 +1166,7 @@ def main(args):
             f"epo{args.epochs}_bat{args.batch_size}_" 
             f"kld{args.max_kld_weight}_cls{args.cls_weight}_"
             f"(mi{args.mi_weight}_tc{args.tc_weight}_dwkl{args.dwkl_weight})_"
-            f"adv{args.adv_weight}_rec{args.recon_sample_weight}_"
-            f"cls{args.cls_weight}_{args.label_cols}.pth")
+            f"adv{args.adv_weight}_rec{args.recon_sample_weight}.pth")
     
     # Data transformations
     transform = transforms.Compose([
@@ -1101,6 +1285,43 @@ def main(args):
     if args.feature_attribution:
         visualize_feature_attribution(vae_model, train_dataset, samples=args.feature_samples, save_dir=out_dir)
     
+    # Restored visualization functions from original VAE
+    if args.reconstructions:
+        # Visualize reconstructions
+        visualize_reconstructions(vae_model, train_loader, num_images=10, save_dir=out_dir)
+        
+    if args.traversals:
+        # Visualize latent space traversal
+        visualize_latent_traversal(vae_model, train_dataset, args.traversals, dim=0, num_dims=args.latent_dim, save_dir=out_dir)
+    
+    if args.interpolate:
+        # Visualize interpolation between specific files
+        visualize_interpolation_between_files(vae_model, train_dataset, 
+                                            args.interpolate[0], 
+                                            args.interpolate[1],
+                                            steps=args.interpolate_steps, 
+                                            save_dir=out_dir)
+    
+    if args.extract_latent:
+        # Extract and save latent vectors
+        mu, log_var = extract_latent_vectors(vae_model, train_loader, save_dir=out_dir)
+    
+    if args.sample:
+        # Generate random samples
+        with torch.no_grad():
+            samples = vae_model.sample(num_samples=25)
+            
+        # Display samples
+        plt.figure(figsize=(10, 10))
+        for i in range(25):
+            plt.subplot(5, 5, i+1)
+            plt.imshow(samples[i].cpu().squeeze().numpy(), cmap='gray')
+            plt.axis('off')
+        plt.tight_layout()
+        plt.savefig(os.path.join(out_dir, 'samples.png'))
+        plt.close()
+        print(f"Saved random samples to {out_dir}")
+    
     # End timer and print execution time
     end_time = time.time()
     execution_time = end_time - start_time
@@ -1115,15 +1336,18 @@ if __name__ == "__main__":
     # Data parameters
     #################
     parser.add_argument('--data_dir', type=str, default='data/evox_256x256_1-3', help='Directory containing the image dataset')
+    parser.add_argument('--label_file', type=str, default='data/labels.csv', help='CSV file containing image labels')
+    parser.add_argument('--label_cols', type=str, default=None, help='Comma-separated list of column names to use for labels. Default is all columns except filename.')
     parser.add_argument('--img_size', type=int, default=64, help='Image size')
     
     #################
     # Model parameters
     #################
-    parser.add_argument('--latent_dim', type=int, default=128, 
-                        help='Dimension of latent space')
+    parser.add_argument('--latent_dim', type=int, default=128, help='Dimension of latent space')
     parser.add_argument('--max_kld_weight', type=float, default=1.0, 
                         help='Maximum weight for KLD loss term in the scheduler')
+    parser.add_argument('--cls_weight', type=float, default=1.0,
+                        help='Weight for classification loss term')
     parser.add_argument('--mi_weight', type=float, default=1.0, 
                         help='Weight for mutual information loss term in KLD Loss')
     parser.add_argument('--tc_weight', type=float, default=1.0, 
@@ -1134,16 +1358,6 @@ if __name__ == "__main__":
                         help='Weight of adversarial loss term')
     parser.add_argument('--recon_sample_weight', type=float, default=0.7, 
                         help='Weight for reconstruction vs sample discrimination')
-    
-    #################
-    # Classifier
-    #################
-    parser.add_argument('--label_file', type=str, default='data/labels_evox_256x256_1-4.csv', 
-                        help='CSV file containing image labels')
-    parser.add_argument('--label_cols', type=str, default="Year,Brand,Body,Door", 
-                        help='Column names to use for labels, separated by commas with no spaces. Default is all columns except filename.')
-    parser.add_argument('--cls_weight', type=float, default=1.0,
-                        help='Weight for classification loss term')
     
     #################
     # Training parameters
@@ -1169,6 +1383,16 @@ if __name__ == "__main__":
     parser.add_argument('--feature_samples', type=int, default=5, help='Number of samples for feature attribution')
     parser.add_argument('--track_reconstruction', type=str, default='-unspecified-', metavar='FILE', 
                         help='Track reconstruction of a specific image across training epochs')
+    # Restored from original VAE
+    parser.add_argument('--reconstructions', action='store_true', help='Visualize reconstructions')
+    parser.add_argument('--traversals', type=str, metavar='FILE1', 
+                        help='Visualize latent space traversals. Specify which .png file.')
+    parser.add_argument('--extract_latent', action='store_true', help='Extract and save latent vectors')
+    parser.add_argument('--sample', action='store_true', help='Generate random samples from the latent space')
+    parser.add_argument('--interpolate', nargs=2, metavar=('FILE1', 'FILE2'), 
+                        help='Specify two image filenames to interpolate between')
+    parser.add_argument('--interpolate_steps', type=int, default=10,
+                        help='Number of steps for interpolation (default: 10)')
     
     args = parser.parse_args()
     
