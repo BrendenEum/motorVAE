@@ -25,7 +25,7 @@ python motorVAEGAN-withSupervision.py \
     --latent_dim 128 \
     --max_kld_weight 1.0 --tc_weight 50.0 \
     --adv_weight 1.0 --recon_sample_weight 0.5 \
-    --cls_weight 1.0 --cls_latent_dim 10 \
+    --cls_weight 1.0 --cls_latent_dim 8 \
     --label_file data/labels_evox_256x256_1-4.csv --label_cols Year,Brand,Body,Door \
     --learning_rate 0.0001 --epochs 200 --batch_size 128 \
     --train --reconstructions --extract_latent --sample \
