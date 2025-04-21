@@ -35,4 +35,4 @@ python motorVAEGAN-withSupervision.py \
     --track_reconstruction 2010_Jeep_Compass_Sport_CUV_4Door_4.png
 
 # Notes
-# 200 epochs takes approx 12.5 hrs.
+# 200 epochs takes approx 13 hrs.
