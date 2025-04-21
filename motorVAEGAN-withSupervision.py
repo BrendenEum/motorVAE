@@ -228,6 +228,16 @@ class VAEWithClassifier(nn.Module):
         # Use only the specified number of dimensions for classification
         mu_subset = mu[:, :self.cls_latent_dim]
         log_var_subset = log_var[:, :self.cls_latent_dim]
+
+        # Apply z-scoring normalization (standardize)
+        # For each batch separately
+        mu_mean = mu_subset.mean(dim=1, keepdim=True)
+        mu_std = mu_subset.std(dim=1, keepdim=True) + 1e-6  # Add small epsilon to avoid division by zero
+        mu_subset = (mu_subset - mu_mean) / mu_std
+        
+        log_var_mean = log_var_subset.mean(dim=1, keepdim=True)
+        log_var_std = log_var_subset.std(dim=1, keepdim=True) + 1e-6
+        log_var_subset = (log_var_subset - log_var_mean) / log_var_std
         
         # Concatenate subset of mu and log_var for classification
         z_for_cls = torch.cat([mu_subset, log_var_subset], dim=1)
