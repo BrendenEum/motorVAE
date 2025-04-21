@@ -10,6 +10,7 @@
 ###########################
 # Preamble
 ###########################
+set.seed(4)
 
 # Load required libraries
 library(tidyverse)
@@ -109,15 +110,25 @@ unexpected_files <- results$unexpected_files
 ###########################
 cd = car_data
 
+# Function to get the factor mapping
+factor_mapping <- function(factor_variable, fn) {
+  mapping <- data.frame(
+    string = levels(factor_variable),
+    factor_number = 0:(length(levels(factor_variable))-1)
+  ) 
+  write.csv(mapping, file = fn, row.names = FALSE)
+}
+
 # Format variables
-cd$Door <- gsub("\\D", "", cd$Door) %>% as.numeric()
-cd$Year <- cd$Year %>% as.numeric()
-cd$Color <- cd$Color %>% as.numeric()
+cd$Year <- cd$Year %>% factor() 
+cd$Color <- cd$Color %>% as.numeric() - 1
+cd$Trim <- cd$Trim %>% tolower() %>% factor() 
+cd$Body <- cd$Body %>% tolower() %>% factor() 
+cd$Model <- cd$Model %>% tolower() %>% factor()
 cd$Trim <- cd$Trim %>% tolower() %>% factor()
-cd$Body <- cd$Body %>% tolower() %>% factor()
-cd$Brand <- cd$Brand %>% tolower()
 
 # Only keep major brands, group others. Define this as 500 vehicles or more in the dataset.
+cd$Brand <- cd$Brand %>% tolower() 
 majors <- c("acura", "audi", "bmw", "buick", "cadillac", "chevrolet", "dodge", "ford", "gmc", "honda", "hyundai", "infiniti", "jaguar", "jeep", "kia", "landrover", "lexus", "lincoln", "mazda", "mercedes-benz", "mitsubishi", "nissan", "porsche", "subaru", "toyota", "volkswagen", "volvo")
 cd$Brand = ifelse(cd$Brand %in% majors, cd$Brand, "other") %>% factor()
 
@@ -126,7 +137,19 @@ cd$Brand = ifelse(cd$Brand %in% majors, cd$Brand, "other") %>% factor()
 # Thus: (1) Doors provides non-visual information that will trick network. (2) Doors and Body have some overlap.
 # Solution: (1) 3 or less doors will be grouped as 2-door. (2) 4 or more doors will be grouped as 4-door. 
 # Discussion: This solution deals with the the # of doors on the driver side. Still has some overlap with Body.
+cd$Door <- gsub("\\D", "", cd$Door) %>% as.numeric()
 cd$Door <- ifelse(cd$Door <= 3, 2, 4) %>% factor()
+
+# Save the factor mappings
+factor_mapping(cd$Year, "/Users/brenden/Desktop/motorVAE/data/labels_Year_mapping.csv")
+factor_mapping(cd$Body, "/Users/brenden/Desktop/motorVAE/data/labels_Body_mapping.csv")
+factor_mapping(cd$Brand, "/Users/brenden/Desktop/motorVAE/data/labels_Brand_mapping.csv")
+factor_mapping(cd$Door, "/Users/brenden/Desktop/motorVAE/data/labels_Door_mapping.csv")
+
+# Fix the factor numbers in the dataframe
+for (var in c("Year","Body","Brand","Door", "Model", "Trim")) {
+  cd[,var] <- cd[,var] %>% as.numeric() - 1
+}
 
 
 ###########################

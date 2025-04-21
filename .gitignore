@@ -18,4 +18,4 @@
 ._.DS_Store
 .DS_Store
 
-!data/labels_evox_256x256_1-4.csv
+!data/labels_*.csv

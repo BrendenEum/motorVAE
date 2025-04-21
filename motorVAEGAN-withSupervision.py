@@ -42,17 +42,16 @@ class SupervisedVehicleDataset(Dataset):
         else:  # Default to all label columns except filename
             self.label_cols = [col for col in self.labels_df.columns if col != 'Filename']
         
-        # Create mappings between label values and indices
-        self.label_mappings = {}
+        # Count unique values for each label column
+        self.num_classes_dict = {}
         for col in self.label_cols:
-            unique_values = sorted(self.labels_df[col].unique())
-            self.label_mappings[col] = {val: idx for idx, val in enumerate(unique_values)}
+            self.num_classes_dict[col] = len(self.labels_df[col].unique())
         
         print(f"Dataset initialized with {len(self.img_files)} images and {len(self.label_cols)} labels: {self.label_cols}")
         
         # Verify label mappings
         for col in self.label_cols:
-            print(f"Label '{col}' has {len(self.label_mappings[col])} unique values")
+            print(f"Label '{col}' has {self.num_classes_dict[col]} unique values")
         
     def __len__(self):
         return len(self.img_files)
@@ -67,28 +66,19 @@ class SupervisedVehicleDataset(Dataset):
         
         # Get labels for this image
         label_row = self.labels_df[self.labels_df['Filename'] == img_file]
-        label_values = label_row[self.label_cols].values[0]
         
-        # Convert string labels to numerical indices using mappings
-        labels = []
-        for col, val in zip(self.label_cols, label_values):
-            try:
-                label_idx = self.label_mappings[col].get(val, 0)  # Default to 0 if not found
-                labels.append(label_idx)
-            except Exception as e:
-                print(f"Error processing label '{col}' with value '{val}': {e}")
-                print(f"Known values for this label: {list(self.label_mappings[col].keys())[:5]}...")
-                labels.append(0)  # Default to first class as fallback
+        # Get numerical labels directly from the dataframe
+        labels = label_row[self.label_cols].values[0]
         
         return image, torch.tensor(labels, dtype=torch.long)
     
     def get_num_classes(self, col_name):
         """Get number of unique classes for a specific label column"""
-        return len(self.label_mappings[col_name])
+        return self.num_classes_dict[col_name]
     
     def get_all_num_classes(self):
         """Get number of unique classes for each label column"""
-        return {col: self.get_num_classes(col) for col in self.label_cols}
+        return self.num_classes_dict
     
     def get_image_by_filename(self, filename):
         """Get an image by its filename"""
@@ -106,10 +96,6 @@ class SupervisedVehicleDataset(Dataset):
     def get_filenames(self):
         """Return all filenames in the dataset"""
         return self.img_files
-
-    def get_class_mapping(self, col_name):
-        """Get the mapping between raw values and class indices for a column"""
-        return self.label_mappings[col_name]
 
 class VAEWithClassifier(nn.Module):
     def __init__(self, img_size=64, latent_dim=128, hidden_dims=None, num_classes_dict=None):
