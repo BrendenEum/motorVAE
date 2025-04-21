@@ -1193,6 +1193,9 @@ def main(args):
         label_cols=label_cols
     )
     
+    # Get the number of classes for each label
+    num_classes_dict = train_dataset.get_all_num_classes()
+
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
     
     # Create VAE model with classifiers
@@ -1334,7 +1337,7 @@ if __name__ == "__main__":
     #################
     parser.add_argument('--data_dir', type=str, default='data/evox_256x256_1-3', help='Directory containing the image dataset')
     parser.add_argument('--label_file', type=str, default='data/labels.csv', help='CSV file containing image labels')
-    parser.add_argument('--label_cols', type=str, default=None, help='Comma-separated list of column names to use for labels. Default is all columns except filename.')
+    parser.add_argument('--label_cols', type=str, default=None, help='Comma-separated list of column names to use for labels. Default is all columns except Filename.')
     parser.add_argument('--img_size', type=int, default=64, help='Image size')
     
     #################

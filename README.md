@@ -53,23 +53,7 @@ If it's not your first time, you can skip directly to activating the environment
 source env/bin/activate
 ```
 
-
-
 Copy-pasta this line of code into the terminal to do all the things!
-
-```
-python motorVAEGAN-withSupervision.py \
-    --data_dir data/evox_256x256_1-4 --img_size 256 \
-    --latent_dim 100 \
-    --max_kld_weight 1.0 --tc_weight 50.0 \
-    --adv_weight 1.0 --recon_sample_weight 0.5 \
-    --cls_weight 1.0 --label_file data/labels_evox_256x256_1-4.csv --label_cols Year,Brand,Body,Door \
-    --learning_rate 0.0001 --epochs 200 --batch_size 128 \
-    --train --reconstructions --extract_latent --sample \
-    --traversals 2021_Toyota_CamryHybrid_XLE_sedan_4Door_2.png \
-    --interpolate 2007_Toyota_PriusHybrid_nan_hatchback_5Door_3.png 2025_Hyundai_Ioniq5N_nan_CUV_4Door_2.png \
-    --track_reconstruction 2017_Kia_Niro_EX_CUV_4Door_3
-```
 
 ```
 python motorVAEGAN-withSupervision.py \
@@ -84,25 +68,17 @@ python motorVAEGAN-withSupervision.py \
     --feature_attribution \
     --traversals 2021_Toyota_CamryHybrid_XLE_sedan_4Door_2.png \
     --interpolate 2007_Toyota_PriusHybrid_nan_hatchback_5Door_3.png 2025_Hyundai_Ioniq5N_nan_CUV_4Door_2.png \
-    --track_reconstruction 2017_Kia_Niro_EX_CUV_4Door_3
+    --track_reconstruction 2017_Kia_Niro_EX_CUV_4Door_3.png
 ```
 
-Key Arguments
+Data Parameters
 
-- Use `--data_dir {path}` to set the location of your training images (default evox_64x64_1).
-- Use `--img_size 64` to set the final image resolution (default 64).
+- Use `--data_dir {path}` to set the location of your training images (default data/evox_256x256_1-4).
+- Use `--label_file` to tell the code where to find the labels for the training data (default data/labels.csv).
+- Use `--label_cols` to input a comma-separated list of column names to use for labels (eg Year,Brand,Body,Door). Column names refer to columns in label_file csv. Default is all columns except Filename.
+- Use `--img_size 256` to set the final image resolution (default 64).
 
-What Do You Want To Do
-
-- Use `--train` to train the VAE from scratch.
-- Use `--resume` to resume training from last checkpoint. Cannot be used with `--train`.
-- Use `--reconstructions` to save visualizations of reconstructions. Randomly selects 10 images to reconstruct, and saves as one file. Only requires `--train` the first time.
-- Use `--traversals {img.png}` to see visualization of latent space traversals. Specify the image you'd like to do this with. Saves in latent_traversals/ subfolder, with one file per dimension. Only requires `--train` the first time.
-- Use `--extract_latent` to save latent vectors for external analysis. Latent vectors are actually matricies: rows are latent dimensions, columns are for each image in dataset. Saves two numpy files: mean and log_variance. Only requires `--train` the first time.
-- Use `--sample` to generate 25 images using random samples from the latent space. Saves as one file. Only requires `--train` the first time.
-- Use `--interpolate {img1.png} {img2.png}` to interpolate between the two images. Use `--interpolate_steps {#}` with this to specify how many steps you'd like to take between image 1 (z1 in latent space) to image 2 (z2 in latent space). Saves as one file.
-
-Parameters
+Model Parameters
 
 - Use `--latent_dim 128` to control the size of your latent space (default is 128). Larger values capture more details but may be harder to train.
 - The weight for L1 reconstruction loss is normalized to 1.0.
@@ -110,17 +86,34 @@ Parameters
 - Use `--mi_weight 1.0` to set the weight for mutual information loss in total KLD loss. This is to reduce the amount of information about x stored in z. Defaults to 1.0.
 - Use `--tc_weight 50.0` to set the weight for total correlation loss in total KLD loss. This is to make latent variables z as independent as possible. Defaults to 50.0 based on Sisodia et al (2024).
 - Use `--dwkl_weight 1.0` to set the weight for dimension-wise KLD loss in total KLD loss. This is to ensure each latent dimension does not deviate from prior (Gaussian). Defaults to 1.0.
-- Use `--epochs 112` to set the number of times the dataset is worked through (default 100). More epochs generally gives better results, but takes longer to train.
 - Use `--adv_weight 1.0` to control the weight of the adversarial loss term in the loss function.
 - Use `--recon_sample_weight 0.7` to adjust weight for reconstruction vs sample discrimination (reconstruction w, sample 1-w).
-- Use `--learning_rate 0.0001` to control how quickly the model learns (default 0.0001). Too high might cause instability, but too low might make training super slow.
+- Use `--cls_weight 1.0` to set the weight for classification loss term. Classification loss is the sum of losses over all labels. Default is 1.0.
+
+Training Parameters
+
+- Use `--train` to train the VAE from scratch.
+- Use `--resume` to resume training from last checkpoint. Cannot be used with `--train`.
 - Use `--batch_size 128` to deal with memory constraints (default 32). Smaller batches help with limited memory, but higher batches speed up training.
+- Use `--learning_rate 0.0001` to control how quickly the model learns (default 0.0001). Too high might cause instability, but too low might make training super slow.
+- Use `--epochs 112` to set the number of times the dataset is worked through (default 100). More epochs generally gives better results, but takes longer to train.
 
-Optional Arguments
+Output Parameters
 
-- Use `--out_dir {output subfolder}` to name the subfolder in outputs/. Leaving this blank will automatically give you a detailed subfolder name.
-- Use `--model_path {path/fn.pth}` to save/load the model as a .pth file. Leaving this blank will automatically give you a detailed file name.
+- Use `--out_dir {output subfolder}` to name the subfolder in outputs/. Leaving this blank will automatically give you a detailed subfolder name (recommended).
+- Use `--model_path {path/fn.pth}` to save/load the model as a .pth file. Leaving this blank will automatically give you a detailed file name (recommended).
 
+Actions
+
+- Use `--reconstructions` to save visualizations of reconstructions. Randomly selects 10 images to reconstruct, and saves as one file. Only requires `--train` the first time.
+- Use `--extract_latent` to save latent vectors for external analysis. Latent vectors are actually matricies: rows are latent dimensions, columns are for each image in dataset. Saves two numpy files: mean and log_variance. Only requires `--train` the first time.
+- Use `--sample` to generate 25 images using random samples from the latent space. Saves as one file. Only requires `--train` the first time.
+- Use `--track_reconstruction {img}.png` to track reconstruction of a specific image across training epochs. I use this to generate GIFs for oohs and ahhs. Can only run if `--train` is also specified. Default is -unspecified-.
+- Use `--traversals {img}.png` to see visualization of latent space traversals. Specify the image you'd like to do this with. Saves in latent_traversals/ subfolder, with one file per dimension. Only requires `--train` the first time.
+- Use `--interpolate {img1.png} {img2.png}` to interpolate between the two images. Use `--interpolate_steps {#}` with this to specify how many steps you'd like to take between image 1 (z1 in latent space) to image 2 (z2 in latent space). Saves as one file.
+- Use `--classification_accuracy` to evaluate classification accuracy.
+- Use `--visualize_latent_class` to visualize latent space by class.
+- Use `--feature_attribution` to visualize feature attribution. Use `--feature_samples` to with this to specify the number of samples for feature attribution.
 
 
 ## Run it as a job on the cluster
@@ -128,7 +121,7 @@ Optional Arguments
 Once you know how to run it interactively, you can just write all of this into shell code and submit it as a SLURM job.
 
 ```
-sbatch job-motorVAEGAN_256x256_1-3.sh
+sbatch job-motorVAEGAN.sh
 ```
 
 To stream the output, type `tail -f job-logs/{job#}.out`. 
