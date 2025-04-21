@@ -1152,11 +1152,12 @@ def main(args):
     # If out_dir is "-unspecified-", generate it from parameters
     subfolder = args.out_dir
     if subfolder == "-unspecified-":
-        subfolder = (f"supervised_res{args.img_size}_lat{args.latent_dim}_"
+        subfolder = (f"res{args.img_size}_lat{args.latent_dim}_"
             f"epo{args.epochs}_bat{args.batch_size}_" 
-            f"kld{args.max_kld_weight}_cls{args.cls_weight}_"
+            f"kld{args.max_kld_weight}_"
             f"(mi{args.mi_weight}_tc{args.tc_weight}_dwkl{args.dwkl_weight})_"
-            f"adv{args.adv_weight}_rec{args.recon_sample_weight}")
+            f"adv{args.adv_weight}_rec{args.recon_sample_weight}_"
+            f"cls{args.cls_weight}")
     out_dir = os.path.join("outputs", subfolder)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -1165,11 +1166,12 @@ def main(args):
     # Set model path the same way you set output directory
     model_path = args.model_path
     if model_path == "-unspecified-":
-        model_path = (f"supervised_res{args.img_size}_lat{args.latent_dim}_"
+        model_path = (f"res{args.img_size}_lat{args.latent_dim}_"
             f"epo{args.epochs}_bat{args.batch_size}_" 
-            f"kld{args.max_kld_weight}_cls{args.cls_weight}_"
+            f"kld{args.max_kld_weight}_"
             f"(mi{args.mi_weight}_tc{args.tc_weight}_dwkl{args.dwkl_weight})_"
-            f"adv{args.adv_weight}_rec{args.recon_sample_weight}.pth")
+            f"adv{args.adv_weight}_rec{args.recon_sample_weight}_"
+            f"cls{args.cls_weight}.pth")
     
     # Data transformations
     transform = transforms.Compose([
