@@ -10,7 +10,10 @@
 cd /home/beum/scratch/motorVAE
 
 # Load modules
-module load StdEnv/2020 python/3.9.6 cuda/11.4 scipy-stack/2021a
+module load StdEnv/2020 
+module load python/3.9.6 
+module load cuda/11.4 
+module load scipy-stack/2021a
 
 # Activate virtual environment
 source env/bin/activate
