@@ -401,13 +401,31 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     for i, (label_name, pred) in enumerate(logits.items()):
         # Get label for this class type
         label = labels[:, i]
+
+        # Get the number of classes for this label type
+        num_classes = pred.size(1)
+        
+        # Check for invalid labels and print details
+        invalid_labels = (label < 0) | (label >= num_classes)
+        if torch.any(invalid_labels):
+            # Find which examples have invalid labels
+            bad_indices = torch.where(invalid_labels)[0]
+            bad_values = label[invalid_labels]
+            
+            print(f"*** FOUND INVALID LABELS in batch for {label_name} ***")
+            print(f"Label range should be 0 to {num_classes-1}")
+            print(f"Invalid labels at indices: {bad_indices.tolist()}")
+            print(f"Invalid values: {bad_values.tolist()}")
+            
+            # To prevent CUDA error, temporarily clamp labels
+            label = torch.clamp(label, 0, num_classes - 1)
         
         # Ensure labels are valid (within range of classes)
-        num_classes = pred.size(1)
-        if torch.any(label >= num_classes) or torch.any(label < 0):
-            # Clamp out-of-range indices
-            print(f"WARNING: Found out-of-range label indices for {label_name}. Clamping to valid range.")
-            label = torch.clamp(label, 0, num_classes - 1)
+        #num_classes = pred.size(1)
+        #if torch.any(label >= num_classes) or torch.any(label < 0):
+        #    # Clamp out-of-range indices
+        #    print(f"WARNING: Found out-of-range label indices for {label_name}. Clamping to valid range.")
+        #    label = torch.clamp(label, 0, num_classes - 1)
         
         # Calculate cross-entropy loss
         loss = F.cross_entropy(pred, label)
@@ -1227,39 +1245,6 @@ def main(args):
     # Define optimizers
     vae_optimizer = optim.Adam(vae_model.parameters(), lr=args.learning_rate)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=args.learning_rate * 0.5)
-
-
-    # Check labels across multiple batches
-    batch_label_ranges = {col: {'min': float('inf'), 'max': float('-inf')} for col in train_dataset.label_cols}
-    num_batches_to_check = 5  # Check first 5 batches
-
-    print("\nChecking labels across multiple batches...")
-    for batch_idx, (_, labels) in enumerate(train_loader):
-        if batch_idx >= num_batches_to_check:
-            break
-            
-        # Check each label column
-        for i, col in enumerate(train_dataset.label_cols):
-            batch_labels = labels[:, i]
-            min_val = batch_labels.min().item()
-            max_val = batch_labels.max().item()
-            
-            # Update global min/max
-            batch_label_ranges[col]['min'] = min(batch_label_ranges[col]['min'], min_val)
-            batch_label_ranges[col]['max'] = max(batch_label_ranges[col]['max'], max_val)
-            
-            print(f"Batch {batch_idx} '{col}': range is {min_val}-{max_val}")
-
-    # Compare with model expectations
-    print("\nSummary of label ranges across batches:")
-    for col, range_info in batch_label_ranges.items():
-        model_classes = vae_model.num_classes_dict[col]
-        print(f"Label '{col}': range across batches is {range_info['min']}-{range_info['max']}, model expects 0-{model_classes-1}")
-        
-        # Check if any labels are out of range
-        if range_info['max'] >= model_classes or range_info['min'] < 0:
-            print(f"ERROR: Label '{col}' has values outside model's range!")
-
 
     # If resuming from checkpoint
     start_epoch = 0
