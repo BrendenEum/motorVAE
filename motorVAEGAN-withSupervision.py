@@ -100,13 +100,14 @@ class SupervisedVehicleDataset(Dataset):
         return self.img_files
 
 class VAEWithClassifier(nn.Module):
-    def __init__(self, img_size=64, latent_dim=128, hidden_dims=None, num_classes_dict=None):
+    def __init__(self, img_size=64, latent_dim=128, hidden_dims=None, num_classes_dict=None, cls_latent_dim=4):
         super(VAEWithClassifier, self).__init__()
         
         self.img_size = img_size
         self.latent_dim = latent_dim
         self.device = device
         self.num_classes_dict = num_classes_dict  # Dictionary mapping label names to class counts
+        self.cls_latent_dim = cls_latent_dim  # Number of latent dimensions to use for classification
         
         # Default architecture if hidden_dims is not provided
         if hidden_dims is None:
@@ -182,9 +183,9 @@ class VAEWithClassifier(nn.Module):
         if num_classes_dict:
             for label_name, num_classes in num_classes_dict.items():
                 self.classifiers[label_name] = nn.Sequential(
-                    nn.Linear(latent_dim * 2, 256),  # Use both mu and log_var for classification
+                    nn.Linear(cls_latent_dim * 2, cls_latent_dim),  # Use only subset of latent dimensions
                     nn.ReLU(),
-                    nn.Linear(256, num_classes)
+                    nn.Linear(cls_latent_dim, num_classes)
                 )
         
     def encode(self, input):
@@ -224,8 +225,12 @@ class VAEWithClassifier(nn.Module):
         Classify the latent representation into different labels
         Returns a dictionary of logits for each label type
         """
-        # Concatenate mu and log_var for classification
-        z_for_cls = torch.cat([mu, log_var], dim=1)
+        # Use only the specified number of dimensions for classification
+        mu_subset = mu[:, :self.cls_latent_dim]
+        log_var_subset = log_var[:, :self.cls_latent_dim]
+        
+        # Concatenate subset of mu and log_var for classification
+        z_for_cls = torch.cat([mu_subset, log_var_subset], dim=1)
         
         # Apply each classifier
         logits = {}
@@ -1018,7 +1023,11 @@ def visualize_feature_attribution(model, dataset, samples=5, save_dir="outputs")
         
         # Encode the image
         mu, log_var = model.encode(image)
-        z_concat = torch.cat([mu, log_var], dim=1)  # This is what we feed to classifiers
+        
+        # Get subset of latent dimensions used for classification
+        mu_subset = mu[:, :model.classifier_latent_dim]
+        log_var_subset = log_var[:, :model.classifier_latent_dim]
+        z_concat = torch.cat([mu_subset, log_var_subset], dim=1)  # This is what we feed to classifiers
         
         # For each label type
         for i, (label_name, classifier) in enumerate(model.classifiers.items()):
@@ -1039,7 +1048,6 @@ def visualize_feature_attribution(model, dataset, samples=5, save_dir="outputs")
             plt.subplot(1, 2, 2)
             
             # Get the weights from the first layer of the classifier
-            # This is a very basic attribution method
             weights = classifier[0].weight.data[true_label]  # Weights for the true class
             
             # Normalize weights
@@ -1048,7 +1056,7 @@ def visualize_feature_attribution(model, dataset, samples=5, save_dir="outputs")
             
             # Visualize weights for each dimension
             # First half are mu, second half are log_var
-            latent_dim = model.latent_dim
+            latent_dim = model.classifier_latent_dim
             mu_weights = weights[:latent_dim]
             logvar_weights = weights[latent_dim:]
             
@@ -1060,7 +1068,7 @@ def visualize_feature_attribution(model, dataset, samples=5, save_dir="outputs")
             
             plt.xlabel('Latent Dimension')
             plt.ylabel('Weight Magnitude')
-            plt.title(f'Feature Attribution for {label_name}: {true_label_name}')
+            plt.title(f'Feature Attribution for {label_name}: {true_label_name}\n(Using first {latent_dim} dimensions)')
             plt.legend()
             plt.tight_layout()
             
@@ -1156,7 +1164,7 @@ def main(args):
             f"kld{args.max_kld_weight}_"
             f"(mi{args.mi_weight}_tc{args.tc_weight}_dwkl{args.dwkl_weight})_"
             f"adv{args.adv_weight}_rec{args.recon_sample_weight}_"
-            f"cls{args.cls_weight}")
+            f"{args.cls_latent_dim}dC{args.cls_weight}")
     out_dir = os.path.join("outputs", subfolder)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -1170,7 +1178,7 @@ def main(args):
             f"kld{args.max_kld_weight}_"
             f"(mi{args.mi_weight}_tc{args.tc_weight}_dwkl{args.dwkl_weight})_"
             f"adv{args.adv_weight}_rec{args.recon_sample_weight}_"
-            f"cls{args.cls_weight}.pth")
+            f"{args.cls_latent_dim}dC{args.cls_weight}.pth")
     
     # Data transformations
     transform = transforms.Compose([
@@ -1203,12 +1211,14 @@ def main(args):
     vae_model = VAEWithClassifier(
         img_size=args.img_size, 
         latent_dim=args.latent_dim,
-        num_classes_dict=num_classes_dict
+        num_classes_dict=num_classes_dict,
+        cls_latent_dim=args.cls_latent_dim
     ).to(device)
     
     # Create Discriminator
     discriminator = Discriminator(img_size=args.img_size).to(device)
     print("Using VAE-GAN architecture with supervised classification")
+    print(f"Classifier networks using first {args.cls_latent_dim} latent dimensions")
     
     # Count and print model parameters
     vae_params = sum(p.numel() for p in vae_model.parameters())
@@ -1359,6 +1369,8 @@ if __name__ == "__main__":
                         help='Weight for reconstruction vs sample discrimination')
     parser.add_argument('--cls_weight', type=float, default=1.0,
                         help='Weight for classification loss term')
+    parser.add_argument('--cls_latent_dim', type=int, default=4, 
+                        help='Number of latent dimensions to use for classification (default: 4)')
     
     #################
     # Training parameters
