@@ -1,9 +1,10 @@
 #!/bin/bash
 #SBATCH --account=def-webbr
 #SBATCH --time=00-24:00:00 # DD-HH:MM:SS
-#SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:v100l:1
 #SBATCH --mem=32000M
+#SBATCH --ntasks=1 
+#SBATCH --cpus-per-task=4
 #SBATCH --output=logs/%j.out
 
 # Go to project folder
