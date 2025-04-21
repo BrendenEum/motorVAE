@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import argparse
 import pandas as pd
+from sklearn.decomposition import PCA
+import seaborn as sns
 
 # Set random seeds for reproducibility
 torch.manual_seed(42)
@@ -182,7 +184,6 @@ class VAEWithClassifier(nn.Module):
                 self.classifiers[label_name] = nn.Sequential(
                     nn.Linear(latent_dim * 2, 256),  # Use both mu and log_var for classification
                     nn.ReLU(),
-                    nn.Dropout(0.3),
                     nn.Linear(256, num_classes)
                 )
         
@@ -1073,8 +1074,6 @@ def visualize_latent_space_by_class(model, dataset, label_name, save_dir="output
     """
     Create a 2D visualization of the latent space colored by class labels
     """
-    from sklearn.decomposition import PCA
-    import seaborn as sns
     
     model.eval()
     
