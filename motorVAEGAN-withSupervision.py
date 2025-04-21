@@ -1228,23 +1228,25 @@ def main(args):
     vae_optimizer = optim.Adam(vae_model.parameters(), lr=args.learning_rate)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=args.learning_rate * 0.5)
 
-    # Quick check for label ranges
-    for col in train_dataset.label_cols:
-        # Get actual values in dataset
-        values = train_dataset.labels_df[col].values
-        max_val = values.max()
+   # Get one batch from the dataloader
+    for _, labels in train_loader:
+        # Check each label column
+        for i, col in enumerate(train_dataset.label_cols):
+            batch_labels = labels[:, i]
+            min_val = batch_labels.min().item()
+            max_val = batch_labels.max().item()
+            
+            # Get what the model expects
+            model_classes = vae_model.num_classes_dict[col]
+            
+            print(f"Batch check for '{col}': range is {min_val}-{max_val}, model expects 0-{model_classes-1}")
+            
+            # Check if any labels are out of range
+            if max_val >= model_classes or min_val < 0:
+                print(f"BATCH ERROR: Label '{col}' has out-of-range values: {min_val}-{max_val}")
         
-        # Get what the model expects
-        model_classes = vae_model.num_classes_dict[col]
-        
-        print(f"Label '{col}': max value = {max_val}, model expects {model_classes} classes (0-{model_classes-1})")
-        
-        # Check if any labels exceed what the model expects
-        if max_val >= model_classes:
-            print(f"ERROR: Label '{col}' has values up to {max_val} but model only handles 0-{model_classes-1}")
-            # Optionally, print some examples of rows with problematic values
-            problem_rows = train_dataset.labels_df[train_dataset.labels_df[col] > model_classes-1].head(3)
-            print(f"Example problematic rows:\n{problem_rows}")
+        # Only check the first batch
+        break
 
     # If resuming from checkpoint
     start_epoch = 0
