@@ -401,7 +401,7 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     # In vae_gan_classification_loss function
     for i, (label_name, pred) in enumerate(logits.items()):
         # Get label for this class type
-        label = labels[:, i]
+        label = labels[:, i].clone().detach()
         num_classes = pred.size(1)
         
         # Print info about every batch to ensure we see something
