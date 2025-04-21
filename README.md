@@ -90,6 +90,7 @@ Model Parameters
 - Use `--adv_weight 1.0` to control the weight of the adversarial loss term in the loss function.
 - Use `--recon_sample_weight 0.7` to adjust weight for reconstruction vs sample discrimination (reconstruction w, sample 1-w).
 - Use `--cls_weight 1.0` to set the weight for classification loss term. Classification loss is the sum of losses over all labels. Default is 1.0.
+- Use `--cls_latent_dim 4` to set the number of latent dimensions to use for classification.This also sets the number of nodes in the intermediate, fully connected layer of the classifier. Default is 4.
 
 Training Parameters
 
