@@ -12,7 +12,7 @@ cd /home/beum/scratch/motorVAE
 # Load modules
 module load StdEnv/2020 python/3.9.6 cuda/11.4 scipy-stack/2021a
 
-# Activate virtual environment for carVAEna
+# Activate virtual environment
 source env/bin/activate
 
 # Train
