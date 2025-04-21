@@ -1227,7 +1227,25 @@ def main(args):
     # Define optimizers
     vae_optimizer = optim.Adam(vae_model.parameters(), lr=args.learning_rate)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=args.learning_rate * 0.5)
-    
+
+    # Quick check for label ranges
+    for col in train_dataset.label_cols:
+        # Get actual values in dataset
+        values = train_dataset.labels_df[col].values
+        max_val = values.max()
+        
+        # Get what the model expects
+        model_classes = vae_model.num_classes_dict[col]
+        
+        print(f"Label '{col}': max value = {max_val}, model expects {model_classes} classes (0-{model_classes-1})")
+        
+        # Check if any labels exceed what the model expects
+        if max_val >= model_classes:
+            print(f"ERROR: Label '{col}' has values up to {max_val} but model only handles 0-{model_classes-1}")
+            # Optionally, print some examples of rows with problematic values
+            problem_rows = train_dataset.labels_df[train_dataset.labels_df[col] > model_classes-1].head(3)
+            print(f"Example problematic rows:\n{problem_rows}")
+
     # If resuming from checkpoint
     start_epoch = 0
     if args.resume and os.path.exists(os.path.join("checkpoints", model_path)):
