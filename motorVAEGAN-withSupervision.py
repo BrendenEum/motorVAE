@@ -1195,12 +1195,6 @@ def main(args):
     
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
     
-    # Get number of classes for each label type
-    num_classes_dict = train_dataset.get_all_num_classes()
-    print("Label categories and their class counts:")
-    for label, count in num_classes_dict.items():
-        print(f"  - {label}: {count} classes")
-    
     # Create VAE model with classifiers
     vae_model = VAEWithClassifier(
         img_size=args.img_size, 
