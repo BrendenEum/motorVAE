@@ -397,40 +397,15 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     ######################
     cls_loss = 0
     cls_losses = {}
-    
-    # In vae_gan_classification_loss function
+
     for i, (label_name, pred) in enumerate(logits.items()):
-        # Get label for this class type
+        # Get label for this class type and ensure it's detached
         label = labels[:, i].clone().detach()
-        num_classes = pred.size(1)
         
-        # Print info about every batch to ensure we see something
-        print(f"Processing {label_name}: labels range {label.min().item()}-{label.max().item()}, num_classes={num_classes}")
+        # Calculate cross-entropy loss
+        loss = F.cross_entropy(pred, label)
         
-        try:
-            # Try to calculate loss with explicit checks
-            assert torch.all(label >= 0), f"Negative labels found: {label[label < 0]}"
-            assert torch.all(label < num_classes), f"Labels too large: {label[label >= num_classes]}"
-            loss = F.cross_entropy(pred, label)
-        except Exception as e:
-            # If any error occurs, print detailed diagnostic info
-            print(f"ERROR in loss calculation for {label_name}:")
-            print(f"Exception: {e}")
-            print(f"Label min: {label.min().item()}, max: {label.max().item()}")
-            print(f"Num classes: {num_classes}")
-            print(f"Label dtype: {label.dtype}, device: {label.device}")
-            print(f"Pred shape: {pred.shape}, dtype: {pred.dtype}")
-            
-            # Try to identify problematic indices
-            bad_indices = torch.where((label < 0) | (label >= num_classes))[0]
-            if len(bad_indices) > 0:
-                print(f"Bad indices: {bad_indices.tolist()}")
-                print(f"Bad values: {label[bad_indices].tolist()}")
-            
-            # Recover by clamping values
-            label = torch.clamp(label, 0, num_classes - 1)
-            loss = F.cross_entropy(pred, label)
-        
+        # Store and accumulate losses
         cls_losses[label_name] = loss.item()
         cls_loss += loss
     
