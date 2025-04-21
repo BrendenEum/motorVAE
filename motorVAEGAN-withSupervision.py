@@ -398,37 +398,39 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     cls_loss = 0
     cls_losses = {}
     
+    # In vae_gan_classification_loss function
     for i, (label_name, pred) in enumerate(logits.items()):
         # Get label for this class type
         label = labels[:, i]
-
-        # Get the number of classes for this label type
         num_classes = pred.size(1)
         
-        # Check for invalid labels and print details
-        invalid_labels = (label < 0) | (label >= num_classes)
-        if torch.any(invalid_labels):
-            # Find which examples have invalid labels
-            bad_indices = torch.where(invalid_labels)[0]
-            bad_values = label[invalid_labels]
+        # Print info about every batch to ensure we see something
+        print(f"Processing {label_name}: labels range {label.min().item()}-{label.max().item()}, num_classes={num_classes}")
+        
+        try:
+            # Try to calculate loss with explicit checks
+            assert torch.all(label >= 0), f"Negative labels found: {label[label < 0]}"
+            assert torch.all(label < num_classes), f"Labels too large: {label[label >= num_classes]}"
+            loss = F.cross_entropy(pred, label)
+        except Exception as e:
+            # If any error occurs, print detailed diagnostic info
+            print(f"ERROR in loss calculation for {label_name}:")
+            print(f"Exception: {e}")
+            print(f"Label min: {label.min().item()}, max: {label.max().item()}")
+            print(f"Num classes: {num_classes}")
+            print(f"Label dtype: {label.dtype}, device: {label.device}")
+            print(f"Pred shape: {pred.shape}, dtype: {pred.dtype}")
             
-            print(f"*** FOUND INVALID LABELS in batch for {label_name} ***")
-            print(f"Label range should be 0 to {num_classes-1}")
-            print(f"Invalid labels at indices: {bad_indices.tolist()}")
-            print(f"Invalid values: {bad_values.tolist()}")
+            # Try to identify problematic indices
+            bad_indices = torch.where((label < 0) | (label >= num_classes))[0]
+            if len(bad_indices) > 0:
+                print(f"Bad indices: {bad_indices.tolist()}")
+                print(f"Bad values: {label[bad_indices].tolist()}")
             
-            # To prevent CUDA error, temporarily clamp labels
+            # Recover by clamping values
             label = torch.clamp(label, 0, num_classes - 1)
+            loss = F.cross_entropy(pred, label)
         
-        # Ensure labels are valid (within range of classes)
-        #num_classes = pred.size(1)
-        #if torch.any(label >= num_classes) or torch.any(label < 0):
-        #    # Clamp out-of-range indices
-        #    print(f"WARNING: Found out-of-range label indices for {label_name}. Clamping to valid range.")
-        #    label = torch.clamp(label, 0, num_classes - 1)
-        
-        # Calculate cross-entropy loss
-        loss = F.cross_entropy(pred, label)
         cls_losses[label_name] = loss.item()
         cls_loss += loss
     
