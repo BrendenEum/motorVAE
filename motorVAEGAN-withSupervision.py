@@ -24,10 +24,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 class SupervisedVehicleDataset(Dataset):
-    def __init__(self, img_dir, label_file, transform=None, label_cols=None):
+    def __init__(self, img_dir, label_file, transform=None, label_cols=None, preload=True):
         self.img_dir = img_dir
         self.transform = transform
         self.img_files = [f for f in os.listdir(img_dir) if f.endswith('.png')]
+        self.preload = preload
         
         # Load labels from CSV
         self.labels_df = pd.read_csv(label_file)
@@ -55,16 +56,35 @@ class SupervisedVehicleDataset(Dataset):
         for col in self.label_cols:
             print(f"Label '{col}' has {self.num_classes_dict[col]} unique values")
         
+        # Preload images if requested
+        self.preloaded_images = {}
+        if preload:
+            print("Preloading images into memory...")
+            for i, img_file in enumerate(tqdm(self.img_files, desc="Preloading")):
+                img_path = os.path.join(self.img_dir, img_file)
+                image = Image.open(img_path).convert('L')  # Convert to grayscale
+                
+                if self.transform:
+                    image = self.transform(image)
+                    
+                self.preloaded_images[img_file] = image
+            print(f"Preloaded {len(self.preloaded_images)} images")
+    
     def __len__(self):
         return len(self.img_files)
     
     def __getitem__(self, idx):
         img_file = self.img_files[idx]
-        img_path = os.path.join(self.img_dir, img_file)
-        image = Image.open(img_path).convert('L')  # Convert to grayscale
         
-        if self.transform:
-            image = self.transform(image)
+        # Get image either from preloaded cache or load from disk
+        if self.preload and img_file in self.preloaded_images:
+            image = self.preloaded_images[img_file]
+        else:
+            img_path = os.path.join(self.img_dir, img_file)
+            image = Image.open(img_path).convert('L')  # Convert to grayscale
+            
+            if self.transform:
+                image = self.transform(image)
         
         # Get labels for this image
         label_row = self.labels_df[self.labels_df['Filename'] == img_file]
@@ -1035,8 +1055,8 @@ def visualize_feature_attribution(model, dataset, samples=5, save_dir="outputs")
         mu, log_var = model.encode(image)
         
         # Get subset of latent dimensions used for classification
-        mu_subset = mu[:, :model.classifier_latent_dim]
-        log_var_subset = log_var[:, :model.classifier_latent_dim]
+        mu_subset = mu[:, :model.cls_latent_dim]
+        log_var_subset = log_var[:, :model.cls_latent_dim]
         z_concat = torch.cat([mu_subset, log_var_subset], dim=1)  # This is what we feed to classifiers
         
         # For each label type
@@ -1066,7 +1086,7 @@ def visualize_feature_attribution(model, dataset, samples=5, save_dir="outputs")
             
             # Visualize weights for each dimension
             # First half are mu, second half are log_var
-            latent_dim = model.classifier_latent_dim
+            latent_dim = model.cls_latent_dim
             mu_weights = weights[:latent_dim]
             logvar_weights = weights[latent_dim:]
             
@@ -1112,7 +1132,7 @@ def visualize_latent_space_by_class(model, dataset, label_name, save_dir="output
     all_log_var = []
     all_labels = []
     
-    # Create a dataloader with batch size 1 to iterate through dataset
+    # Create a dataloader with batch size 32 to iterate through dataset
     dataloader = DataLoader(dataset, batch_size=32, shuffle=False)
     
     with torch.no_grad():
@@ -1261,7 +1281,7 @@ def main(args):
             'total_epochs': args.epochs,
             'min_weight': 0.01,
             'max_weight': args.max_kld_weight,
-            'warmup_epochs': 28,
+            'warmup_epochs': 25,
             'schedule_type': "linear"
         }
 

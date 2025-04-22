@@ -2,7 +2,7 @@
 #SBATCH --account=def-webbr
 #SBATCH --time=00-24:00:00 # DD-HH:MM:SS
 #SBATCH --gres=gpu:v100l:1
-#SBATCH --mem=32000M
+#SBATCH --mem=40000M
 #SBATCH --ntasks=1 
 #SBATCH --cpus-per-task=4
 #SBATCH --output=logs/%j.out
@@ -23,11 +23,11 @@ source env/bin/activate
 python motorVAEGAN-withSupervision.py \
     --data_dir data/evox_256x256_1-4 --img_size 256 \
     --latent_dim 128 \
-    --max_kld_weight 1.0 --tc_weight 50.0 \
+    --max_kld_weight 1.5 --tc_weight 50.0 \
     --adv_weight 1.0 --recon_sample_weight 0.5 \
     --cls_weight 1.0 --cls_latent_dim 8 \
     --label_file data/labels_evox_256x256_1-4.csv --label_cols Year,Brand,Body,Door \
-    --learning_rate 0.0001 --epochs 200 --batch_size 128 \
+    --learning_rate 0.0001 --epochs 100 --batch_size 128 \
     --train --reconstructions --extract_latent --sample \
     --classification_accuracy --visualize_latent_class \
     --feature_attribution \
