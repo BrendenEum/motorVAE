@@ -421,8 +421,8 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     ######################
     # 3. Adversarial loss
     ######################
-    d_recon = torch.clamp(d_recon, min=tiny_amt, max=1-tiny_amt)
-    d_samples = torch.clamp(d_samples, min=tiny_amt, max=1-tiny_amt)
+    #d_recon = torch.clamp(d_recon, min=tiny_amt, max=1-tiny_amt)
+    #d_samples = torch.clamp(d_samples, min=tiny_amt, max=1-tiny_amt)
 
     adv_recon_loss = F.binary_cross_entropy_with_logits(
         d_recon, torch.ones_like(d_recon))
