@@ -424,8 +424,10 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     d_recon = torch.clamp(d_recon, min=tiny_amt, max=1-tiny_amt)
     d_samples = torch.clamp(d_samples, min=tiny_amt, max=1-tiny_amt)
 
-    adv_recon_loss = F.binary_cross_entropy(d_recon, torch.ones_like(d_recon))
-    adv_samples_loss = F.binary_cross_entropy(d_samples, torch.ones_like(d_samples))
+    adv_recon_loss = F.binary_cross_entropy_with_logits(
+        d_recon, torch.ones_like(d_recon))
+    adv_samples_loss = F.binary_cross_entropy_with_logits(
+        d_samples, torch.ones_like(d_samples))
     adv_loss = recon_sample_weight * adv_recon_loss + (1.0 - recon_sample_weight) * adv_samples_loss
     
     ######################
@@ -648,13 +650,16 @@ def discriminator_loss(d_real, d_fake_recon, d_fake_samples, recon_sample_weight
     """
     # Clamp values slightly away from 0 and 1
     tiny_amt = 1e-8
-    d_real = torch.clamp(d_real, min=tiny_amt, max=1-tiny_amt)
-    d_fake_recon = torch.clamp(d_fake_recon, min=tiny_amt, max=1-tiny_amt)
-    d_fake_samples = torch.clamp(d_fake_samples, min=tiny_amt, max=1-tiny_amt)
+    #d_real = torch.clamp(d_real, min=tiny_amt, max=1-tiny_amt)
+    #d_fake_recon = torch.clamp(d_fake_recon, min=tiny_amt, max=1-tiny_amt)
+    #d_fake_samples = torch.clamp(d_fake_samples, min=tiny_amt, max=1-tiny_amt)
 
-    real_loss = F.binary_cross_entropy(d_real, torch.ones_like(d_real))
-    fake_recon_loss = F.binary_cross_entropy(d_fake_recon, torch.zeros_like(d_fake_recon))
-    fake_samples_loss = F.binary_cross_entropy(d_fake_samples, torch.zeros_like(d_fake_samples))
+    real_loss = F.binary_cross_entropy_with_logits(
+        d_real, torch.ones_like(d_real))
+    fake_recon_loss = F.binary_cross_entropy_with_logits(
+        d_fake_recon, torch.zeros_like(d_fake_recon))
+    fake_samples_loss = F.binary_cross_entropy_with_logits(
+        d_fake_samples, torch.zeros_like(d_fake_samples))
     
     # Weighted fake loss
     fake_loss = recon_sample_weight * fake_recon_loss + (1.0 - recon_sample_weight) * fake_samples_loss
