@@ -1316,6 +1316,7 @@ def main(args):
         start_epoch = checkpoint['epoch'] + 1
         print(f"Resuming from epoch {start_epoch}")
     
+    # PRIORITY 1: Train the model
     if args.train:
         # Set up your desired KLD scheduler parameters
         kld_scheduler_params = {
@@ -1342,52 +1343,17 @@ def main(args):
         vae_model.load_state_dict(checkpoint['vae_model_state_dict'])
         print(f"Loaded model from checkpoints/{model_path}")
     
-    # Evaluate classification accuracy
-    if args.classification_accuracy:
-        accuracies, overall_accuracy = evaluate_classification_accuracy(vae_model, train_loader)
-        
-        print("\nClassification Accuracy:")
-        for label, acc in accuracies.items():
-            print(f"  - {label}: {acc:.4f} ({acc*100:.2f}%)")
-        print(f"Overall Accuracy: {overall_accuracy:.4f} ({overall_accuracy*100:.2f}%)")
-        
-        # Save accuracy results to file
-        with open(os.path.join(out_dir, 'classification_accuracy.txt'), 'w') as f:
-            f.write("Classification Accuracy:\n")
-            for label, acc in accuracies.items():
-                f.write(f"{label}: {acc:.4f} ({acc*100:.2f}%)\n")
-            f.write(f"Overall Accuracy: {overall_accuracy:.4f} ({overall_accuracy*100:.2f}%)\n")
-    
-    # Visualize latent space by class
-    if args.visualize_latent_class:
-        for label in train_dataset.label_cols:
-            visualize_latent_space_by_class(vae_model, train_dataset, label, save_dir=out_dir)
-    
-    # Visualize feature attribution
-    if args.feature_attribution:
-        visualize_feature_attribution(vae_model, train_dataset, samples=args.feature_samples, save_dir=out_dir)
-    
-    # Restored visualization functions from original VAE
-    if args.reconstructions:
-        # Visualize reconstructions
-        visualize_reconstructions(vae_model, train_loader, num_images=10, save_dir=out_dir)
-        
-    if args.traversals:
-        # Visualize latent space traversal
-        visualize_latent_traversal(vae_model, train_dataset, args.traversals, dim=0, num_dims=args.latent_dim, save_dir=out_dir)
-    
-    if args.interpolate:
-        # Visualize interpolation between specific files
-        visualize_interpolation_between_files(vae_model, train_dataset, 
-                                            args.interpolate[0], 
-                                            args.interpolate[1],
-                                            steps=args.interpolate_steps, 
-                                            save_dir=out_dir)
-    
+    # PRIORITY 2: Extract and save latent vectors
     if args.extract_latent:
         # Extract and save latent vectors
         mu, log_var = extract_latent_vectors(vae_model, train_loader, save_dir=out_dir)
     
+    # PRIORITY 3: Visualize reconstructions
+    if args.reconstructions:
+        # Visualize reconstructions
+        visualize_reconstructions(vae_model, train_loader, num_images=10, save_dir=out_dir)
+    
+    # PRIORITY 4: Generate random samples
     if args.sample:
         # Generate random samples
         with torch.no_grad():
@@ -1403,6 +1369,45 @@ def main(args):
         plt.savefig(os.path.join(out_dir, 'samples.png'))
         plt.close()
         print(f"Saved random samples to {out_dir}")
+    
+    # PRIORITY 5: Evaluate classification accuracy
+    if args.classification_accuracy:
+        accuracies, overall_accuracy = evaluate_classification_accuracy(vae_model, train_loader)
+        
+        print("\nClassification Accuracy:")
+        for label, acc in accuracies.items():
+            print(f"  - {label}: {acc:.4f} ({acc*100:.2f}%)")
+        print(f"Overall Accuracy: {overall_accuracy:.4f} ({overall_accuracy*100:.2f}%)")
+        
+        # Save accuracy results to file
+        with open(os.path.join(out_dir, 'classification_accuracy.txt'), 'w') as f:
+            f.write("Classification Accuracy:\n")
+            for label, acc in accuracies.items():
+                f.write(f"{label}: {acc:.4f} ({acc*100:.2f}%)\n")
+            f.write(f"Overall Accuracy: {overall_accuracy:.4f} ({overall_accuracy*100:.2f}%)\n")
+    
+    # PRIORITY 6: Visualize latent space traversal
+    if args.traversals:
+        # Visualize latent space traversal
+        visualize_latent_traversal(vae_model, train_dataset, args.traversals, dim=0, num_dims=args.latent_dim, save_dir=out_dir)
+    
+    # PRIORITY 7: Visualize interpolation between specific files
+    if args.interpolate:
+        # Visualize interpolation between specific files
+        visualize_interpolation_between_files(vae_model, train_dataset, 
+                                            args.interpolate[0], 
+                                            args.interpolate[1],
+                                            steps=args.interpolate_steps, 
+                                            save_dir=out_dir)
+    
+    # PRIORITY 8: Visualize latent space by class
+    if args.visualize_latent_class:
+        for label in train_dataset.label_cols:
+            visualize_latent_space_by_class(vae_model, train_dataset, label, save_dir=out_dir)
+    
+    # PRIORITY 9: Visualize feature attribution
+    if args.feature_attribution:
+        visualize_feature_attribution(vae_model, train_dataset, samples=args.feature_samples, save_dir=out_dir)
     
     # End timer and print execution time
     end_time = time.time()
