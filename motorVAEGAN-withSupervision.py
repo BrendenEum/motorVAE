@@ -185,9 +185,12 @@ class VAEWithClassifier(nn.Module):
         if num_classes_dict:
             for label_name, num_classes in num_classes_dict.items():
                 self.classifiers[label_name] = nn.Sequential(
-                    nn.Linear(cls_latent_dim * 2, cls_latent_dim),  # Use only subset of latent dimensions
+                    nn.Linear(cls_latent_dim * 2, 16),  # 8 (depends on cls_latent_dim) -> 16
                     nn.ReLU(),
-                    nn.Linear(cls_latent_dim, num_classes)
+                    nn.Dropout(0.2),
+                    nn.Linear(16, 8),                   # 16 -> 8
+                    nn.ReLU(),
+                    nn.Linear(8, num_classes)           # 8 -> num_classes
                 )
         
     def encode(self, input):
