@@ -1,6 +1,0 @@
-Classification Accuracy:
-Year: 0.0732 (7.32%)
-Brand: 0.0933 (9.33%)
-Body: 0.2652 (26.52%)
-Door: 0.8211 (82.11%)
-Overall Accuracy: 0.3132 (31.32%)

@@ -24,11 +24,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 class SupervisedVehicleDataset(Dataset):
-    def __init__(self, img_dir, label_file, transform=None, label_cols=None, preload=True):
+    def __init__(self, img_dir, label_file, transform=None, label_cols=None):
         self.img_dir = img_dir
         self.transform = transform
         self.img_files = [f for f in os.listdir(img_dir) if f.endswith('.png')]
-        self.preload = preload
         
         # Load labels from CSV
         self.labels_df = pd.read_csv(label_file)
@@ -55,20 +54,6 @@ class SupervisedVehicleDataset(Dataset):
         # Verify label mappings
         for col in self.label_cols:
             print(f"Label '{col}' has {self.num_classes_dict[col]} unique values")
-        
-        # Preload images if requested
-        self.preloaded_images = {}
-        if preload:
-            print("Preloading images into memory...")
-            for i, img_file in enumerate(tqdm(self.img_files, desc="Preloading")):
-                img_path = os.path.join(self.img_dir, img_file)
-                image = Image.open(img_path).convert('L')  # Convert to grayscale
-                
-                if self.transform:
-                    image = self.transform(image)
-                    
-                self.preloaded_images[img_file] = image
-            print(f"Preloaded {len(self.preloaded_images)} images")
     
     def __len__(self):
         return len(self.img_files)
@@ -76,15 +61,12 @@ class SupervisedVehicleDataset(Dataset):
     def __getitem__(self, idx):
         img_file = self.img_files[idx]
         
-        # Get image either from preloaded cache or load from disk
-        if self.preload and img_file in self.preloaded_images:
-            image = self.preloaded_images[img_file]
-        else:
-            img_path = os.path.join(self.img_dir, img_file)
-            image = Image.open(img_path).convert('L')  # Convert to grayscale
-            
-            if self.transform:
-                image = self.transform(image)
+        # Load image from disk
+        img_path = os.path.join(self.img_dir, img_file)
+        image = Image.open(img_path).convert('L')  # Convert to grayscale
+        
+        if self.transform:
+            image = self.transform(image)
         
         # Get labels for this image
         label_row = self.labels_df[self.labels_df['Filename'] == img_file]
@@ -219,6 +201,25 @@ class VAEWithClassifier(nn.Module):
         # Split the result into mu and var components
         mu = self.fc_mu(result)
         log_var = self.fc_var(result)
+
+        # Check for NaN or infinity values in mu and log_var
+        has_nan_mu = torch.isnan(mu).any().item()
+        has_inf_mu = torch.isinf(mu).any().item()
+        has_nan_logvar = torch.isnan(log_var).any().item()
+        has_inf_logvar = torch.isinf(log_var).any().item()
+        
+        if has_nan_mu or has_inf_mu or has_nan_logvar or has_inf_logvar:
+            print(f"WARNING: Invalid values detected in latent vectors:")
+            print(f"  NaN in mu: {has_nan_mu}")
+            print(f"  Inf in mu: {has_inf_mu}")
+            print(f"  NaN in log_var: {has_nan_logvar}")
+            print(f"  Inf in log_var: {has_inf_logvar}")
+            
+            # Get min and max values to help with debugging
+            if not has_nan_mu and not has_inf_mu:
+                print(f"  mu min: {mu.min().item()}, max: {mu.max().item()}")
+            if not has_nan_logvar and not has_inf_logvar:
+                print(f"  log_var min: {log_var.min().item()}, max: {log_var.max().item()}")
         
         return mu, log_var
     
@@ -1039,7 +1040,7 @@ def extract_latent_vectors(model, data_loader, save_dir="output"):
 def visualize_feature_attribution(model, dataset, samples=5, save_dir="outputs"):
     """
     Visualize which latent dimensions contribute most to specific classification labels
-    using a basic feature attribution technique
+    using a basic feature attribution technique, with improved error handling for class mismatches.
     """
     model.eval()
     
@@ -1051,9 +1052,21 @@ def visualize_feature_attribution(model, dataset, samples=5, save_dir="outputs")
     # Get some samples
     sample_indices = np.random.choice(len(dataset), samples, replace=False)
     
+    # Print the expected number of classes for each label from the model
+    print("\nModel's expected classes per label:")
+    for label_name, num_classes in model.num_classes_dict.items():
+        print(f"  - {label_name}: {num_classes} classes")
+    
+    # Print the actual number of unique values in the dataset
+    print("\nDataset's unique values per label:")
+    for label_name in dataset.label_cols:
+        unique_values = dataset.labels_df[label_name].unique()
+        print(f"  - {label_name}: {len(unique_values)} unique values")
+    
     for idx in sample_indices:
         # Get image and labels
         image, labels = dataset[idx]
+        filename = dataset.img_files[idx]
         image = image.to(device).unsqueeze(0)  # Add batch dimension
         
         # Encode the image
@@ -1066,50 +1079,73 @@ def visualize_feature_attribution(model, dataset, samples=5, save_dir="outputs")
         
         # For each label type
         for i, (label_name, classifier) in enumerate(model.classifiers.items()):
-            # Ground truth label for this image
-            true_label = labels[i].item()
-            true_label_name = dataset.labels_df[label_name].unique()[true_label]
-            
-            # Create figure
-            plt.figure(figsize=(12, 6))
-            
-            # Original image
-            plt.subplot(1, 2, 1)
-            plt.imshow(image.cpu().squeeze().numpy(), cmap='gray')
-            plt.title(f"Original Image\n{dataset.img_files[idx]}\n{label_name}: {true_label_name}")
-            plt.axis('off')
-            
-            # Feature attribution
-            plt.subplot(1, 2, 2)
-            
-            # Get the weights from the first layer of the classifier
-            weights = classifier[0].weight.data[true_label]  # Weights for the true class
-            
-            # Normalize weights
-            weights = weights.abs().cpu().numpy()
-            weights = weights / weights.max()
-            
-            # Visualize weights for each dimension
-            # First half are mu, second half are log_var
-            latent_dim = model.cls_latent_dim
-            mu_weights = weights[:latent_dim]
-            logvar_weights = weights[latent_dim:]
-            
-            x = np.arange(latent_dim)
-            
-            plt.bar(x, mu_weights, alpha=0.7, label='μ weights')
-            plt.bar(x, -logvar_weights, alpha=0.7, label='log_var weights')
-            plt.axhline(y=0, color='k', linestyle='-', alpha=0.3)
-            
-            plt.xlabel('Latent Dimension')
-            plt.ylabel('Weight Magnitude')
-            plt.title(f'Feature Attribution for {label_name}: {true_label_name}\n(Using first {latent_dim} dimensions)')
-            plt.legend()
-            plt.tight_layout()
-            
-            # Save the figure
-            plt.savefig(os.path.join(attr_dir, f'attr_{label_name}_{dataset.img_files[idx]}_{true_label_name}.png'))
-            plt.close()
+            try:
+                # Ground truth label for this image
+                true_label = labels[i].item()
+                
+                # Check if true_label is within bounds for this classifier
+                num_classes = model.num_classes_dict[label_name]
+                if true_label >= num_classes:
+                    print(f"Warning: Sample {filename} has label index {true_label} for {label_name}, but classifier only has {num_classes} classes. Skipping.")
+                    continue
+                
+                # Map numeric label to string representation if available
+                try:
+                    if label_name in dataset.labels_df.columns:
+                        unique_values = dataset.labels_df[label_name].unique()
+                        if true_label < len(unique_values):
+                            true_label_name = unique_values[true_label]
+                        else:
+                            true_label_name = f"Unknown ({true_label})"
+                    else:
+                        true_label_name = f"Class {true_label}"
+                except:
+                    true_label_name = f"Class {true_label}"
+                
+                # Create figure
+                plt.figure(figsize=(12, 6))
+                
+                # Original image
+                plt.subplot(1, 2, 1)
+                plt.imshow(image.cpu().squeeze().numpy(), cmap='gray')
+                plt.title(f"Original Image\n{filename}\n{label_name}: {true_label_name}")
+                plt.axis('off')
+                
+                # Feature attribution
+                plt.subplot(1, 2, 2)
+                
+                # Get the weights from the first layer of the classifier
+                weights = classifier[0].weight.data[true_label]  # Weights for the true class
+                
+                # Normalize weights
+                weights = weights.abs().cpu().numpy()
+                weights = weights / weights.max() if weights.max() > 0 else weights
+                
+                # Visualize weights for each dimension
+                # First half are mu, second half are log_var
+                latent_dim = model.cls_latent_dim
+                mu_weights = weights[:latent_dim]
+                logvar_weights = weights[latent_dim:]
+                
+                x = np.arange(latent_dim)
+                
+                plt.bar(x, mu_weights, alpha=0.7, label='μ weights')
+                plt.bar(x, -logvar_weights, alpha=0.7, label='log_var weights')
+                plt.axhline(y=0, color='k', linestyle='-', alpha=0.3)
+                
+                plt.xlabel('Latent Dimension')
+                plt.ylabel('Weight Magnitude')
+                plt.title(f'Feature Attribution for {label_name}: {true_label_name}\n(Using first {latent_dim} dimensions)')
+                plt.legend()
+                plt.tight_layout()
+                
+                # Save the figure
+                safe_label_name = str(true_label_name).replace('/', '_').replace('\\', '_')
+                plt.savefig(os.path.join(attr_dir, f'attr_{label_name}_{filename}_{safe_label_name}.png'))
+                plt.close()
+                
+            except Exception as e:
+                print(f"Error processing {label_name} for sample {filename}: {str(e)}")
     
     print(f"Saved feature attribution visualizations to {attr_dir}")
 
