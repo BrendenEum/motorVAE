@@ -460,10 +460,11 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
 
 def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_img,
                           vae_optimizer, d_optimizer, epochs, kld_scheduler_fn, kld_scheduler_params,
+                          tc_scheduler_fn=None, tc_scheduler_params=None,  # New parameters
                           adv_weight=1.0, cls_weight=1.0, recon_sample_weight=0.7,
                           checkpoint_path="supervised_model.pth", recon_path="outputs/supervised"):
     """
-    Train the supervised VAE-GAN model
+    Train the supervised VAE-GAN model with separate schedulers for KLD and TC weights
     """
     if not os.path.exists("checkpoints/"):
         os.makedirs("checkpoints/")
@@ -479,6 +480,12 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
     cls_losses = []
     disc_losses = []
     kld_weights = []
+    tc_weights = []  # New tracking list for TC weights
+    
+    # Default TC parameters if not provided
+    if tc_scheduler_fn is None:
+        tc_scheduler_fn = lambda epoch, **kwargs: 1.0  # Default to constant weight 1.0
+        tc_scheduler_params = {}
     
     # Create per-label classification loss trackers
     label_cls_losses = {label_name: [] for label_name in vae_model.num_classes_dict.keys()}
@@ -488,7 +495,11 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
         current_kld_weight = kld_scheduler_fn(epoch, **kld_scheduler_params)
         kld_weights.append(current_kld_weight)
         
-        print(f"\nEpoch {epoch+1}/{epochs}, KLD weight: {current_kld_weight:.5f}")
+        # Get the scheduled TC weight for this epoch
+        current_tc_weight = tc_scheduler_fn(epoch, **tc_scheduler_params)
+        tc_weights.append(current_tc_weight)
+        
+        print(f"\nEpoch {epoch+1}/{epochs}, KLD weight: {current_kld_weight:.5f}, TC weight: {current_tc_weight:.5f}")
         
         epoch_vae_loss = 0
         epoch_recon_loss = 0
@@ -549,12 +560,12 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
             d_fake_recon = discriminator(recon_batch)
             d_fake_samples = discriminator(fake_samples)
             
-            # VAE-GAN loss with classification loss
+            # VAE-GAN loss with classification loss and scheduled TC weight
             (loss, recon_loss, kld_loss, mi_loss, tc_loss, dwkl_loss, 
              adv_loss, cls_loss, label_losses) = vae_gan_classification_loss(
                 recon_batch, data, mu, log_var, logits, labels, d_fake_recon, d_fake_samples,
                 current_kld_weight, adv_weight, cls_weight, recon_sample_weight,
-                mi_weight=args.mi_weight, tc_weight=args.tc_weight, dwkl_weight=args.dwkl_weight)
+                mi_weight=1.0, tc_weight=current_tc_weight, dwkl_weight=1.0)  # Pass the current TC weight
             
             loss.backward()
             vae_optimizer.step()
@@ -576,8 +587,8 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
                 'vae_loss': loss.item() / batch_size,
                 'recon_loss': recon_loss.item() / batch_size,
                 'kld_loss': kld_loss.item() / batch_size,
+                'tc_loss': tc_loss.item() / batch_size,  # Add TC loss to progress bar
                 'cls_loss': cls_loss.item() / batch_size,
-                'adv_loss': adv_loss.item() / batch_size,
                 'd_loss': d_loss.item() / batch_size
             })
         
@@ -628,6 +639,7 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
                 'd_optimizer_state_dict': d_optimizer.state_dict(),
                 'loss': avg_vae_loss,
                 'kld_weight': current_kld_weight,
+                'tc_weight': current_tc_weight,  # Save current TC weight
                 'cls_weight': cls_weight,
                 'recon_sample_weight': recon_sample_weight,
                 'label_cols': dataset.label_cols,
@@ -635,7 +647,7 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
             }, os.path.join("checkpoints", checkpoint_path))
             print(f"Checkpoint saved to checkpoints/{checkpoint_path}")
     
-    # Return all loss components
+    # Return all loss components and weights
     return {
         'total': total_losses,
         'recon': recon_losses,
@@ -644,6 +656,7 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
         'adv': adv_losses,
         'disc': disc_losses,
         'kld_weights': kld_weights,
+        'tc_weights': tc_weights,  # Return TC weights
         'label_cls_losses': label_cls_losses
     }
 
@@ -688,34 +701,56 @@ def kld_weight_scheduler(epoch, total_epochs=112, min_weight=0.01, max_weight=0.
         # Linear increase from min to max
         weight = min_weight + progress * (max_weight - min_weight)
         
-    elif schedule_type == "step":
-        # Step increase at 25%, 50%, and 75% of training
-        if progress < 0.25:
-            weight = min_weight
-        elif progress < 0.5:
-            weight = min_weight + (max_weight - min_weight) * 0.33
-        elif progress < 0.75:
-            weight = min_weight + (max_weight - min_weight) * 0.66
-        else:
-            weight = max_weight
             
     elif schedule_type == "exp":
         # Exponential increase (slower at first, faster later)
         weight = min_weight + (max_weight - min_weight) * (progress ** 2)
+    
+    else:
+        raise ValueError(f"Unknown schedule type: {schedule_type}")
+    
+    return weight
+
+def tc_weight_scheduler(epoch, total_epochs=112, min_weight=0.1, max_weight=1.0, delay_start=10, schedule_type="linear"):
+    """
+    A flexible Total Correlation (TC) weight scheduler.
+    
+    Parameters:
+    -----------
+    epoch : int
+        Current epoch number (0-indexed)
+    total_epochs : int
+        Total number of training epochs
+    min_weight : float
+        Minimum TC weight at the beginning
+    max_weight : float
+        Maximum TC weight at the end
+    warmup_epochs : int
+        Number of epochs over which to increase the weight
+    delay_start : int
+        Number of epochs to wait before starting to increase the weight
+    schedule_type : str
+        Type of scheduling ('linear', 'exp', 'step', or 'cyclical')
         
-    elif schedule_type == "cyclical":
-        # Cyclical schedule with 4 cycles
-        cycles = 4
-        cycle_length = (total_epochs - warmup_epochs) / cycles
-        cycle_position = ((epoch - warmup_epochs) % cycle_length) / cycle_length
-        
-        if cycle_position < 0.5:
-            # First half of cycle: linear increase
-            cycle_progress = cycle_position * 2
-            weight = min_weight + (max_weight - min_weight) * cycle_progress
-        else:
-            # Second half of cycle: maintain high weight
-            weight = max_weight
+    Returns:
+    --------
+    float: The TC weight for the current epoch
+    """
+    # Initial delay period - keep weight at minimum
+    if epoch < delay_start:
+        return min_weight
+    
+    # Calculate progress after delay period
+    progress = (epoch - delay_start) / (total_epochs)
+    progress = min(max(progress, 0.0), 1.0)  # Clamp between 0 and 1
+    
+    if schedule_type == "linear":
+        # Linear increase from min to max
+        weight = min_weight + progress * (max_weight - min_weight)
+            
+    elif schedule_type == "exp":
+        # Exponential increase (slower at first, faster later)
+        weight = min_weight + (max_weight - min_weight) * (progress ** 2)
     
     else:
         raise ValueError(f"Unknown schedule type: {schedule_type}")
@@ -724,13 +759,13 @@ def kld_weight_scheduler(epoch, total_epochs=112, min_weight=0.01, max_weight=0.
 
 def plot_supervised_training_losses(losses, out_dir):
     """
-    Plot training losses including classification loss
+    Plot training losses including classification loss and TC weight schedule
     """
     # Plot VAE losses
-    plt.figure(figsize=(12, 16))
+    plt.figure(figsize=(12, 20))  # Made taller to accommodate the extra subplot
     
     # VAE Losses
-    plt.subplot(4, 1, 1)
+    plt.subplot(5, 1, 1)  # 5 rows now instead of 4
     plt.semilogy(losses['total'], label='Total Loss', linewidth=2.5, color='black')
     plt.semilogy(losses['recon'], label='Reconstruction Loss', alpha=0.7)
     plt.semilogy(losses['kld'], label='KL Divergence Loss', alpha=0.7)
@@ -742,7 +777,7 @@ def plot_supervised_training_losses(losses, out_dir):
     plt.grid(True, alpha=0.3)
 
     # Discriminator Loss
-    plt.subplot(4, 1, 2)
+    plt.subplot(5, 1, 2)
     plt.semilogy(losses['disc'], label='Discriminator Loss', linewidth=2.5, color='purple')
     plt.title('Discriminator Loss')
     plt.ylabel('Log-Loss')
@@ -750,7 +785,7 @@ def plot_supervised_training_losses(losses, out_dir):
     plt.grid(True, alpha=0.3)
 
     # Per-Label Classification Losses
-    plt.subplot(4, 1, 3)
+    plt.subplot(5, 1, 3)
     for label, loss_values in losses['label_cls_losses'].items():
         plt.semilogy(loss_values, label=f'{label} Loss', alpha=0.8)
     plt.title('Per-Label Classification Losses')
@@ -759,12 +794,22 @@ def plot_supervised_training_losses(losses, out_dir):
     plt.grid(True, alpha=0.3)
 
     # KLD Weight Schedule
-    plt.subplot(4, 1, 4)
-    plt.plot(losses['kld_weights'], linewidth=2, color='red')
+    plt.subplot(5, 1, 4)
+    plt.plot(losses['kld_weights'], linewidth=2, color='red', label='KLD Weight')
     plt.title('KL Divergence Weight Schedule')
-    plt.xlabel('Epoch')
     plt.ylabel('KLD Weight')
+    plt.legend()
     plt.grid(True, alpha=0.3)
+    
+    # TC Weight Schedule
+    plt.subplot(5, 1, 5)
+    if 'tc_weights' in losses:
+        plt.plot(losses['tc_weights'], linewidth=2, color='blue', label='TC Weight')
+        plt.title('Total Correlation Weight Schedule')
+        plt.xlabel('Epoch')
+        plt.ylabel('TC Weight')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
 
     plt.tight_layout()
     plt.savefig(os.path.join(out_dir, f'supervised_training_losses.png'), dpi=300)
@@ -1235,8 +1280,7 @@ def main(args):
     if subfolder == "-unspecified-":
         subfolder = (f"res{args.img_size}_lat{args.latent_dim}_"
             f"epo{args.epochs}_bat{args.batch_size}_" 
-            f"kld{args.max_kld_weight}_"
-            f"(mi{args.mi_weight}_tc{args.tc_weight}_dwkl{args.dwkl_weight})_"
+            f"kld{args.max_kld_weight}_tc{args.min_tc_weight}-{args.max_tc_weight}_" 
             f"adv{args.adv_weight}_rec{args.recon_sample_weight}_"
             f"{args.cls_latent_dim}dC{args.cls_weight}")
     out_dir = os.path.join("outputs", subfolder)
@@ -1249,8 +1293,7 @@ def main(args):
     if model_path == "-unspecified-":
         model_path = (f"res{args.img_size}_lat{args.latent_dim}_"
             f"epo{args.epochs}_bat{args.batch_size}_" 
-            f"kld{args.max_kld_weight}_"
-            f"(mi{args.mi_weight}_tc{args.tc_weight}_dwkl{args.dwkl_weight})_"
+            f"kld{args.max_kld_weight}_tc{args.min_tc_weight}-{args.max_tc_weight}_" 
             f"adv{args.adv_weight}_rec{args.recon_sample_weight}_"
             f"{args.cls_latent_dim}dC{args.cls_weight}.pth")
     
@@ -1321,20 +1364,32 @@ def main(args):
     
     # PRIORITY 1: Train the model
     if args.train:
-        # Set up your desired KLD scheduler parameters
+        # Set up KLD scheduler parameters
         kld_scheduler_params = {
             'total_epochs': args.epochs,
             'min_weight': 0.01,
             'max_weight': args.max_kld_weight,
             'warmup_epochs': 25,
-            'schedule_type': "linear"
+            'schedule_type': 'linear'
+        }
+        
+        # Set up TC scheduler parameters
+        tc_scheduler_params = {
+            'total_epochs': args.epochs,
+            'min_weight': args.min_tc_weight,
+            'max_weight': args.max_tc_weight,
+            'delay_start': 25,
+            'schedule_type': 'linear'
         }
 
-        # Train with KLD weight scheduling
+        # Train with both KLD and TC weight scheduling
         losses = train_supervised_vaegan(
             vae_model, discriminator, train_loader, train_dataset, args.track_reconstruction,
-            vae_optimizer, d_optimizer, args.epochs, kld_weight_scheduler, kld_scheduler_params,
-            adv_weight=args.adv_weight, cls_weight=args.cls_weight, recon_sample_weight=args.recon_sample_weight,
+            vae_optimizer, d_optimizer, args.epochs, 
+            kld_weight_scheduler, kld_scheduler_params,
+            tc_weight_scheduler, tc_scheduler_params,  # Add TC scheduler
+            adv_weight=args.adv_weight, cls_weight=args.cls_weight, 
+            recon_sample_weight=args.recon_sample_weight,
             checkpoint_path=model_path, recon_path=out_dir)
         
         # Plot training losses
@@ -1440,6 +1495,10 @@ if __name__ == "__main__":
                         help='Weight for mutual information loss term in KLD Loss')
     parser.add_argument('--tc_weight', type=float, default=1.0, 
                         help='Weight for total correlation loss term in KLD Loss')
+    parser.add_argument('--min_tc_weight', type=float, default=1.0, 
+                    help='Starting weight for TC loss term')
+    parser.add_argument('--max_tc_weight', type=float, default=2.0, 
+                    help='Maximum weight for TC loss term')
     parser.add_argument('--dwkl_weight', type=float, default=1.0, 
                         help='Weight for dimension-wise KL divergence loss term in KLD Loss')
     parser.add_argument('--adv_weight', type=float, default=1.0, 
