@@ -23,7 +23,7 @@ source env/bin/activate
 python motorVAEGAN-withSupervision.py \
     --data_dir data/evox_256x256_1-4 --img_size 256 \
     --latent_dim 128 \
-    --max_kld_weight 0.75 \
+    --max_kld_weight 0.5 \
     --min_tc_weight 1 --max_tc_weight 2 \
     --adv_weight 1 --recon_sample_weight 0.5 \
     --cls_weight 1 --cls_latent_dim 16 \
