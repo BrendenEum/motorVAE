@@ -59,17 +59,17 @@ Copy-pasta this line of code into the terminal to do all the things!
 python motorVAEGAN-withSupervision.py \
     --data_dir data/evox_256x256_1-4 --img_size 256 \
     --latent_dim 128 \
-    --max_kld_weight 1.0 --tc_weight 50.0 \
-    --adv_weight 1.0 --recon_sample_weight 0.5 \
-    --cls_weight 1.0 --cls_latent_dim 10 \
+    --max_kld_weight 1 \
+    --min_tc_weight 1 --max_tc_weight 2 \
+    --adv_weight 1 --recon_sample_weight 0.67 \
+    --cls_weight 1 --cls_latent_dim 6 \
     --label_file data/labels_evox_256x256_1-4.csv --label_cols Year,Brand,Body,Door \
     --learning_rate 0.0001 --epochs 2 --batch_size 128 \
     --train --reconstructions --extract_latent --sample \
-    --classification_accuracy --visualize_latent_class \
-    --feature_attribution \
+    --classification_accuracy --visualize_latent_class --feature_attribution \
     --traversals 2021_Toyota_CamryHybrid_XLE_sedan_4Door_2.png \
     --interpolate 2007_Toyota_PriusHybrid_nan_hatchback_5Door_3.png 2025_Hyundai_Ioniq5N_nan_CUV_4Door_2.png \
-    --track_reconstruction 2010_Jeep_Compass_Sport_CUV_4Door_4.png
+    --track_reconstruction 2008_Volvo_S80_T6_sedan_4Door_2.png
 ```
 
 Data Parameters
@@ -85,7 +85,8 @@ Model Parameters
 - The weight for L1 reconstruction loss is normalized to 1.0.
 - Use `--max_kld_weight 1.0` to balance reconstruction quality versus latent space regularity. We are using a scheduler, so KLD weight starts at 0.01 (to focus on reconstruction), then increases linearly to max_kld_weight (to emphasize latent space structure).
 - Use `--mi_weight 1.0` to set the weight for mutual information loss in total KLD loss. This is to reduce the amount of information about x stored in z. Defaults to 1.0.
-- Use `--tc_weight 50.0` to set the weight for total correlation loss in total KLD loss. This is to make latent variables z as independent as possible. Defaults to 50.0 based on Sisodia et al (2024).
+- Use `--min_tc_weight 1.0` to set the initial weight for total correlation loss in total KLD loss. This is to make latent variables z as independent as possible. Defaults to 1.0.
+- Use `--max_tc_weight 2.0` to set the final weight for total correlation loss in total KLD loss. The tc_weight will increase from the minimum to maximum in a linear schedule. You can set the rate of increase, as well as, warmup epochs in the model code. Defaults to 2.0.
 - Use `--dwkl_weight 1.0` to set the weight for dimension-wise KLD loss in total KLD loss. This is to ensure each latent dimension does not deviate from prior (Gaussian). Defaults to 1.0.
 - Use `--adv_weight 1.0` to control the weight of the adversarial loss term in the loss function.
 - Use `--recon_sample_weight 0.7` to adjust weight for reconstruction vs sample discrimination (reconstruction w, sample 1-w).
