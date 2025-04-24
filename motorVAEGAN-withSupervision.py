@@ -1267,7 +1267,7 @@ def main(args):
             f"epo{args.epochs}_bat{args.batch_size}_" 
             f"kld{args.max_kld_weight}_tc{args.min_tc_weight}-{args.max_tc_weight}_" 
             f"adv{args.adv_weight}_rec{args.recon_sample_weight}_"
-            f"{args.cls_latent_dim}dC{args.cls_weight}")
+            f"{args.cls_latent_dim}dCz{args.cls_weight}")
     out_dir = os.path.join("outputs", subfolder)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -1280,7 +1280,7 @@ def main(args):
             f"epo{args.epochs}_bat{args.batch_size}_" 
             f"kld{args.max_kld_weight}_tc{args.min_tc_weight}-{args.max_tc_weight}_" 
             f"adv{args.adv_weight}_rec{args.recon_sample_weight}_"
-            f"{args.cls_latent_dim}dC{args.cls_weight}.pth")
+            f"{args.cls_latent_dim}dCz{args.cls_weight}.pth")
     
     # Data transformations
     transform = transforms.Compose([
