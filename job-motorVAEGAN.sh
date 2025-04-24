@@ -23,10 +23,10 @@ source env/bin/activate
 python motorVAEGAN-withSupervision.py \
     --data_dir data/evox_256x256_1-4 --img_size 256 \
     --latent_dim 128 \
-    --max_kld_weight 1 \
-    --min_tc_weight 1 --max_tc_weight 2 \
-    --adv_weight 1 --recon_sample_weight 0.67 \
-    --cls_weight 1 --cls_latent_dim 6 \
+    --max_kld_weight 0.75 \
+    --min_tc_weight 1 --max_tc_weight 1 \
+    --adv_weight 1 --recon_sample_weight 0.5 \
+    --cls_weight 1 --cls_latent_dim 16 \
     --label_file data/labels_evox_256x256_1-4.csv --label_cols Year,Brand,Body,Door \
     --learning_rate 0.0001 --epochs 200 --batch_size 128 \
     --train --reconstructions --extract_latent --sample \
