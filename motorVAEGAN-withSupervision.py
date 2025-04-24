@@ -185,7 +185,7 @@ class VAEWithClassifier(nn.Module):
         if num_classes_dict:
             for label_name, num_classes in num_classes_dict.items():
                 self.classifiers[label_name] = nn.Sequential(
-                    nn.Linear(cls_latent_dim * 2, 16),  # 8 (depends on cls_latent_dim) -> 16
+                    nn.Linear(cls_latent_dim, 16),  # cls_latent_dim -> 16
                     nn.ReLU(),
                     nn.Dropout(0.2),
                     nn.Linear(16, 8),                   # 16 -> 8
@@ -244,32 +244,24 @@ class VAEWithClassifier(nn.Module):
         eps = torch.randn_like(std)
         return mu + eps * std
     
-    def classify(self, mu, log_var):
+    def classify(self, z):
         """
-        Classify the latent representation into different labels
+        Classify the sampled latent representation into different labels
         Returns a dictionary of logits for each label type
         """
         # Use only the specified number of dimensions for classification
-        mu_subset = mu[:, :self.cls_latent_dim]
-        log_var_subset = log_var[:, :self.cls_latent_dim]
+        z_subset = z[:, :self.cls_latent_dim]
 
         # Apply z-scoring normalization (standardize)
         # For each batch separately
-        mu_mean = mu_subset.mean(dim=1, keepdim=True)
-        mu_std = mu_subset.std(dim=1, keepdim=True) + 1e-6  # Add small epsilon to avoid division by zero
-        mu_subset = (mu_subset - mu_mean) / mu_std
-        
-        log_var_mean = log_var_subset.mean(dim=1, keepdim=True)
-        log_var_std = log_var_subset.std(dim=1, keepdim=True) + 1e-6
-        log_var_subset = (log_var_subset - log_var_mean) / log_var_std
-        
-        # Concatenate subset of mu and log_var for classification
-        z_for_cls = torch.cat([mu_subset, log_var_subset], dim=1)
+        z_mean = z_subset.mean(dim=1, keepdim=True)
+        z_std = z_subset.std(dim=1, keepdim=True) + 1e-6  # Add small epsilon to avoid division by zero
+        z_subset = (z_subset - z_mean) / z_std
         
         # Apply each classifier
         logits = {}
         for label_name, classifier in self.classifiers.items():
-            logits[label_name] = classifier(z_for_cls)
+            logits[label_name] = classifier(z_subset)
             
         return logits
     
@@ -278,8 +270,8 @@ class VAEWithClassifier(nn.Module):
         z = self.reparameterize(mu, log_var)
         x_recon = self.decode(z)
         
-        # Get classification logits
-        logits = self.classify(mu, log_var)
+        # Get classification logits using z instead of mu and log_var
+        logits = self.classify(z)
         
         return x_recon, mu, log_var, z, logits
     
@@ -1119,11 +1111,10 @@ def visualize_feature_attribution(model, dataset, samples=5, save_dir="outputs")
         
         # Encode the image
         mu, log_var = model.encode(image)
+        z = model.reparameterize(mu, log_var)
         
         # Get subset of latent dimensions used for classification
-        mu_subset = mu[:, :model.cls_latent_dim]
-        log_var_subset = log_var[:, :model.cls_latent_dim]
-        z_concat = torch.cat([mu_subset, log_var_subset], dim=1)  # This is what we feed to classifiers
+        z_subset = z[:, :model.cls_latent_dim]
         
         # For each label type
         for i, (label_name, classifier) in enumerate(model.classifiers.items()):
@@ -1170,15 +1161,9 @@ def visualize_feature_attribution(model, dataset, samples=5, save_dir="outputs")
                 weights = weights / weights.max() if weights.max() > 0 else weights
                 
                 # Visualize weights for each dimension
-                # First half are mu, second half are log_var
                 latent_dim = model.cls_latent_dim
-                mu_weights = weights[:latent_dim]
-                logvar_weights = weights[latent_dim:]
                 
-                x = np.arange(latent_dim)
-                
-                plt.bar(x, mu_weights, alpha=0.7, label='μ weights')
-                plt.bar(x, -logvar_weights, alpha=0.7, label='log_var weights')
+                plt.bar(np.arange(latent_dim), weights, alpha=0.7, label='z weights')
                 plt.axhline(y=0, color='k', linestyle='-', alpha=0.3)
                 
                 plt.xlabel('Latent Dimension')
