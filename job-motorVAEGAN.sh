@@ -24,7 +24,7 @@ python motorVAEGAN-withSupervision.py \
     --data_dir data/evox_256x256_1-4 --img_size 256 \
     --latent_dim 128 \
     --max_kld_weight 1 \
-    --min_tc_weight 1 --max_tc_weight 6 \
+    --min_tc_weight 1 --max_tc_weight 3 \
     --adv_weight 1 --recon_sample_weight 0.5 \
     --cls_weight 1 --cls_latent_dim 6 \
     --label_file data/labels_evox_256x256_1-4.csv --label_cols Year,Brand,Body,Door \
