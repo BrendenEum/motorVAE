@@ -393,8 +393,9 @@ class PerceptualLoss(nn.Module):
         return loss
 
 def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon, d_samples, 
-                             kld_weight=0.005, adv_weight=1.0, cls_weight=1.0, recon_sample_weight=0.5,
-                             mi_weight=1.0, tc_weight=1.0, dwkl_weight=1.0, perceptual_weight=1.0):
+                                perceptual_loss_fn, perceptual_weight=1.0,
+                                kld_weight=0.005, adv_weight=1.0, cls_weight=1.0, recon_sample_weight=0.5,
+                                mi_weight=1.0, tc_weight=1.0, dwkl_weight=1.0):
     """
     Supervised VAE-GAN loss function with classification loss:
     - Reconstruction loss (L1)
@@ -612,9 +613,9 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
             (loss, p_loss, kld_loss, mi_loss, tc_loss, dwkl_loss, 
             adv_loss, cls_loss, label_losses) = vae_gan_classification_loss(
                 recon_batch, data, mu, log_var, logits, labels, d_fake_recon, d_fake_samples,
+                perceptual_loss_fn, args.perceptual_weight,
                 current_kld_weight, adv_weight, cls_weight, recon_sample_weight,
-                mi_weight=1.0, tc_weight=current_tc_weight, dwkl_weight=1.0, 
-                perceptual_weight=args.perceptual_weight)  # Add perceptual weight parameter
+                mi_weight=1.0, tc_weight=current_tc_weight, dwkl_weight=1.0)
             
             loss.backward()
             vae_optimizer.step()
