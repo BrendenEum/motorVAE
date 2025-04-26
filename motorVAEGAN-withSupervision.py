@@ -349,7 +349,7 @@ class PerceptualLoss(nn.Module):
         super(PerceptualLoss, self).__init__()
         blocks = []
         # Load pre-trained VGG16 model
-        vgg = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1).features.eval()
+        vgg = models.vgg16(pretrained=True).features.eval()
         
         # Get first few convolutional layers
         # These capture low-level features which are important for image structure
