@@ -349,7 +349,7 @@ class PerceptualLoss(nn.Module):
         super(PerceptualLoss, self).__init__()
         blocks = []
         # Load pre-trained VGG16 model
-        vgg = models.vgg16(pretrained=True).features.eval()
+        vgg = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1).features.eval()
         
         # Get first few convolutional layers
         # These capture low-level features which are important for image structure
@@ -505,7 +505,7 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     return vae_loss, p_loss, kld_loss, mi_loss, tc_loss, dwkl_loss, adv_loss, cls_loss, cls_losses
 
 def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_img,
-                          vae_optimizer, d_optimizer, epochs, kld_scheduler_fn, kld_scheduler_params,
+                          vae_optimizer, d_optimizer, perceptual_loss_fn, epochs, kld_scheduler_fn, kld_scheduler_params,
                           tc_scheduler_fn=None, tc_scheduler_params=None,  # New parameters
                           adv_weight=1.0, cls_weight=1.0, recon_sample_weight=0.7,
                           checkpoint_path="supervised_model.pth", recon_path="outputs/supervised"):
@@ -517,9 +517,6 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
 
     vae_model.train()
     discriminator.train()
-
-    # Initialize perceptual loss
-    perceptual_loss_fn = PerceptualLoss().to(device)
     
     # Lists to track all loss components
     total_losses = []
@@ -1365,7 +1362,8 @@ def main(args):
     # Get the number of classes for each label
     num_classes_dict = train_dataset.get_all_num_classes()
 
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, 
+                              num_workers=4, pin_memory=True, persistent_workers=True)
     
     # Create VAE model with classifiers
     vae_model = VAEWithClassifier(
@@ -1390,6 +1388,9 @@ def main(args):
     # Define optimizers
     vae_optimizer = optim.Adam(vae_model.parameters(), lr=args.learning_rate)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=args.learning_rate * 0.5)
+
+    # Initialize pretrained VGG16 for perceptual loss
+    perceptual_loss_fn = PerceptualLoss().to(device)
 
     # If resuming from checkpoint
     start_epoch = 0
@@ -1428,7 +1429,7 @@ def main(args):
         # Train with both KLD and TC weight scheduling
         losses = train_supervised_vaegan(
             vae_model, discriminator, train_loader, train_dataset, args.track_reconstruction,
-            vae_optimizer, d_optimizer, args.epochs, 
+            vae_optimizer, d_optimizer, perceptual_loss_fn, args.epochs, 
             kld_weight_scheduler, kld_scheduler_params,
             tc_weight_scheduler, tc_scheduler_params,  # Add TC scheduler
             adv_weight=args.adv_weight, cls_weight=args.cls_weight, 
