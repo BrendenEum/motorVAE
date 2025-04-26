@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
+import torchvision.models as models
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
@@ -342,10 +343,58 @@ class Discriminator(nn.Module):
         features = self.features(img)
         validity = self.classifier(features)
         return validity
+    
+class PerceptualLoss(nn.Module):
+    def __init__(self, resize=True):
+        super(PerceptualLoss, self).__init__()
+        blocks = []
+        # Load pre-trained VGG16 model
+        vgg = models.vgg16(pretrained=True).features.eval()
+        
+        # Get first few convolutional layers
+        # These capture low-level features which are important for image structure
+        blocks.append(vgg[:4])    # relu1_2
+        blocks.append(vgg[4:9])   # relu2_2
+        blocks.append(vgg[9:16])  # relu3_3
+        
+        for bl in blocks:
+            for p in bl.parameters():
+                p.requires_grad = False
+                
+        self.blocks = nn.ModuleList(blocks)
+        self.resize = resize
+        self.register_buffer("mean", torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
+        self.register_buffer("std", torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
+        
+    def forward(self, input, target):
+        if input.shape[1] != 3:
+            # Convert grayscale to RGB by repeating the channel
+            input = input.repeat(1, 3, 1, 1)
+            target = target.repeat(1, 3, 1, 1)
+            
+        # Normalize to ImageNet stats
+        input = (input - self.mean) / self.std
+        target = (target - self.mean) / self.std
+        
+        # Resize if needed (VGG expects at least 224x224)
+        if self.resize:
+            input = F.interpolate(input, mode='bilinear', size=(224, 224), align_corners=False)
+            target = F.interpolate(target, mode='bilinear', size=(224, 224), align_corners=False)
+            
+        loss = 0.0
+        x = input
+        y = target
+        
+        for block in self.blocks:
+            x = block(x)
+            y = block(y)
+            loss += F.mse_loss(x, y)
+            
+        return loss
 
 def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon, d_samples, 
                              kld_weight=0.005, adv_weight=1.0, cls_weight=1.0, recon_sample_weight=0.5,
-                             mi_weight=1.0, tc_weight=1.0, dwkl_weight=1.0):
+                             mi_weight=1.0, tc_weight=1.0, dwkl_weight=1.0, perceptual_weight=1.0):
     """
     Supervised VAE-GAN loss function with classification loss:
     - Reconstruction loss (L1)
@@ -357,9 +406,12 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     tiny_amt = 1e-8  # for numerical stability
 
     ######################
-    # 1. Reconstruction loss
+    # 1. Perceptual loss
     ######################
-    recon_loss = F.l1_loss(recon_x, x, reduction='sum')
+    if perceptual_weight > 0:
+        p_loss = perceptual_loss_fn(recon_x, x)
+    else:
+        p_loss = torch.tensor(0.0, device=device)
     
     ######################
     # 2. KL Divergence components
@@ -447,9 +499,9 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     ######################
     # Total loss for VAE (generator)
     ######################
-    vae_loss = recon_loss + kld_weight * kld_loss + adv_weight * adv_loss + cls_weight * cls_loss
+    vae_loss = perceptual_weight * p_loss + kld_weight * kld_loss + adv_weight * adv_loss + cls_weight * cls_loss
     
-    return vae_loss, recon_loss, kld_loss, mi_loss, tc_loss, dwkl_loss, adv_loss, cls_loss, cls_losses
+    return vae_loss, p_loss, kld_loss, mi_loss, tc_loss, dwkl_loss, adv_loss, cls_loss, cls_losses
 
 def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, target_recon_img,
                           vae_optimizer, d_optimizer, epochs, kld_scheduler_fn, kld_scheduler_params,
@@ -464,10 +516,13 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
 
     vae_model.train()
     discriminator.train()
+
+    # Initialize perceptual loss
+    perceptual_loss_fn = PerceptualLoss().to(device)
     
     # Lists to track all loss components
     total_losses = []
-    recon_losses = []
+    p_losses = []
     kld_losses = []
     adv_losses = []
     cls_losses = []
@@ -495,7 +550,7 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
         print(f"\nEpoch {epoch+1}/{epochs}, KLD weight: {current_kld_weight:.5f}, TC weight: {current_tc_weight:.5f}")
         
         epoch_vae_loss = 0
-        epoch_recon_loss = 0
+        epoch_p_loss = 0
         epoch_kld_loss = 0
         epoch_adv_loss = 0
         epoch_cls_loss = 0
@@ -554,18 +609,19 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
             d_fake_samples = discriminator(fake_samples)
             
             # VAE-GAN loss with classification loss and scheduled TC weight
-            (loss, recon_loss, kld_loss, mi_loss, tc_loss, dwkl_loss, 
-             adv_loss, cls_loss, label_losses) = vae_gan_classification_loss(
+            (loss, p_loss, kld_loss, mi_loss, tc_loss, dwkl_loss, 
+            adv_loss, cls_loss, label_losses) = vae_gan_classification_loss(
                 recon_batch, data, mu, log_var, logits, labels, d_fake_recon, d_fake_samples,
                 current_kld_weight, adv_weight, cls_weight, recon_sample_weight,
-                mi_weight=1.0, tc_weight=current_tc_weight, dwkl_weight=1.0)  # Pass the current TC weight
+                mi_weight=1.0, tc_weight=current_tc_weight, dwkl_weight=1.0, 
+                perceptual_weight=args.perceptual_weight)  # Add perceptual weight parameter
             
             loss.backward()
             vae_optimizer.step()
             
             # Update statistics
             epoch_vae_loss += loss.item()
-            epoch_recon_loss += recon_loss.item()
+            epoch_p_loss += p_loss.item()
             epoch_kld_loss += kld_loss.item()
             epoch_adv_loss += adv_loss.item()
             epoch_cls_loss += cls_loss.item()
@@ -578,7 +634,7 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
             # Update progress bar
             progress_bar.set_postfix({
                 'vae_loss': loss.item() / batch_size,
-                'recon_loss': recon_loss.item() / batch_size,
+                'p_loss': p_loss.item() / batch_size,
                 'kld_loss': kld_loss.item() / batch_size,
                 'tc_loss': tc_loss.item() / batch_size,  # Add TC loss to progress bar
                 'cls_loss': cls_loss.item() / batch_size,
@@ -587,7 +643,7 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
         
         # Average losses for the epoch
         avg_vae_loss = epoch_vae_loss / len(train_loader.dataset)
-        avg_recon_loss = epoch_recon_loss / len(train_loader.dataset)
+        avg_p_loss = epoch_p_loss / len(train_loader.dataset)
         avg_kld_loss = epoch_kld_loss / len(train_loader.dataset)
         avg_adv_loss = epoch_adv_loss / len(train_loader.dataset)
         avg_cls_loss = epoch_cls_loss / len(train_loader.dataset)
@@ -599,7 +655,7 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
 
         # Store all loss components
         total_losses.append(avg_vae_loss)
-        recon_losses.append(avg_recon_loss)
+        p_losses.append(avg_p_loss)
         kld_losses.append(avg_kld_loss)
         adv_losses.append(avg_adv_loss)
         cls_losses.append(avg_cls_loss)
@@ -610,7 +666,7 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
             label_cls_losses[label].append(loss)
         
         print(f"Average VAE Loss: {avg_vae_loss:.4f}")
-        print(f"Average Reconstruction Loss: {avg_recon_loss:.4f}")
+        print(f"Average Perceptual Loss: {avg_p_loss:.4f}")
         print(f"Average KLD Loss: {avg_kld_loss:.4f} (raw: {avg_kld_loss/current_kld_weight:.4f})")
         print(f"Average Classification Loss: {avg_cls_loss:.4f}")
         for label, loss in avg_label_cls_losses.items():
@@ -643,7 +699,7 @@ def train_supervised_vaegan(vae_model, discriminator, train_loader, dataset, tar
     # Return all loss components and weights
     return {
         'total': total_losses,
-        'recon': recon_losses,
+        'perceptual': p_losses,
         'kld': kld_losses,
         'cls': cls_losses,
         'adv': adv_losses,
@@ -760,7 +816,7 @@ def plot_supervised_training_losses(losses, out_dir):
     # VAE Losses
     plt.subplot(5, 1, 1)  # 5 rows now instead of 4
     plt.semilogy(losses['total'], label='Total Loss', linewidth=2.5, color='black')
-    plt.semilogy(losses['recon'], label='Reconstruction Loss', alpha=0.7)
+    plt.semilogy(losses['perceptual'], label='Perceptual Loss', alpha=0.7)
     plt.semilogy(losses['kld'], label='KL Divergence Loss', alpha=0.7)
     plt.semilogy(losses['adv'], label='Adversarial Loss', alpha=0.7)
     plt.semilogy(losses['cls'], label='Classification Loss', alpha=0.7, color='red')
@@ -1475,6 +1531,8 @@ if __name__ == "__main__":
     # Model parameters
     #################
     parser.add_argument('--latent_dim', type=int, default=128, help='Dimension of latent space')
+    parser.add_argument('--perceptual_weight', type=float, default=0.1, 
+                        help='Weight for perceptual loss term')
     parser.add_argument('--max_kld_weight', type=float, default=1.0, 
                         help='Maximum weight for KLD loss term in the scheduler')
     parser.add_argument('--mi_weight', type=float, default=1.0, 
