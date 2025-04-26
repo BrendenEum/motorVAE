@@ -1354,8 +1354,8 @@ def main(args):
             'total_epochs': args.epochs,
             'min_weight': 0.01,
             'max_weight': args.max_kld_weight,
-            'warmup_epochs': 25,
-            'schedule_type': 'linear'
+            'warmup_epochs': 40,
+            'schedule_type': 'exp'
         }
         
         # Set up TC scheduler parameters
