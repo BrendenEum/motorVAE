@@ -320,7 +320,8 @@ class Discriminator(nn.Module):
                     nn.Conv2d(in_channels, out_channels=h_dim,
                               kernel_size=3, stride=2, padding=1),
                     nn.BatchNorm2d(h_dim),
-                    nn.LeakyReLU(0.2))
+                    nn.LeakyReLU(0.2),
+                    nn.Dropout2d(0.3))
             )
             in_channels = h_dim
         
@@ -1355,7 +1356,7 @@ def main(args):
             'min_weight': 0.01,
             'max_weight': args.max_kld_weight,
             'warmup_epochs': 40,
-            'schedule_type': 'exp'
+            'schedule_type': 'linear'
         }
         
         # Set up TC scheduler parameters
