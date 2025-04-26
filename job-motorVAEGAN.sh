@@ -25,7 +25,7 @@ python superMotorVAEGANpatch.py \
     --latent_dim 128 \
     --perceptual_weight 1.0 \
     --max_kld_weight 1.0 \
-    --min_tc_weight 1.0 --max_tc_weight 1.0 --dwkl_weight 1.0 \
+    --mi_weight 1.0 --tc_weight 1.0 --dwkl_weight 1.0 \
     --adv_weight 0.5 --recon_sample_weight 0.5 \
     --cls_weight 0.5 --cls_latent_dim 16 \
     --label_file data/labels_evox_256x256_1-4.csv --label_cols Year,Brand,Body,Door \

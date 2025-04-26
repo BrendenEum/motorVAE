@@ -413,15 +413,15 @@ class PerceptualLoss(nn.Module):
             
         return loss
 
-def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon, d_samples, 
+def vae_gan_classification_loss_patchgan(recon_x, x, mu, log_var, logits, labels, d_recon, d_samples, 
                                 perceptual_loss_fn, perceptual_weight=1.0,
                                 kld_weight=0.005, adv_weight=1.0, cls_weight=1.0, recon_sample_weight=0.5,
                                 mi_weight=1.0, tc_weight=1.0, dwkl_weight=1.0):
     """
-    Supervised VAE-GAN loss function with classification loss:
-    - Reconstruction loss (L1)
+    Supervised VAE-GAN loss function with classification loss using PatchGAN outputs:
+    - Reconstruction loss (perceptual)
     - KL Divergence decomposed into three terms
-    - Adversarial loss from discriminator
+    - Adversarial loss from PatchGAN discriminator
     - Classification loss for each label type
     """
     batch_size = x.size(0)
@@ -490,15 +490,14 @@ def vae_gan_classification_loss(recon_x, x, mu, log_var, logits, labels, d_recon
     kld_loss = mi_weight * mi_loss + tc_weight * tc_loss + dwkl_weight * dwkl_loss
     
     ######################
-    # 3. Adversarial loss
+    # 3. Adversarial loss (PatchGAN version)
     ######################
-    #d_recon = torch.clamp(d_recon, min=tiny_amt, max=1-tiny_amt)
-    #d_samples = torch.clamp(d_samples, min=tiny_amt, max=1-tiny_amt)
-
-    adv_recon_loss = F.binary_cross_entropy_with_logits(
-        d_recon, torch.ones_like(d_recon))
-    adv_samples_loss = F.binary_cross_entropy_with_logits(
-        d_samples, torch.ones_like(d_samples))
+    # For PatchGAN, create targets of ones (same shape as discriminator output)
+    real_target = torch.ones_like(d_recon)
+    
+    # Generator wants discriminator to classify its outputs as real
+    adv_recon_loss = F.binary_cross_entropy_with_logits(d_recon, real_target)
+    adv_samples_loss = F.binary_cross_entropy_with_logits(d_samples, real_target)
     adv_loss = recon_sample_weight * adv_recon_loss + (1.0 - recon_sample_weight) * adv_samples_loss
     
     ######################
@@ -1293,7 +1292,7 @@ def main(args):
     subfolder = args.out_dir
     if subfolder == "-unspecified-":
         subfolder = (f"res{args.img_size}_lat{args.latent_dim}_"
-            f"epo{args.epochs}_bat{args.batch_size}_pat{args.patch_downsample}" 
+            f"epo{args.epochs}_bat{args.batch_size}_pat{args.patch_downsample}_" 
             f"per{args.perceptual_weight}_"
             f"kld{args.max_kld_weight}_" 
             f"adv{args.adv_weight}_rec{args.recon_sample_weight}_"
@@ -1307,7 +1306,7 @@ def main(args):
     model_path = args.model_path
     if model_path == "-unspecified-":
         model_path = (f"res{args.img_size}_lat{args.latent_dim}_"
-            f"epo{args.epochs}_bat{args.batch_size}_pat{args.patch_downsample}" 
+            f"epo{args.epochs}_bat{args.batch_size}_pat{args.patch_downsample}_" 
             f"per{args.perceptual_weight}_"
             f"kld{args.max_kld_weight}_" 
             f"adv{args.adv_weight}_rec{args.recon_sample_weight}_"
