@@ -34,7 +34,7 @@ python superMotorVAEGANpatch.py \
     --classification_accuracy --visualize_latent_class --feature_attribution \
     --traversals 2021_Toyota_CamryHybrid_XLE_sedan_4Door_2.png \
     --interpolate 2007_Toyota_PriusHybrid_nan_hatchback_5Door_3.png 2025_Polestar_Polestar4_LongRangeDualMotor_SUV_4Door_1.png \
-    --track_reconstruction 2014_Nissan_Versa_SL_sedan_4Door_1.png
+    --track_reconstruction 2018_Ford_Explorer_XLT_SUV_4Door_1.png
 
 # Notes
 # 200 epochs takes approx 13 hrs.
