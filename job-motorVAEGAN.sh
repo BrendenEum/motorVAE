@@ -20,7 +20,7 @@ module load scipy-stack/2021a
 source env/bin/activate
 
 # Train
-python motorVAEGAN-withSupervision.py \
+python superMotorVAEGANpatch.py \
     --data_dir data/evox_256x256_1-4 --img_size 256 \
     --latent_dim 128 \
     --perceptual_weight 1.0 \
@@ -29,7 +29,7 @@ python motorVAEGAN-withSupervision.py \
     --adv_weight 0.5 --recon_sample_weight 0.5 \
     --cls_weight 0.5 --cls_latent_dim 16 \
     --label_file data/labels_evox_256x256_1-4.csv --label_cols Year,Brand,Body,Door \
-    --learning_rate 0.0001 --epochs 200 --batch_size 128 \
+    --learning_rate 0.0001 --epochs 200 --batch_size 128 --patch_downsample 4 \
     --train --reconstructions --extract_latent --sample \
     --classification_accuracy --visualize_latent_class --feature_attribution \
     --traversals 2021_Toyota_CamryHybrid_XLE_sedan_4Door_2.png \
