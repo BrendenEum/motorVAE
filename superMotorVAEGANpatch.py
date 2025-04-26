@@ -1354,7 +1354,7 @@ def main(args):
         img_size=args.img_size, 
         input_channels=1,  # 1 for grayscale images
         ndf=64,            # Base number of filters 
-        n_layers=4         # Number of downsampling layers
+        n_layers=args.patch_downsample       # Number of downsampling layers. Typicaly 2-4 for mid-feature focus.
     ).to(device)
     print("Using VAE-GAN architecture with PatchGAN discriminator and supervised classification")
     print(f"Classifier networks using first {args.cls_latent_dim} latent dimensions")
