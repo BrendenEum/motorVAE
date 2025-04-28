@@ -1073,9 +1073,6 @@ def main():
         labels_file="data/labels_evox_256x256_1-4.csv",
         transform=transform
     )
-    
-    # DEBUG Small number of images for debugging
-    train_dataset = torch.utils.data.Subset(train_dataset, range(1000))
 
     # Split into train and validation sets
     train_size = int(0.95 * len(train_dataset))
