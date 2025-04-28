@@ -400,61 +400,59 @@ def compute_tc_loss(z, mu, logvar, batch_size):
     # Compute the TC term: KL(q(z) || prod_j q(z_j))
     tc_loss = torch.mean(log_qz - log_qz_condx)
     
-    # Add check for NaN values and replace with zeros if necessary
-    if torch.isnan(tc_loss):
-        print("Warning: TC loss is NaN, setting to zero")
-        tc_loss = torch.tensor(0.0, device=device)
-    
     return tc_loss
 
 def compute_mi_loss(z, mu, logvar, batch_size):
     # Add larger epsilon for numerical stability
     eps = 1e-8
+
+    # Add stronger clipping to prevent extreme values
+    logvar_clipped = torch.clamp(logvar, min=-20, max=20)
+    var_term = torch.exp(logvar_clipped) + eps
     
     # Compute log q(z|x) with better numerical stability
     log_qz_condx = -0.5 * torch.sum(
-        1 + logvar - mu.pow(2) - torch.clamp(logvar.exp(), min=eps), dim=1
+        torch.log(2 * torch.tensor(np.pi, device=device) * var_term) + 
+        (z - mu).pow(2) / var_term, 
+        dim=1
     )
     
-    # Compute log q(z) (marginal entropy) with better formulation
+    # Compute log q(z) with more stable approach
     log_qz_prob = torch.zeros(batch_size, batch_size, device=device)
     for i in range(batch_size):
         for j in range(batch_size):
             z_centered = z[i] - mu[j]
-            # Apply clipping to prevent extreme values
-            var_j = torch.clamp(torch.exp(logvar[j]), min=eps)
+            # Use the clipped logvar
+            var_j = torch.exp(logvar_clipped[j]) + eps
             log_qz_prob[i, j] = -0.5 * torch.sum(
                 torch.log(2 * torch.tensor(np.pi, device=device) * var_j) + 
                 z_centered.pow(2) / var_j
             )
     
-    # Use logaddexp for better numerical stability
+    # Use log-sum-exp trick for better stability
     log_qz = torch.logsumexp(log_qz_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
     
-    # Compute MI
+    # Compute MI and check for numerical issues
     mi_loss = torch.mean(log_qz_condx - log_qz)
     
-    # Add check for NaN values
-    if torch.isnan(mi_loss):
-        print("Warning: MI loss is NaN, setting to zero")
-        mi_loss = torch.tensor(0.0, device=device)
+    # Add aggressive handling for extreme values
+    if torch.abs(mi_loss) > 1e10: print("Warning: MI loss is extreme")
     
     return mi_loss
 
 def compute_dkld_loss(mu, logvar):
+    # More aggressive clamping for stability
+    logvar_clipped = torch.clamp(logvar, min=-20, max=20)
+    mu_clipped = torch.clamp(mu, min=-20, max=20)
+    
     # Standard KL divergence with better numerical stability
-    # KL(q(z|x) || p(z)) where p(z) is standard normal
-    eps = 1e-8
-    # Clamp the exponential term to avoid explosion
-    var_term = torch.clamp(logvar.exp(), min=eps)
-    kld = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - var_term, dim=1))
+    var_term = torch.exp(logvar_clipped) + 1e-10
+    dkld_loss = -0.5 * torch.mean(torch.sum(1 + logvar_clipped - mu_clipped.pow(2) - var_term, dim=1))
     
-    # Add check for NaN values
-    if torch.isnan(kld):
-        print("Warning: DKLD loss is NaN, setting to zero")
-        kld = torch.tensor(0.0, device=device)
+    # Handle extreme values
+    if torch.abs(dkld_loss) > 1e10: print("Warning: DKLD loss is extreme")
     
-    return kld
+    return dkld_loss
 
 # Function to calculate perceptual loss
 def perceptual_loss(real_features, fake_features):
