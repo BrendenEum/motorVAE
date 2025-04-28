@@ -359,71 +359,99 @@ class VAEGAN(nn.Module):
 
 # Calculate KL divergence terms
 def kl_divergence(mu, logvar):
-    # Standard KL divergence
-    # Take mean across batch dimension - more stable implementation
+    # Standard KL divergence = log(2πσ²) + (x-μ)²/σ² - 1
+    # Take mean for batch dimension
     kld = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
     return kld
 
 def compute_tc_loss(z, mu, logvar, batch_size):
-    # Add a small epsilon for numerical stability
-    eps = 1e-10
+    # Add epsilon for numerical stability
+    eps = 1e-8
     
     # Compute log q(z) - log q(z|x)
-    log_qz_prob = torch.zeros(batch_size, batch_size).to(device)
-    log_qz_condx = torch.zeros(batch_size, batch_size).to(device)
+    log_qz_prob = torch.zeros(batch_size, batch_size, device=device)
+    log_qz_condx = torch.zeros(batch_size, device=device)
     
     for i in range(batch_size):
         # log q(z_i|x_i) = log N(z_i; mu_i, var_i)
-        log_det_sigma = torch.sum(logvar[i])
         z_centered = z[i] - mu[i]
-        log_qz_condx[i, i] = -0.5 * torch.sum(
-            logvar[i] + z_centered.pow(2) / (torch.exp(logvar[i]) + eps)
+        # Apply clipping to prevent extreme values in logvar.exp()
+        var_i = torch.clamp(torch.exp(logvar[i]), min=eps)
+        log_qz_condx[i] = -0.5 * torch.sum(
+            torch.log(2 * torch.tensor(np.pi, device=device) * var_i) + 
+            z_centered.pow(2) / var_i
         )
         
         # log q(z_i) = log 1/N sum_j N(z_i; mu_j, var_j)
         for j in range(batch_size):
             z_centered = z[i] - mu[j]
+            # Apply clipping to prevent extreme values
+            var_j = torch.clamp(torch.exp(logvar[j]), min=eps)
             log_qz_prob[i, j] = -0.5 * torch.sum(
-                logvar[j] + z_centered.pow(2) / (torch.exp(logvar[j]) + eps)
+                torch.log(2 * torch.tensor(np.pi, device=device) * var_j) + 
+                z_centered.pow(2) / var_j
             )
     
     # Compute log q(z) using the log-sum-exp trick for numerical stability
-    log_qz = torch.logsumexp(log_qz_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float).to(device))
+    log_qz = torch.logsumexp(log_qz_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
     
     # Compute the TC term: KL(q(z) || prod_j q(z_j))
-    tc_loss = torch.mean(log_qz - torch.diag(log_qz_condx))
+    tc_loss = torch.mean(log_qz - log_qz_condx)
+    
+    # Add check for NaN values and replace with zeros if necessary
+    if torch.isnan(tc_loss):
+        print("Warning: TC loss is NaN, setting to zero")
+        tc_loss = torch.tensor(0.0, device=device)
     
     return tc_loss
 
 def compute_mi_loss(z, mu, logvar, batch_size):
-    # Add small epsilon for numerical stability
-    eps = 1e-10
+    # Add larger epsilon for numerical stability
+    eps = 1e-8
     
-    # Compute log q(z|x)
+    # Compute log q(z|x) with better numerical stability
     log_qz_condx = -0.5 * torch.sum(
-        1 + logvar - mu.pow(2) - logvar.exp(), dim=1
+        1 + logvar - mu.pow(2) - torch.clamp(logvar.exp(), min=eps), dim=1
     )
     
-    # Compute log q(z) (marginal entropy)
-    log_qz_prob = torch.zeros(batch_size, batch_size).to(device)
+    # Compute log q(z) (marginal entropy) with better formulation
+    log_qz_prob = torch.zeros(batch_size, batch_size, device=device)
     for i in range(batch_size):
         for j in range(batch_size):
             z_centered = z[i] - mu[j]
+            # Apply clipping to prevent extreme values
+            var_j = torch.clamp(torch.exp(logvar[j]), min=eps)
             log_qz_prob[i, j] = -0.5 * torch.sum(
-                logvar[j] + z_centered.pow(2) / (torch.exp(logvar[j]) + eps)
+                torch.log(2 * torch.tensor(np.pi, device=device) * var_j) + 
+                z_centered.pow(2) / var_j
             )
     
-    log_qz = torch.logsumexp(log_qz_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float).to(device))
+    # Use logaddexp for better numerical stability
+    log_qz = torch.logsumexp(log_qz_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
     
     # Compute MI
     mi_loss = torch.mean(log_qz_condx - log_qz)
     
+    # Add check for NaN values
+    if torch.isnan(mi_loss):
+        print("Warning: MI loss is NaN, setting to zero")
+        mi_loss = torch.tensor(0.0, device=device)
+    
     return mi_loss
 
 def compute_dkld_loss(mu, logvar):
-    # Standard KL divergence, with more stable implementation
+    # Standard KL divergence with better numerical stability
     # KL(q(z|x) || p(z)) where p(z) is standard normal
-    kld = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
+    eps = 1e-8
+    # Clamp the exponential term to avoid explosion
+    var_term = torch.clamp(logvar.exp(), min=eps, max=1e8)
+    kld = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - var_term, dim=1))
+    
+    # Add check for NaN values
+    if torch.isnan(kld):
+        print("Warning: DKLD loss is NaN, setting to zero")
+        kld = torch.tensor(0.0, device=device)
+    
     return kld
 
 # Function to calculate perceptual loss
@@ -798,7 +826,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             
             # Update discriminator
             d_loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.discriminator.parameters(), max_norm=1.0)
+            #torch.nn.utils.clip_grad_norm_(model.discriminator.parameters(), max_norm=1.0)
             optim_disc.step()
             
             # ------------------------------
@@ -878,12 +906,12 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             
             # Update encoder & decoder
             total_loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.encoder.parameters(), max_norm=1.0)
-            torch.nn.utils.clip_grad_norm_(model.decoder.parameters(), max_norm=1.0)
-            torch.nn.utils.clip_grad_norm_(model.year_classifier.parameters(), max_norm=1.0)
-            torch.nn.utils.clip_grad_norm_(model.make_classifier.parameters(), max_norm=1.0)
-            torch.nn.utils.clip_grad_norm_(model.body_classifier.parameters(), max_norm=1.0)
-            torch.nn.utils.clip_grad_norm_(model.door_classifier.parameters(), max_norm=1.0)
+            #torch.nn.utils.clip_grad_norm_(model.encoder.parameters(), max_norm=1.0)
+            #torch.nn.utils.clip_grad_norm_(model.decoder.parameters(), max_norm=1.0)
+            #torch.nn.utils.clip_grad_norm_(model.year_classifier.parameters(), max_norm=1.0)
+            #torch.nn.utils.clip_grad_norm_(model.make_classifier.parameters(), max_norm=1.0)
+            #torch.nn.utils.clip_grad_norm_(model.body_classifier.parameters(), max_norm=1.0)
+            #torch.nn.utils.clip_grad_norm_(model.door_classifier.parameters(), max_norm=1.0)
             optim_encoder.step()
             optim_decoder.step()
             optim_year.step()
