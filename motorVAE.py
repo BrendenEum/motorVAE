@@ -238,7 +238,7 @@ class Classifier(nn.Module):
         super(Classifier, self).__init__()
         
         # latent_dim specifies how many dimensions to use from the latent vector
-        self.fc1 = nn.Linear(latent_dim, 128)
+        self.fc1 = nn.Linear(16, 128)
         self.fc2 = nn.Linear(128, 64)
         self.fc3 = nn.Linear(64, n_classes)
 
