@@ -407,8 +407,9 @@ def compute_mi_loss(z, mu, logvar, batch_size):
     eps = 1e-8
 
     # Add stronger clipping to prevent extreme values
+    print(f"MI - Before clamping: logvar min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, clamp %={(((logvar < -20) | (logvar > 20)).sum().item() / logvar.numel() * 100):.2f}%")
     logvar_clipped = torch.clamp(logvar, min=-20, max=20)
-    var_term = torch.exp(logvar_clipped) + eps
+    var_term = torch.clamp(torch.exp(logvar_clipped), min=eps)
     
     # Compute log q(z|x) with better numerical stability
     log_qz_condx = -0.5 * torch.sum(
@@ -423,7 +424,7 @@ def compute_mi_loss(z, mu, logvar, batch_size):
         for j in range(batch_size):
             z_centered = z[i] - mu[j]
             # Use the clipped logvar
-            var_j = torch.exp(logvar_clipped[j]) + eps
+            var_j = torch.clamp(torch.exp(logvar_clipped[j]), min=eps)
             log_qz_prob[i, j] = -0.5 * torch.sum(
                 torch.log(2 * torch.tensor(np.pi, device=device) * var_j) + 
                 z_centered.pow(2) / var_j
@@ -442,11 +443,13 @@ def compute_mi_loss(z, mu, logvar, batch_size):
 
 def compute_dkld_loss(mu, logvar):
     # More aggressive clamping for stability
+    print(f"DKLD - Before clamping: mu min={mu.min().item():.2f}, max={mu.max().item():.2f}, mu clamp %={(((mu < -20) | (mu > 20)).sum().item() / mu.numel() * 100):.2f}%, logvar min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, logvar clamp %={(((logvar < -20) | (logvar > 20)).sum().item() / logvar.numel() * 100):.2f}%")
+    eps = 1e-8
     logvar_clipped = torch.clamp(logvar, min=-20, max=20)
     mu_clipped = torch.clamp(mu, min=-20, max=20)
     
     # Standard KL divergence with better numerical stability
-    var_term = torch.exp(logvar_clipped) + 1e-10
+    var_term = torch.clamp(torch.exp(logvar_clipped), min=eps)
     dkld_loss = -0.5 * torch.mean(torch.sum(1 + logvar_clipped - mu_clipped.pow(2) - var_term, dim=1))
     
     # Handle extreme values
@@ -955,23 +958,23 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
               f"GAN: {epoch_losses['gan']:.4f}, " +
               f"Disc: {epoch_losses['disc']:.4f}, " +
               f"KL: {epoch_losses['kl']:.4f}, " +
-              f"  tc: {epoch_losses['tc']:.4f}, " +
-              f"  mi: {epoch_losses['mi']:.4f}, " +
-              f"  dkld: {epoch_losses['dkld']:.4f}, " +
+              f"tc: {epoch_losses['tc']:.4f}, " +
+              f"mi: {epoch_losses['mi']:.4f}, " +
+              f"dkld: {epoch_losses['dkld']:.4f}, " +
               f"Cls: {epoch_losses['cls']:.4f}")
         
         # Save reconstructions for tracking
         if (epoch + 1) % 10 == 0 or epoch == 0 or epoch == EPOCHS - 1:
             save_reconstructions(model, train_loader, output_dir, epoch)
             
-            # Also save tracking reconstruction
-            with torch.no_grad():
-                tracking_recon, _, _, _ = model(tracking_image)
-                tracking_img = tracking_image[0].cpu().numpy()
-                tracking_rec = tracking_recon[0].cpu().numpy()
-                comparisons = [tracking_img[0], tracking_rec[0]]
-                save_image_grid(comparisons, os.path.join(output_dir, "reconstructions_epochs", f"tracking_{epoch}.png"), 
-                                nrow=2, title=f"Tracking Reconstruction Epoch {epoch}")
+        # Also save tracking reconstruction
+        with torch.no_grad():
+            tracking_recon, _, _, _ = model(tracking_image)
+            tracking_img = tracking_image[0].cpu().numpy()
+            tracking_rec = tracking_recon[0].cpu().numpy()
+            comparisons = [tracking_img[0], tracking_rec[0]]
+            save_image_grid(comparisons, os.path.join(output_dir, "reconstructions_epochs", f"tracking_{epoch}.png"), 
+                            nrow=2, title=f"Tracking Reconstruction Epoch {epoch}")
                 
         # Save checkpoint every CHECKPOINT_FREQ epochs
         if (epoch + 1) % CHECKPOINT_FREQ == 0:
@@ -1071,6 +1074,9 @@ def main():
         transform=transform
     )
     
+    # DEBUG Small number of images for debugging
+    train_dataset = torch.utils.data.Subset(train_dataset, range(1000))
+
     # Split into train and validation sets
     train_size = int(0.95 * len(train_dataset))
     val_size = len(train_dataset) - train_size
