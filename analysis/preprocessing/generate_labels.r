@@ -30,14 +30,14 @@ process_car_filenames <- function(folder_path) {
   
   # Initialize empty dataframe to store results
   car_data <- data.frame(
-    Filename = character(),
-    Year = character(),
-    Brand = character(),
-    Model = character(),
-    Trim = character(),
-    Body = character(),
-    Door = character(),
-    Color = character(),
+    filename = character(),
+    year = character(),
+    make = character(),
+    model = character(),
+    trim = character(),
+    body = character(),
+    door = character(),
+    color = character(),
     stringsAsFactors = FALSE
   )
   
@@ -69,14 +69,14 @@ process_car_filenames <- function(folder_path) {
       
       # Add to dataframe
       car_data <- rbind(car_data, data.frame(
-        Filename = filename,
-        Year = year,
-        Brand = brand,
-        Model = model,
-        Trim = trim,
-        Body = body,
-        Door = door,
-        Color = color,
+        filename = filename,
+        year = year,
+        brand = brand,
+        model = model,
+        trim = trim,
+        body = body,
+        door = door,
+        color = color,
         stringsAsFactors = FALSE
       ))
     } else {
@@ -120,34 +120,34 @@ factor_mapping <- function(factor_variable, fn) {
 }
 
 # Format variables
-cd$Year <- cd$Year %>% factor() 
-cd$Color <- cd$Color %>% as.numeric() - 1
-cd$Trim <- cd$Trim %>% tolower() %>% factor() 
-cd$Body <- cd$Body %>% tolower() %>% factor() 
-cd$Model <- cd$Model %>% tolower() %>% factor()
-cd$Trim <- cd$Trim %>% tolower() %>% factor()
+cd$year <- cd$year %>% factor() 
+cd$color <- cd$color %>% as.numeric() - 1
+cd$trim <- cd$trim %>% tolower() %>% factor() 
+cd$body <- cd$body %>% tolower() %>% factor() 
+cd$model <- cd$model %>% tolower() %>% factor()
+cd$trim <- cd$trim %>% tolower() %>% factor()
 
 # Only keep major brands, group others. Define this as 500 vehicles or more in the dataset.
-cd$Brand <- cd$Brand %>% tolower() 
+cd$brand <- cd$brand %>% tolower() 
 majors <- c("acura", "audi", "bmw", "buick", "cadillac", "chevrolet", "dodge", "ford", "gmc", "honda", "hyundai", "infiniti", "jaguar", "jeep", "kia", "landrover", "lexus", "lincoln", "mazda", "mercedes-benz", "mitsubishi", "nissan", "porsche", "subaru", "toyota", "volkswagen", "volvo")
-cd$Brand = ifelse(cd$Brand %in% majors, cd$Brand, "other") %>% factor()
+cd$brand = ifelse(cd$brand %in% majors, cd$brand, "other") %>% factor()
 
 # Fix Doors. 
 # Example issues: (1) 3-doors will look like 2-door. (2) 5-doors typically mean 4-door and hatchback. 
 # Thus: (1) Doors provides non-visual information that will trick network. (2) Doors and Body have some overlap.
 # Solution: (1) 3 or less doors will be grouped as 2-door. (2) 4 or more doors will be grouped as 4-door. 
 # Discussion: This solution deals with the the # of doors on the driver side. Still has some overlap with Body.
-cd$Door <- gsub("\\D", "", cd$Door) %>% as.numeric()
-cd$Door <- ifelse(cd$Door <= 3, 2, 4) %>% factor()
+cd$door <- gsub("\\D", "", cd$door) %>% as.numeric()
+cd$door <- ifelse(cd$door <= 3, 2, 4) %>% factor()
 
 # Save the factor mappings
-factor_mapping(cd$Year, "/Users/brenden/Desktop/motorVAE/data/labels_Year_mapping.csv")
-factor_mapping(cd$Body, "/Users/brenden/Desktop/motorVAE/data/labels_Body_mapping.csv")
-factor_mapping(cd$Brand, "/Users/brenden/Desktop/motorVAE/data/labels_Brand_mapping.csv")
-factor_mapping(cd$Door, "/Users/brenden/Desktop/motorVAE/data/labels_Door_mapping.csv")
+factor_mapping(cd$year, "/Users/brenden/Desktop/motorVAE/data/labels_year_mapping.csv")
+factor_mapping(cd$body, "/Users/brenden/Desktop/motorVAE/data/labels_body_mapping.csv")
+factor_mapping(cd$make, "/Users/brenden/Desktop/motorVAE/data/labels_make_mapping.csv")
+factor_mapping(cd$door, "/Users/brenden/Desktop/motorVAE/data/labels_door_mapping.csv")
 
 # Fix the factor numbers in the dataframe
-for (var in c("Year","Body","Brand","Door", "Model", "Trim")) {
+for (var in c("Year","body","make","door", "model", "trim")) {
   cd[,var] <- cd[,var] %>% as.numeric() - 1
 }
 
