@@ -360,33 +360,34 @@ class VAEGAN(nn.Module):
 # Calculate KL divergence terms
 def kl_divergence(mu, logvar):
     # Standard KL divergence
-    kld = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)
+    # Take mean across batch dimension - more stable implementation
+    kld = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
     return kld
 
 def compute_tc_loss(z, mu, logvar, batch_size):
-    # Total correlation loss
-    # Implementation based on "Isolating Sources of Disentanglement in VAEs" by Chen et al.
+    # Add a small epsilon for numerical stability
+    eps = 1e-10
     
     # Compute log q(z) - log q(z|x)
     log_qz_prob = torch.zeros(batch_size, batch_size).to(device)
-    
-    # Compute log q(z|x)
     log_qz_condx = torch.zeros(batch_size, batch_size).to(device)
     
-    # Compute entropies
     for i in range(batch_size):
         # log q(z_i|x_i) = log N(z_i; mu_i, var_i)
+        log_det_sigma = torch.sum(logvar[i])
+        z_centered = z[i] - mu[i]
         log_qz_condx[i, i] = -0.5 * torch.sum(
-            logvar[i] + ((z[i] - mu[i]) ** 2) / logvar[i].exp()
+            logvar[i] + z_centered.pow(2) / (torch.exp(logvar[i]) + eps)
         )
         
         # log q(z_i) = log 1/N sum_j N(z_i; mu_j, var_j)
         for j in range(batch_size):
+            z_centered = z[i] - mu[j]
             log_qz_prob[i, j] = -0.5 * torch.sum(
-                logvar[j] + ((z[i] - mu[j]) ** 2) / logvar[j].exp()
+                logvar[j] + z_centered.pow(2) / (torch.exp(logvar[j]) + eps)
             )
     
-    # Compute log q(z)
+    # Compute log q(z) using the log-sum-exp trick for numerical stability
     log_qz = torch.logsumexp(log_qz_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float).to(device))
     
     # Compute the TC term: KL(q(z) || prod_j q(z_j))
@@ -395,8 +396,8 @@ def compute_tc_loss(z, mu, logvar, batch_size):
     return tc_loss
 
 def compute_mi_loss(z, mu, logvar, batch_size):
-    # Mutual information loss
-    # MI = E_q(z,x)[log q(z|x) - log q(z)]
+    # Add small epsilon for numerical stability
+    eps = 1e-10
     
     # Compute log q(z|x)
     log_qz_condx = -0.5 * torch.sum(
@@ -404,13 +405,12 @@ def compute_mi_loss(z, mu, logvar, batch_size):
     )
     
     # Compute log q(z) (marginal entropy)
-    # This is approximated using the batch
     log_qz_prob = torch.zeros(batch_size, batch_size).to(device)
-    
     for i in range(batch_size):
         for j in range(batch_size):
+            z_centered = z[i] - mu[j]
             log_qz_prob[i, j] = -0.5 * torch.sum(
-                logvar[j] + ((z[i] - mu[j]) ** 2) / logvar[j].exp()
+                logvar[j] + z_centered.pow(2) / (torch.exp(logvar[j]) + eps)
             )
     
     log_qz = torch.logsumexp(log_qz_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float).to(device))
@@ -421,16 +421,10 @@ def compute_mi_loss(z, mu, logvar, batch_size):
     return mi_loss
 
 def compute_dkld_loss(mu, logvar):
-    # Dimension-wise KL Divergence
-    # DKLD = sum_j KL(q(z_j) || p(z_j))
-    
-    # Compute KL for each dimension
-    dkld = -0.5 * (1 + logvar - mu.pow(2) - logvar.exp())
-    
-    # Sum over batch, mean over dimensions
-    dkld = dkld.sum(0).mean()
-    
-    return dkld
+    # Standard KL divergence, with more stable implementation
+    # KL(q(z|x) || p(z)) where p(z) is standard normal
+    kld = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
+    return kld
 
 # Function to calculate perceptual loss
 def perceptual_loss(real_features, fake_features):
@@ -804,6 +798,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             
             # Update discriminator
             d_loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.discriminator.parameters(), max_norm=1.0)
             optim_disc.step()
             
             # ------------------------------
@@ -850,7 +845,11 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             tc_loss = compute_tc_loss(z.detach(), mu.detach(), logvar.detach(), batch_size)
             mi_loss = compute_mi_loss(z.detach(), mu.detach(), logvar.detach(), batch_size)
             dkld_loss = compute_dkld_loss(mu.detach(), logvar.detach())
-            kl_loss = tc_loss * TC_WEIGHT + mi_loss * MI_WEIGHT + dkld_loss * DKLD_WEIGHT
+
+            # Total KL Divergence loss schedule
+            # Start small for first 25 epochs, then increase for remaining epochs.
+            kl_weight = 0.01 if epoch < 25 else min(1.0, (epoch - 25) / (EPOCHS - 25))
+            kl_loss = kl_weight * (tc_loss * TC_WEIGHT + mi_loss * MI_WEIGHT + dkld_loss * DKLD_WEIGHT)
             
             # Compute classification losses
             z_cls = z.detach().clone()
@@ -879,6 +878,12 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             
             # Update encoder & decoder
             total_loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.encoder.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.decoder.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.year_classifier.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.make_classifier.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.body_classifier.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.door_classifier.parameters(), max_norm=1.0)
             optim_encoder.step()
             optim_decoder.step()
             optim_year.step()
