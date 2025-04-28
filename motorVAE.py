@@ -24,7 +24,7 @@ print(f"Using device: {device}")
 
 # Define hyperparameters
 IMAGE_SIZE = 256
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 EPOCHS = 100
 LATENT_DIM = 128
 LEARNING_RATE = 0.0002
@@ -359,9 +359,11 @@ class VAEGAN(nn.Module):
 
 # Calculate KL divergence terms
 def kl_divergence(mu, logvar):
+    # Clamp logvar to prevent extreme values
+    logvar_clamped = torch.clamp(logvar, min=-20, max=20)
     # Standard KL divergence = log(2πσ²) + (x-μ)²/σ² - 1
     # Take mean for batch dimension
-    kld = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1))
+    kld = -0.5 * torch.mean(torch.sum(1 + logvar_clamped - mu.pow(2) - logvar_clamped.exp(), dim=1))
     return kld
 
 def compute_tc_loss(z, mu, logvar, batch_size):
@@ -444,7 +446,7 @@ def compute_dkld_loss(mu, logvar):
     # KL(q(z|x) || p(z)) where p(z) is standard normal
     eps = 1e-8
     # Clamp the exponential term to avoid explosion
-    var_term = torch.clamp(logvar.exp(), min=eps, max=1e8)
+    var_term = torch.clamp(logvar.exp(), min=eps)
     kld = -0.5 * torch.mean(torch.sum(1 + logvar - mu.pow(2) - var_term, dim=1))
     
     # Add check for NaN values
@@ -955,6 +957,9 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
               f"GAN: {epoch_losses['gan']:.4f}, " +
               f"Disc: {epoch_losses['disc']:.4f}, " +
               f"KL: {epoch_losses['kl']:.4f}, " +
+              f"  tc: {epoch_losses['tc']:.4f}, " +
+              f"  mi: {epoch_losses['mi']:.4f}, " +
+              f"  dkld: {epoch_losses['dkld']:.4f}, " +
               f"Cls: {epoch_losses['cls']:.4f}")
         
         # Save reconstructions for tracking
