@@ -1075,7 +1075,7 @@ def main():
     )
 
     # Split into train and validation sets
-    train_size = int(0.95 * len(train_dataset))
+    train_size = int(0.05 * len(train_dataset)) # 0.95
     val_size = len(train_dataset) - train_size
     train_dataset, val_dataset = torch.utils.data.random_split(
         train_dataset, [train_size, val_size]
