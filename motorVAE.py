@@ -32,13 +32,14 @@ BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
 
 # Create weights for different loss components
-RECON_WEIGHT = 1.0
+RECON_WEIGHT = 10.0
 PERCEPTUAL_WEIGHT = 1.0
-GAN_WEIGHT = 1.0
+GAN_WEIGHT = (1/3)
+DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
 TC_WEIGHT = 1.0  # Total Correlation weight
 MI_WEIGHT = 1.0  # Mutual Information weight
 DKLD_WEIGHT = 0.0  # Dimension-wise KL Divergence weight
-CLS_WEIGHT = 1.0  # Classifier weight
+CLS_WEIGHT = (1/8)  # Classifier weight
 
 # Number of patches for PatchGAN discriminator
 PATCH_SIZE = 16  # Size of each patch
@@ -370,80 +371,96 @@ def compute_tc_loss(z, mu, logvar, batch_size):
     # Add epsilon for numerical stability
     eps = 1e-8
     
-    # Compute log q(z) - log q(z|x)
-    log_qz_prob = torch.zeros(batch_size, batch_size, device=device)
-    log_qz_condx = torch.zeros(batch_size, device=device)
-    
-    for i in range(batch_size):
-        # log q(z_i|x_i) = log N(z_i; mu_i, var_i)
-        z_centered = z[i] - mu[i]
-        # Apply clipping to prevent extreme values in logvar.exp()
-        var_i = torch.clamp(torch.exp(logvar[i]), min=eps)
-        log_qz_condx[i] = -0.5 * torch.sum(
-            torch.log(2 * torch.tensor(np.pi, device=device) * var_i) + 
-            z_centered.pow(2) / var_i
-        )
-        
-        # log q(z_i) = log 1/N sum_j N(z_i; mu_j, var_j)
-        for j in range(batch_size):
-            z_centered = z[i] - mu[j]
-            # Apply clipping to prevent extreme values
-            var_j = torch.clamp(torch.exp(logvar[j]), min=eps)
-            log_qz_prob[i, j] = -0.5 * torch.sum(
-                torch.log(2 * torch.tensor(np.pi, device=device) * var_j) + 
-                z_centered.pow(2) / var_j
-            )
-    
-    # Compute log q(z) using the log-sum-exp trick for numerical stability
-    log_qz = torch.logsumexp(log_qz_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
-    
-    # Compute the TC term: KL(q(z) || prod_j q(z_j))
-    tc_loss = torch.mean(log_qz - log_qz_condx)
-    
-    return tc_loss
-
-def compute_mi_loss(z, mu, logvar, batch_size):
-    # Add larger epsilon for numerical stability
-    eps = 1e-8
-
-    # Add stronger clipping to prevent extreme values
-    print(f"MI - Before clamping: logvar min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, clamp %={(((logvar < -20) | (logvar > 20)).sum().item() / logvar.numel() * 100):.2f}%")
+    # Clamp logvar for numerical stability
+    logvar_clamp_pr = (((logvar < -20) | (logvar > 20)).sum().item() / logvar.numel() * 100)
+    if logvar_clamp_pr > 0:
+        print(f"TC - Before clamping: logvar min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, clamp %={logvar_clamp_pr:.2f}%")
     logvar_clipped = torch.clamp(logvar, min=-20, max=20)
-    var_term = torch.clamp(torch.exp(logvar_clipped), min=eps)
     
-    # Compute log q(z|x) with better numerical stability
-    log_qz_condx = -0.5 * torch.sum(
-        torch.log(2 * torch.tensor(np.pi, device=device) * var_term) + 
-        (z - mu).pow(2) / var_term, 
-        dim=1
-    )
-    
-    # Compute log q(z) with more stable approach
+    # 1. Compute log q(z) - approximate marginal
     log_qz_prob = torch.zeros(batch_size, batch_size, device=device)
     for i in range(batch_size):
         for j in range(batch_size):
             z_centered = z[i] - mu[j]
-            # Use the clipped logvar
             var_j = torch.clamp(torch.exp(logvar_clipped[j]), min=eps)
             log_qz_prob[i, j] = -0.5 * torch.sum(
                 torch.log(2 * torch.tensor(np.pi, device=device) * var_j) + 
                 z_centered.pow(2) / var_j
             )
     
-    # Use log-sum-exp trick for better stability
+    # Use log-sum-exp trick for numerical stability
     log_qz = torch.logsumexp(log_qz_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
     
-    # Compute MI and check for numerical issues
-    mi_loss = torch.mean(log_qz_condx - log_qz)
+    # 2. Compute log prod_j q(z_j) - product of marginals
+    # First compute marginals q(z_j) for each dimension
+    z_perm = z.unsqueeze(1)  # [B, 1, D]
+    mu_perm = mu.unsqueeze(0)  # [1, B, D]
+    logvar_perm = logvar_clipped.unsqueeze(0)  # [1, B, D]
     
-    # Add aggressive handling for extreme values
-    if torch.abs(mi_loss) > 1e10: print("Warning: MI loss is extreme")
+    # [B, B, D]
+    log_qzj_prob = -0.5 * (
+        torch.log(2 * torch.tensor(np.pi, device=device)) + 
+        logvar_perm + 
+        (z_perm - mu_perm).pow(2) / torch.clamp(torch.exp(logvar_perm), min=eps)
+    )
+    
+    # Marginal log q(z_j) for each dimension j
+    # Sum across the batch dimension (1) and apply log-sum-exp
+    log_qzj = torch.logsumexp(log_qzj_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
+    
+    # Sum across dimensions to get log prod_j q(z_j)
+    log_qz_prod = torch.sum(log_qzj, dim=1)
+    
+    # Compute TC = KL(q(z) || prod_j q(z_j)) = E_q(z)[log q(z) - log prod_j q(z_j)]
+    tc_loss = torch.mean(log_qz - log_qz_prod)
+    
+    return tc_loss
+
+def compute_mi_loss(z, mu, logvar, batch_size):
+    # Add epsilon for numerical stability
+    eps = 1e-8
+    
+    # Clamp logvar for numerical stability
+    logvar_clamp_pr = (((logvar < -20) | (logvar > 20)).sum().item() / logvar.numel() * 100)
+    if logvar_clamp_pr > 0:
+        print(f"MI - Before clamping: logvar min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, clamp %={logvar_clamp_pr:.2f}%")
+    logvar_clipped = torch.clamp(logvar, min=-20, max=20)
+    var_term = torch.clamp(torch.exp(logvar_clipped), min=eps)
+    
+    # Compute log q(z|x)
+    log_qz_condx = -0.5 * torch.sum(
+        torch.log(2 * torch.tensor(np.pi, device=device) * var_term) + 
+        (z - mu).pow(2) / var_term, 
+        dim=1
+    )
+    
+    # Compute log q(z) - approximate marginal
+    log_qz_prob = torch.zeros(batch_size, batch_size, device=device)
+    for i in range(batch_size):
+        for j in range(batch_size):
+            z_centered = z[i] - mu[j]
+            var_j = torch.clamp(torch.exp(logvar_clipped[j]), min=eps)
+            log_qz_prob[i, j] = -0.5 * torch.sum(
+                torch.log(2 * torch.tensor(np.pi, device=device) * var_j) + 
+                z_centered.pow(2) / var_j
+            )
+    
+    # Use log-sum-exp trick for numerical stability
+    log_qz = torch.logsumexp(log_qz_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
+    
+    # Compute MI = I(z;x) = KL(q(z,x) || q(z)q(x)) = E_q(z,x)[log q(z|x) - log q(z)]
+    mi_loss = torch.mean(log_qz_condx - log_qz)
     
     return mi_loss
 
 def compute_dkld_loss(mu, logvar):
     # More aggressive clamping for stability
-    print(f"DKLD - Before clamping: mu min={mu.min().item():.2f}, max={mu.max().item():.2f}, mu clamp %={(((mu < -20) | (mu > 20)).sum().item() / mu.numel() * 100):.2f}%, logvar min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, logvar clamp %={(((logvar < -20) | (logvar > 20)).sum().item() / logvar.numel() * 100):.2f}%")
+    mu_clamp_pr = (((mu < -20) | (mu > 20)).sum().item() / mu.numel() * 100)
+    if mu_clamp_pr > 0:
+        print(f"DKLD - Before clamping: mu min={mu.min().item():.2f}, max={mu.max().item():.2f}, mu clamp %={mu_clamp_pr:.2f}%")
+    logvar_clamp_pr = (((logvar < -20) | (logvar > 20)).sum().item() / logvar.numel() * 100)
+    if logvar_clamp_pr > 0:
+        print(f"DKLD - Before clamping: logvar min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, logvar clamp %={logvar_clamp_pr:.2f}%")
     eps = 1e-8
     logvar_clipped = torch.clamp(logvar, min=-20, max=20)
     mu_clipped = torch.clamp(mu, min=-20, max=20)
@@ -955,6 +972,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
         print(f"Epoch {epoch+1}/{EPOCHS} - " +
               f"Total: {epoch_losses['total']:.4f}, " +
               f"Recon: {epoch_losses['recon']:.4f}, " +
+              f"Percept: {epoch_losses['perceptual']:.4f}, " +
               f"GAN: {epoch_losses['gan']:.4f}, " +
               f"Disc: {epoch_losses['disc']:.4f}, " +
               f"KL: {epoch_losses['kl']:.4f}, " +
