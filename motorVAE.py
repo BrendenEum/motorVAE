@@ -37,7 +37,7 @@ PERCEPTUAL_WEIGHT = 1.0
 GAN_WEIGHT = 1.0
 TC_WEIGHT = 1.0  # Total Correlation weight
 MI_WEIGHT = 1.0  # Mutual Information weight
-DKLD_WEIGHT = 1.0  # Dimension-wise KL Divergence weight
+DKLD_WEIGHT = 0.0  # Dimension-wise KL Divergence weight
 CLS_WEIGHT = 1.0  # Classifier weight
 
 # Number of patches for PatchGAN discriminator
