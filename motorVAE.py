@@ -25,9 +25,9 @@ print(f"Using device: {device}")
 # Define hyperparameters
 IMAGE_SIZE = 256
 BATCH_SIZE = 64
-EPOCHS = 100
+EPOCHS = 250
 LATENT_DIM = 128
-LEARNING_RATE = 0.0002
+LEARNING_RATE = 0.00015
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
 
@@ -40,7 +40,7 @@ KLD_WEIGHT_START = 0.01 # KLD Scheduler
 KLD_WEIGHT_END = 1.0
 TC_WEIGHT = 0.01  # Total Correlation weight
 MI_WEIGHT = 0.25  # Mutual Information weight
-DKLD_WEIGHT = 0.0  # Dimension-wise KL Divergence weight
+DKLD_WEIGHT = 0.001  # Dimension-wise KL Divergence weight
 CLS_WEIGHT = 0.12  # Classifier weight
 
 # Number of patches for PatchGAN discriminator
@@ -377,11 +377,11 @@ def compute_tc_loss(z, mu, logvar, batch_size):
     mu_clamp_pr = (((mu < -20) | (mu > 20)).sum().item() / mu.numel() * 100)
     if mu_clamp_pr > 0:
         print(f"Warning: Clamping mu required for stability in total KLD loss computation.")
-        print(f"min={mu.min().item():.2f}, max={mu.max().item():.2f}, clamp %={mu_clamp_pr:.2f}%")
+        print(f"min={mu.min().item():.2f}, max={mu.max().item():.2f}, clamp proportion={mu_clamp_pr:.2f}%")
     logvar_clamp_pr = (((logvar < -20) | (logvar > 20)).sum().item() / logvar.numel() * 100)
     if logvar_clamp_pr > 0:
         print(f"Warning: Clamping logvar required for stability in total KLD loss computation.")
-        print(f"min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, clamp %={logvar_clamp_pr:.2f}%")
+        print(f"min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, clamp proportion={logvar_clamp_pr:.2f}%")
     
     # Clamp logvar for numerical stability
     logvar_clipped = torch.clamp(logvar, min=-20, max=20)
@@ -487,9 +487,9 @@ def perceptual_loss(real_features, fake_features):
 # Function to create folder based on parameters
 def create_output_folder(config):
     folder_name = (
-        f"res{IMAGE_SIZE}_lat{LATENT_DIM}_ep{EPOCHS}_bat{BATCH_SIZE}_"
+        f"res{IMAGE_SIZE}_lat{LATENT_DIM}_ep{EPOCHS}_bat{BATCH_SIZE}_lrn{LEARNING_RATE*1000}"
         f"rec{RECON_WEIGHT}_per{PERCEPTUAL_WEIGHT}_gan{GAN_WEIGHT}_"
-        f"tc{TC_WEIGHT}_mi{MI_WEIGHT}_cls{CLS_WEIGHT}_pat{PATCH_SIZE}"
+        f"(tc{TC_WEIGHT}_mi{MI_WEIGHT}_dkl{DKLD_WEIGHT})_cls{CLS_WEIGHT}_pat{PATCH_SIZE}"
     )
     output_dir = os.path.join("outputs", folder_name)
     os.makedirs(output_dir, exist_ok=True)
