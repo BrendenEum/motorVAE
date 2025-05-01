@@ -969,6 +969,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             
         # Also save tracking reconstruction
         with torch.no_grad():
+            model.eval()  # Set to evaluation mode
             tracking_recon, _, _, _ = model(tracking_image)
             tracking_img = tracking_image[0].cpu().numpy()
             tracking_rec = tracking_recon[0].cpu().numpy()
