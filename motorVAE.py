@@ -34,12 +34,14 @@ BETA2 = 0.999 # Default for Adam optimizer
 # Create weights for different loss components
 RECON_WEIGHT = 10.0
 PERCEPTUAL_WEIGHT = 1.0
-GAN_WEIGHT = (1/3)
+GAN_WEIGHT = 0.3
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
-TC_WEIGHT = 1.0  # Total Correlation weight
-MI_WEIGHT = 1.0  # Mutual Information weight
+KLD_WEIGHT_START = 0.01 # KLD Scheduler
+KLD_WEIGHT_END = 1.0
+TC_WEIGHT = 0.01  # Total Correlation weight
+MI_WEIGHT = 0.25  # Mutual Information weight
 DKLD_WEIGHT = 0.0  # Dimension-wise KL Divergence weight
-CLS_WEIGHT = (1/8)  # Classifier weight
+CLS_WEIGHT = 0.12  # Classifier weight
 
 # Number of patches for PatchGAN discriminator
 PATCH_SIZE = 16  # Size of each patch
@@ -370,11 +372,18 @@ def kl_divergence(mu, logvar):
 def compute_tc_loss(z, mu, logvar, batch_size):
     # Add epsilon for numerical stability
     eps = 1e-8
-    
-    # Clamp logvar for numerical stability
+
+    # Print a warning if clamping is necessary.
+    mu_clamp_pr = (((mu < -20) | (mu > 20)).sum().item() / mu.numel() * 100)
+    if mu_clamp_pr > 0:
+        print(f"Warning: Clamping mu required for stability in total KLD loss computation.")
+        print(f"min={mu.min().item():.2f}, max={mu.max().item():.2f}, clamp %={mu_clamp_pr:.2f}%")
     logvar_clamp_pr = (((logvar < -20) | (logvar > 20)).sum().item() / logvar.numel() * 100)
     if logvar_clamp_pr > 0:
-        print(f"TC - Before clamping: logvar min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, clamp %={logvar_clamp_pr:.2f}%")
+        print(f"Warning: Clamping logvar required for stability in total KLD loss computation.")
+        print(f"min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, clamp %={logvar_clamp_pr:.2f}%")
+    
+    # Clamp logvar for numerical stability
     logvar_clipped = torch.clamp(logvar, min=-20, max=20)
     
     # 1. Compute log q(z) - approximate marginal
@@ -421,9 +430,6 @@ def compute_mi_loss(z, mu, logvar, batch_size):
     eps = 1e-8
     
     # Clamp logvar for numerical stability
-    logvar_clamp_pr = (((logvar < -20) | (logvar > 20)).sum().item() / logvar.numel() * 100)
-    if logvar_clamp_pr > 0:
-        print(f"MI - Before clamping: logvar min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, clamp %={logvar_clamp_pr:.2f}%")
     logvar_clipped = torch.clamp(logvar, min=-20, max=20)
     var_term = torch.clamp(torch.exp(logvar_clipped), min=eps)
     
@@ -455,18 +461,12 @@ def compute_mi_loss(z, mu, logvar, batch_size):
 
 def compute_dkld_loss(mu, logvar):
     # More aggressive clamping for stability
-    mu_clamp_pr = (((mu < -20) | (mu > 20)).sum().item() / mu.numel() * 100)
-    if mu_clamp_pr > 0:
-        print(f"DKLD - Before clamping: mu min={mu.min().item():.2f}, max={mu.max().item():.2f}, mu clamp %={mu_clamp_pr:.2f}%")
-    logvar_clamp_pr = (((logvar < -20) | (logvar > 20)).sum().item() / logvar.numel() * 100)
-    if logvar_clamp_pr > 0:
-        print(f"DKLD - Before clamping: logvar min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, logvar clamp %={logvar_clamp_pr:.2f}%")
     eps = 1e-8
     logvar_clipped = torch.clamp(logvar, min=-20, max=20)
     mu_clipped = torch.clamp(mu, min=-20, max=20)
-    
-    # Standard KL divergence with better numerical stability
     var_term = torch.clamp(torch.exp(logvar_clipped), min=eps)
+
+    # Standard KL divergence with better numerical stability
     dkld_loss = -0.5 * torch.mean(torch.sum(1 + logvar_clipped - mu_clipped.pow(2) - var_term, dim=1))
     
     # Handle extreme values
@@ -489,7 +489,7 @@ def create_output_folder(config):
     folder_name = (
         f"res{IMAGE_SIZE}_lat{LATENT_DIM}_ep{EPOCHS}_bat{BATCH_SIZE}_"
         f"rec{RECON_WEIGHT}_per{PERCEPTUAL_WEIGHT}_gan{GAN_WEIGHT}_"
-        f"tc{TC_WEIGHT}_cls{CLS_WEIGHT}_pat{PATCH_SIZE}"
+        f"tc{TC_WEIGHT}_mi{MI_WEIGHT}_cls{CLS_WEIGHT}_pat{PATCH_SIZE}"
     )
     output_dir = os.path.join("outputs", folder_name)
     os.makedirs(output_dir, exist_ok=True)
@@ -768,7 +768,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     optim_year = optim.Adam(model.year_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
     optim_make = optim.Adam(model.make_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
     optim_body = optim.Adam(model.body_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
-    optim_door = optim.Adam(model.door_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
+    optim_door = optim.Adam(model.door_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))  
     
     # Loss functions
     bce_loss = nn.BCELoss()
@@ -896,7 +896,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
 
             # Total KL Divergence loss schedule
             # Start small for first 25 epochs, then increase for remaining epochs.
-            kl_weight = 0.01 if epoch < 25 else min(1.0, (epoch - 25) / (EPOCHS - 25))
+            kl_weight = KLD_WEIGHT_START if epoch < 25 else min(KLD_WEIGHT_END, (epoch - 25) / (EPOCHS - 25))
             kl_loss = kl_weight * (tc_loss * TC_WEIGHT + mi_loss * MI_WEIGHT + dkld_loss * DKLD_WEIGHT)
             
             # Compute classification losses
@@ -997,6 +997,9 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
                 
         # Save checkpoint every CHECKPOINT_FREQ epochs
         if (epoch + 1) % CHECKPOINT_FREQ == 0:
+            optimizers = {'encoder': optim_encoder, 'decoder': optim_decoder, 'discriminator': optim_disc, 
+                  'year_classifier': optim_year, 'make_classifier': optim_make,
+                  'body_classifier': optim_body, 'door_classifier': optim_door}
             save_checkpoint(model, optimizers, epoch, all_losses, output_dir)
     
     # Save final checkpoint
