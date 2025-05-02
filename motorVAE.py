@@ -26,7 +26,7 @@ print(f"Using device: {device}")
 IMAGE_SIZE = 256
 BATCH_SIZE = 64
 EPOCHS = 250
-LATENT_DIM = 128
+LATENT_DIM = 64
 LEARNING_RATE = 0.0002
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
