@@ -27,7 +27,7 @@ IMAGE_SIZE = 256
 BATCH_SIZE = 64
 EPOCHS = 250
 LATENT_DIM = 128
-LEARNING_RATE = 0.00015
+LEARNING_RATE = 0.0002
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
 
@@ -35,13 +35,14 @@ BETA2 = 0.999 # Default for Adam optimizer
 RECON_WEIGHT = 50.0
 PERCEPTUAL_WEIGHT = 10.0
 GAN_WEIGHT = 0.1
-DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
 KLD_WEIGHT_START = 0.0001 # KLD Scheduler
-KLD_WEIGHT_END = 0.75
+KLD_WEIGHT_END = 0.1
 TC_WEIGHT = 0.01  # Total Correlation weight
-MI_WEIGHT = 0.25  # Mutual Information weight
+MI_WEIGHT = 0.1  # Mutual Information weight
 DKLD_WEIGHT = 0.00001  # Dimension-wise KL Divergence weight
-CLS_WEIGHT = 0.12  # Classifier weight
+CLS_WEIGHT = 0.25  # Classifier weight
+
+DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
 
 # Number of patches for PatchGAN discriminator
 PATCH_SIZE = 16  # Size of each patch
@@ -496,9 +497,11 @@ def create_output_folder(config):
     
     # Create subdirectories
     recon_epochs_dir = os.path.join(output_dir, "reconstructions_epochs")
+    tracking_epochs_dir = os.path.join(output_dir, "tracking_epochs")
     latent_traversals_dir = os.path.join(output_dir, "latent_traversals")
     checkpoint_dir = os.path.join(output_dir, "checkpoints")
     os.makedirs(recon_epochs_dir, exist_ok=True)
+    os.makedirs(tracking_epochs_dir, exist_ok=True)
     os.makedirs(latent_traversals_dir, exist_ok=True)
     os.makedirs(checkpoint_dir, exist_ok=True)
     
@@ -992,8 +995,8 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             tracking_img = tracking_image[0].cpu().numpy()
             tracking_rec = tracking_recon[0].cpu().numpy()
             comparisons = [tracking_img[0], tracking_rec[0]]
-            save_image_grid(comparisons, os.path.join(output_dir, "reconstructions_epochs", f"tracking_{epoch}.png"), 
-                            nrow=2, title=f"Tracking Reconstruction Epoch {epoch}")
+            save_image_grid(comparisons, os.path.join(output_dir, "tracking_epochs", f"tracking_{epoch}.png"), 
+                            nrow=2, title=f"{tracking_filename}: Epoch {epoch}")
                 
         # Save checkpoint every CHECKPOINT_FREQ epochs
         if (epoch + 1) % CHECKPOINT_FREQ == 0:
