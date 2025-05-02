@@ -33,12 +33,12 @@ BETA2 = 0.999 # Default for Adam optimizer
 
 # Create weights for different loss components
 RECON_WEIGHT = 50.0
-PERCEPTUAL_WEIGHT = 10.0
+PERCEPTUAL_WEIGHT = 5.0
 GAN_WEIGHT = 0.1
 KLD_WEIGHT_START = 0.0001 # KLD Scheduler
 KLD_WEIGHT_END = 0.1
-TC_WEIGHT = 0.01  # Total Correlation weight
-MI_WEIGHT = 0.1  # Mutual Information weight
+TC_WEIGHT = 0.02  # Total Correlation weight
+MI_WEIGHT = 0.2  # Mutual Information weight
 DKLD_WEIGHT = 0.00001  # Dimension-wise KL Divergence weight
 CLS_WEIGHT = 0.25  # Classifier weight
 
@@ -463,8 +463,8 @@ def compute_mi_loss(z, mu, logvar, batch_size):
 def compute_dkld_loss(mu, logvar):
     # More aggressive clamping for stability
     eps = 1e-8
-    logvar_clipped = torch.clamp(logvar, min=-20, max=20)
-    mu_clipped = torch.clamp(mu, min=-20, max=20)
+    logvar_clipped = torch.clamp(logvar, min=-15, max=15)
+    mu_clipped = torch.clamp(mu, min=-15, max=15)
     var_term = torch.clamp(torch.exp(logvar_clipped), min=eps)
 
     # Standard KL divergence with better numerical stability
@@ -982,7 +982,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
               f"mi: {epoch_losses['mi']:.4f}, " +
               f"dkld: {epoch_losses['dkld']:.4f}, " +
               f"Cls: {epoch_losses['cls']:.4f} " +
-              f"| [Disc: {epoch_losses['disc']:.4f}")
+              f"| Disc: {epoch_losses['disc']:.4f}")
         
         # Save reconstructions for tracking
         if (epoch + 1) % 10 == 0 or epoch == 0 or epoch == EPOCHS - 1:
