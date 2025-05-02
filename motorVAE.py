@@ -32,15 +32,15 @@ BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
 
 # Create weights for different loss components
-RECON_WEIGHT = 10.0
-PERCEPTUAL_WEIGHT = 1.0
-GAN_WEIGHT = 0.3
+RECON_WEIGHT = 50.0
+PERCEPTUAL_WEIGHT = 10.0
+GAN_WEIGHT = 0.1
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
-KLD_WEIGHT_START = 0.01 # KLD Scheduler
-KLD_WEIGHT_END = 1.0
+KLD_WEIGHT_START = 0.0001 # KLD Scheduler
+KLD_WEIGHT_END = 0.75
 TC_WEIGHT = 0.01  # Total Correlation weight
 MI_WEIGHT = 0.25  # Mutual Information weight
-DKLD_WEIGHT = 0.001  # Dimension-wise KL Divergence weight
+DKLD_WEIGHT = 0.00001  # Dimension-wise KL Divergence weight
 CLS_WEIGHT = 0.12  # Classifier weight
 
 # Number of patches for PatchGAN discriminator
@@ -487,9 +487,9 @@ def perceptual_loss(real_features, fake_features):
 # Function to create folder based on parameters
 def create_output_folder(config):
     folder_name = (
-        f"res{IMAGE_SIZE}_lat{LATENT_DIM}_ep{EPOCHS}_bat{BATCH_SIZE}_lrn{LEARNING_RATE*1000}"
+        f"res{IMAGE_SIZE}_lat{LATENT_DIM}_ep{EPOCHS}_bat{BATCH_SIZE}_lrn{LEARNING_RATE}_"
         f"rec{RECON_WEIGHT}_per{PERCEPTUAL_WEIGHT}_gan{GAN_WEIGHT}_"
-        f"(tc{TC_WEIGHT}_mi{MI_WEIGHT}_dkl{DKLD_WEIGHT})_cls{CLS_WEIGHT}_pat{PATCH_SIZE}"
+        f"kld{KLD_WEIGHT_END}(tc{TC_WEIGHT}_mi{MI_WEIGHT}_dk{DKLD_WEIGHT})_cls{CLS_WEIGHT}_pat{PATCH_SIZE}"
     )
     output_dir = os.path.join("outputs", folder_name)
     os.makedirs(output_dir, exist_ok=True)
@@ -970,16 +970,16 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
         
         # Print progress
         print(f"Epoch {epoch+1}/{EPOCHS} - " +
-              f"Total: {epoch_losses['total']:.4f}, " +
-              f"Recon: {epoch_losses['recon']:.4f}, " +
+              f"Total: {epoch_losses['total']:.4f} " +
+              f"| Recon: {epoch_losses['recon']:.4f}, " +
               f"Percept: {epoch_losses['perceptual']:.4f}, " +
               f"GAN: {epoch_losses['gan']:.4f}, " +
-              f"Disc: {epoch_losses['disc']:.4f}, " +
               f"KL: {epoch_losses['kl']:.4f}, " +
               f"tc: {epoch_losses['tc']:.4f}, " +
               f"mi: {epoch_losses['mi']:.4f}, " +
               f"dkld: {epoch_losses['dkld']:.4f}, " +
-              f"Cls: {epoch_losses['cls']:.4f}")
+              f"Cls: {epoch_losses['cls']:.4f} " +
+              f"| [Disc: {epoch_losses['disc']:.4f}")
         
         # Save reconstructions for tracking
         if (epoch + 1) % 10 == 0 or epoch == 0 or epoch == EPOCHS - 1:
