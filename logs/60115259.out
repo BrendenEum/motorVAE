@@ -13877,4 +13877,1531 @@ Warning: Clamping logvar required for stability in total KLD loss computation.
 min=-25.61, max=9.75, clamp proportion=2.76%
 Epoch 230/250 - Total: 5.3953 | Recon: 0.9206, Percept: 2.8019, GAN: 0.4986, KL: 0.4006, tc: 2.5142, mi: 0.4123, dkld: 1.0794, Cls: 0.7736 | [Disc: 0.7861
 Checkpoint saved at epoch 229 to outputs/res256_lat64_ep250_bat64_lrn0.0002_rec50.0_per10.0_gan0.1_kld0.1(tc0.01_mi0.1_dk1e-05)_cls0.25_pat16/checkpoints/checkpoint_epoch_229.pth
-Epoch 231/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 231/250:   3%|▎         | 1/37 [00:03<01:57,  3.27s/it]Epoch 231/250:   5%|▌         | 2/37 [00:05<01:34,  2.70s/it]Epoch 231/250:   8%|▊         | 3/37 [00:07<01:25,  2.52s/it]Epoch 231/250:  11%|█         | 4/37 [00:10<01:20,  2.43s/it]Epoch 231/250:  14%|█▎        | 5/37 [00:13<01:23,  2.61s/it]Epoch 231/250:  16%|█▌        | 6/37 [00:15<01:23,  2.70s/it]
+Epoch 231/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 231/250:   3%|▎         | 1/37 [00:03<01:57,  3.27s/it]Epoch 231/250:   5%|▌         | 2/37 [00:05<01:34,  2.70s/it]Epoch 231/250:   8%|▊         | 3/37 [00:07<01:25,  2.52s/it]Epoch 231/250:  11%|█         | 4/37 [00:10<01:20,  2.43s/it]Epoch 231/250:  14%|█▎        | 5/37 [00:13<01:23,  2.61s/it]Epoch 231/250:  16%|█▌        | 6/37 [00:15<01:23,  2.70s/it]Epoch 231/250:  19%|█▉        | 7/37 [00:18<01:22,  2.77s/it]Epoch 231/250:  22%|██▏       | 8/37 [00:21<01:21,  2.81s/it]Epoch 231/250:  24%|██▍       | 9/37 [00:24<01:19,  2.84s/it]Epoch 231/250:  27%|██▋       | 10/37 [00:27<01:17,  2.85s/it]Epoch 231/250:  30%|██▉       | 11/37 [00:30<01:14,  2.87s/it]Epoch 231/250:  32%|███▏      | 12/37 [00:33<01:11,  2.88s/it]Epoch 231/250:  35%|███▌      | 13/37 [00:36<01:09,  2.88s/it]Epoch 231/250:  38%|███▊      | 14/37 [00:39<01:06,  2.89s/it]Epoch 231/250:  41%|████      | 15/37 [00:42<01:03,  2.89s/it]Epoch 231/250:  43%|████▎     | 16/37 [00:44<01:00,  2.89s/it]Epoch 231/250:  46%|████▌     | 17/37 [00:47<00:57,  2.89s/it]Epoch 231/250:  49%|████▊     | 18/37 [00:50<00:55,  2.90s/it]Epoch 231/250:  51%|█████▏    | 19/37 [00:53<00:52,  2.89s/it]Epoch 231/250:  54%|█████▍    | 20/37 [00:56<00:49,  2.89s/it]Epoch 231/250:  57%|█████▋    | 21/37 [00:59<00:46,  2.89s/it]Epoch 231/250:  59%|█████▉    | 22/37 [01:01<00:40,  2.71s/it]Epoch 231/250:  62%|██████▏   | 23/37 [01:04<00:38,  2.77s/it]Epoch 231/250:  65%|██████▍   | 24/37 [01:07<00:36,  2.81s/it]Epoch 231/250:  68%|██████▊   | 25/37 [01:10<00:34,  2.84s/it]Epoch 231/250:  70%|███████   | 26/37 [01:13<00:31,  2.86s/it]Epoch 231/250:  73%|███████▎  | 27/37 [01:16<00:28,  2.87s/it]Epoch 231/250:  76%|███████▌  | 28/37 [01:18<00:24,  2.69s/it]Epoch 231/250:  78%|███████▊  | 29/37 [01:20<00:20,  2.58s/it]Epoch 231/250:  81%|████████  | 30/37 [01:23<00:17,  2.49s/it]Epoch 231/250:  84%|████████▍ | 31/37 [01:25<00:14,  2.43s/it]Epoch 231/250:  86%|████████▋ | 32/37 [01:27<00:11,  2.39s/it]Epoch 231/250:  89%|████████▉ | 33/37 [01:30<00:09,  2.37s/it]Epoch 231/250:  92%|█████████▏| 34/37 [01:32<00:07,  2.35s/it]Epoch 231/250:  95%|█████████▍| 35/37 [01:34<00:04,  2.33s/it]Epoch 231/250:  97%|█████████▋| 36/37 [01:36<00:02,  2.32s/it]Epoch 231/250: 100%|██████████| 37/37 [01:37<00:00,  1.73s/it]Epoch 231/250: 100%|██████████| 37/37 [01:37<00:00,  2.63s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.77, max=13.38, clamp proportion=1.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.64, max=13.80, clamp proportion=0.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.48, max=19.23, clamp proportion=2.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.11, max=15.58, clamp proportion=1.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.49, max=19.16, clamp proportion=2.83%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.47, max=14.69, clamp proportion=0.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.50, max=16.56, clamp proportion=3.08%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.82, max=19.84, clamp proportion=2.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.04, max=16.00, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.51, max=16.09, clamp proportion=1.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.69, max=14.98, clamp proportion=3.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.24, max=15.41, clamp proportion=3.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.06, max=15.47, clamp proportion=2.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.40, max=15.08, clamp proportion=2.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.97, max=14.72, clamp proportion=1.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.96, max=15.16, clamp proportion=2.47%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-37.24, max=21.43, clamp proportion=2.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.75, max=14.57, clamp proportion=1.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-21.63, max=10.33, clamp proportion=0.24%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.03, max=12.92, clamp proportion=1.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.89, max=16.12, clamp proportion=3.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.45, max=13.50, clamp proportion=2.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.39, max=13.89, clamp proportion=1.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.19, max=12.20, clamp proportion=2.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.74, max=12.38, clamp proportion=1.07%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.10, max=13.06, clamp proportion=1.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.99, max=12.69, clamp proportion=2.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.89, max=11.75, clamp proportion=2.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.35, max=11.86, clamp proportion=1.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.84, max=13.46, clamp proportion=1.10%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.99, max=13.51, clamp proportion=1.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.50, max=11.79, clamp proportion=0.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.53, max=12.84, clamp proportion=2.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.05, max=15.94, clamp proportion=3.30%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.38, max=12.22, clamp proportion=1.46%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.71, max=12.14, clamp proportion=0.66%
+Epoch 231/250 - Total: 5.6911 | Recon: 0.9359, Percept: 2.8288, GAN: 0.5171, KL: 0.6151, tc: 2.5178, mi: 0.4123, dkld: 3.2208, Cls: 0.7942 | [Disc: 1.0160
+Epoch 232/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 232/250:   3%|▎         | 1/37 [00:03<01:52,  3.14s/it]Epoch 232/250:   5%|▌         | 2/37 [00:05<01:32,  2.65s/it]Epoch 232/250:   8%|▊         | 3/37 [00:07<01:24,  2.49s/it]Epoch 232/250:  11%|█         | 4/37 [00:10<01:19,  2.42s/it]Epoch 232/250:  14%|█▎        | 5/37 [00:12<01:22,  2.59s/it]Epoch 232/250:  16%|█▌        | 6/37 [00:15<01:17,  2.49s/it]Epoch 232/250:  19%|█▉        | 7/37 [00:17<01:12,  2.43s/it]Epoch 232/250:  22%|██▏       | 8/37 [00:19<01:09,  2.39s/it]Epoch 232/250:  24%|██▍       | 9/37 [00:22<01:11,  2.55s/it]Epoch 232/250:  27%|██▋       | 10/37 [00:25<01:11,  2.66s/it]Epoch 232/250:  30%|██▉       | 11/37 [00:27<01:06,  2.55s/it]Epoch 232/250:  32%|███▏      | 12/37 [00:30<01:01,  2.47s/it]Epoch 232/250:  35%|███▌      | 13/37 [00:32<00:58,  2.43s/it]Epoch 232/250:  38%|███▊      | 14/37 [00:34<00:54,  2.39s/it]Epoch 232/250:  41%|████      | 15/37 [00:37<00:51,  2.36s/it]Epoch 232/250:  43%|████▎     | 16/37 [00:39<00:49,  2.35s/it]Epoch 232/250:  46%|████▌     | 17/37 [00:41<00:46,  2.33s/it]Epoch 232/250:  49%|████▊     | 18/37 [00:44<00:44,  2.32s/it]Epoch 232/250:  51%|█████▏    | 19/37 [00:46<00:41,  2.32s/it]Epoch 232/250:  54%|█████▍    | 20/37 [00:48<00:39,  2.31s/it]Epoch 232/250:  57%|█████▋    | 21/37 [00:50<00:36,  2.30s/it]Epoch 232/250:  59%|█████▉    | 22/37 [00:53<00:34,  2.30s/it]Epoch 232/250:  62%|██████▏   | 23/37 [00:55<00:32,  2.32s/it]Epoch 232/250:  65%|██████▍   | 24/37 [00:58<00:32,  2.49s/it]Epoch 232/250:  68%|██████▊   | 25/37 [01:01<00:31,  2.62s/it]Epoch 232/250:  70%|███████   | 26/37 [01:04<00:29,  2.70s/it]Epoch 232/250:  73%|███████▎  | 27/37 [01:06<00:25,  2.58s/it]Epoch 232/250:  76%|███████▌  | 28/37 [01:08<00:22,  2.50s/it]Epoch 232/250:  78%|███████▊  | 29/37 [01:11<00:19,  2.44s/it]Epoch 232/250:  81%|████████  | 30/37 [01:13<00:16,  2.40s/it]Epoch 232/250:  84%|████████▍ | 31/37 [01:15<00:14,  2.37s/it]Epoch 232/250:  86%|████████▋ | 32/37 [01:18<00:11,  2.35s/it]Epoch 232/250:  89%|████████▉ | 33/37 [01:20<00:09,  2.33s/it]Epoch 232/250:  92%|█████████▏| 34/37 [01:22<00:06,  2.32s/it]Epoch 232/250:  95%|█████████▍| 35/37 [01:25<00:04,  2.32s/it]Epoch 232/250:  97%|█████████▋| 36/37 [01:27<00:02,  2.31s/it]Epoch 232/250: 100%|██████████| 37/37 [01:27<00:00,  1.73s/it]Epoch 232/250: 100%|██████████| 37/37 [01:27<00:00,  2.37s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-33.35, max=16.88, clamp proportion=2.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.18, max=14.30, clamp proportion=3.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.27, max=14.38, clamp proportion=2.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.83, max=13.28, clamp proportion=2.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.08, max=11.99, clamp proportion=0.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.36, max=15.05, clamp proportion=3.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.22, max=13.61, clamp proportion=1.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.79, max=13.17, clamp proportion=1.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.48, max=11.24, clamp proportion=1.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.57, max=12.78, clamp proportion=1.73%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.28, max=15.12, clamp proportion=1.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.95, max=16.12, clamp proportion=2.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.38, max=15.40, clamp proportion=1.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.98, max=16.25, clamp proportion=2.73%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.54, max=13.30, clamp proportion=1.73%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.92, max=13.92, clamp proportion=3.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.55, max=10.13, clamp proportion=2.03%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.53, max=12.59, clamp proportion=1.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.67, max=11.95, clamp proportion=2.03%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.06, max=14.19, clamp proportion=0.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.61, max=13.93, clamp proportion=2.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.31, max=11.85, clamp proportion=1.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-22.80, max=11.41, clamp proportion=0.24%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.90, max=15.01, clamp proportion=3.03%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.98, max=12.77, clamp proportion=1.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.55, max=12.70, clamp proportion=1.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.72, max=14.31, clamp proportion=1.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.23, max=12.89, clamp proportion=2.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.14, max=15.78, clamp proportion=3.86%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.37, max=16.43, clamp proportion=2.73%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.79, max=13.67, clamp proportion=2.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.30, max=13.16, clamp proportion=3.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.04, max=14.95, clamp proportion=4.52%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.29, max=15.99, clamp proportion=2.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-34.92, max=18.86, clamp proportion=1.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.78, max=12.24, clamp proportion=1.46%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-20.27, max=6.29, clamp proportion=0.09%
+Epoch 232/250 - Total: 5.4395 | Recon: 0.9537, Percept: 2.8409, GAN: 0.5008, KL: 0.3533, tc: 2.5150, mi: 0.4123, dkld: 0.6055, Cls: 0.7909 | [Disc: 0.7126
+Epoch 233/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 233/250:   3%|▎         | 1/37 [00:03<01:55,  3.21s/it]Epoch 233/250:   5%|▌         | 2/37 [00:06<01:46,  3.04s/it]Epoch 233/250:   8%|▊         | 3/37 [00:09<01:41,  2.98s/it]Epoch 233/250:  11%|█         | 4/37 [00:11<01:37,  2.95s/it]Epoch 233/250:  14%|█▎        | 5/37 [00:14<01:26,  2.72s/it]Epoch 233/250:  16%|█▌        | 6/37 [00:16<01:19,  2.57s/it]Epoch 233/250:  19%|█▉        | 7/37 [00:18<01:14,  2.48s/it]Epoch 233/250:  22%|██▏       | 8/37 [00:21<01:10,  2.42s/it]Epoch 233/250:  24%|██▍       | 9/37 [00:23<01:06,  2.38s/it]Epoch 233/250:  27%|██▋       | 10/37 [00:25<01:03,  2.36s/it]Epoch 233/250:  30%|██▉       | 11/37 [00:28<01:00,  2.34s/it]Epoch 233/250:  32%|███▏      | 12/37 [00:30<00:58,  2.33s/it]Epoch 233/250:  35%|███▌      | 13/37 [00:33<01:00,  2.50s/it]Epoch 233/250:  38%|███▊      | 14/37 [00:36<01:00,  2.62s/it]Epoch 233/250:  41%|████      | 15/37 [00:39<00:59,  2.71s/it]Epoch 233/250:  43%|████▎     | 16/37 [00:41<00:58,  2.76s/it]Epoch 233/250:  46%|████▌     | 17/37 [00:44<00:56,  2.80s/it]Epoch 233/250:  49%|████▊     | 18/37 [00:47<00:53,  2.83s/it]Epoch 233/250:  51%|█████▏    | 19/37 [00:50<00:51,  2.85s/it]Epoch 233/250:  54%|█████▍    | 20/37 [00:53<00:48,  2.87s/it]Epoch 233/250:  57%|█████▋    | 21/37 [00:55<00:43,  2.69s/it]Epoch 233/250:  59%|█████▉    | 22/37 [00:58<00:38,  2.57s/it]Epoch 233/250:  62%|██████▏   | 23/37 [01:00<00:34,  2.50s/it]Epoch 233/250:  65%|██████▍   | 24/37 [01:03<00:33,  2.62s/it]Epoch 233/250:  68%|██████▊   | 25/37 [01:06<00:32,  2.70s/it]Epoch 233/250:  70%|███████   | 26/37 [01:09<00:30,  2.76s/it]Epoch 233/250:  73%|███████▎  | 27/37 [01:12<00:28,  2.80s/it]Epoch 233/250:  76%|███████▌  | 28/37 [01:14<00:25,  2.83s/it]Epoch 233/250:  78%|███████▊  | 29/37 [01:17<00:22,  2.85s/it]Epoch 233/250:  81%|████████  | 30/37 [01:20<00:18,  2.70s/it]Epoch 233/250:  84%|████████▍ | 31/37 [01:22<00:15,  2.60s/it]Epoch 233/250:  86%|████████▋ | 32/37 [01:25<00:13,  2.64s/it]Epoch 233/250:  89%|████████▉ | 33/37 [01:28<00:10,  2.71s/it]Epoch 233/250:  92%|█████████▏| 34/37 [01:31<00:08,  2.77s/it]Epoch 233/250:  95%|█████████▍| 35/37 [01:33<00:05,  2.81s/it]Epoch 233/250:  97%|█████████▋| 36/37 [01:36<00:02,  2.84s/it]Epoch 233/250: 100%|██████████| 37/37 [01:37<00:00,  2.10s/it]Epoch 233/250: 100%|██████████| 37/37 [01:37<00:00,  2.63s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.65, max=10.23, clamp proportion=0.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.42, max=11.09, clamp proportion=1.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.94, max=13.05, clamp proportion=2.73%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.30, max=13.98, clamp proportion=2.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.36, max=15.94, clamp proportion=1.73%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.74, max=14.53, clamp proportion=3.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-34.22, max=18.63, clamp proportion=2.08%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.08, max=15.97, clamp proportion=1.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.27, max=14.54, clamp proportion=2.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-22.96, max=10.33, clamp proportion=0.24%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.86, max=13.66, clamp proportion=1.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-21.71, max=10.89, clamp proportion=0.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.33, max=12.71, clamp proportion=2.05%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.40, max=11.67, clamp proportion=0.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.14, max=12.66, clamp proportion=1.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.25, max=14.34, clamp proportion=3.10%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.67, max=16.73, clamp proportion=2.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.73, max=13.99, clamp proportion=1.68%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.17, max=11.85, clamp proportion=2.12%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.78, max=11.41, clamp proportion=1.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.37, max=12.10, clamp proportion=1.12%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.48, max=12.87, clamp proportion=1.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.98, max=13.40, clamp proportion=1.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.53, max=12.71, clamp proportion=1.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.08, max=11.61, clamp proportion=0.20%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.56, max=13.77, clamp proportion=1.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.49, max=15.06, clamp proportion=2.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.07, max=11.54, clamp proportion=1.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.29, max=13.11, clamp proportion=0.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.56, max=12.27, clamp proportion=1.46%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.18, max=14.27, clamp proportion=2.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.23, max=12.14, clamp proportion=0.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.34, max=12.11, clamp proportion=0.98%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.00, max=13.89, clamp proportion=1.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-33.34, max=17.77, clamp proportion=2.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.39, max=14.12, clamp proportion=1.83%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.17, max=9.87, clamp proportion=0.46%
+Epoch 233/250 - Total: 5.4568 | Recon: 0.9501, Percept: 2.8447, GAN: 0.5189, KL: 0.3473, tc: 2.5221, mi: 0.4123, dkld: 0.5382, Cls: 0.7958 | [Disc: 0.7358
+Epoch 234/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 234/250:   3%|▎         | 1/37 [00:03<02:18,  3.84s/it]Epoch 234/250:   5%|▌         | 2/37 [00:06<01:54,  3.28s/it]Epoch 234/250:   8%|▊         | 3/37 [00:09<01:36,  2.84s/it]Epoch 234/250:  11%|█         | 4/37 [00:11<01:26,  2.63s/it]Epoch 234/250:  14%|█▎        | 5/37 [00:13<01:20,  2.51s/it]Epoch 234/250:  16%|█▌        | 6/37 [00:15<01:15,  2.44s/it]Epoch 234/250:  19%|█▉        | 7/37 [00:18<01:11,  2.39s/it]Epoch 234/250:  22%|██▏       | 8/37 [00:20<01:08,  2.36s/it]Epoch 234/250:  24%|██▍       | 9/37 [00:22<01:05,  2.34s/it]Epoch 234/250:  27%|██▋       | 10/37 [00:25<01:02,  2.33s/it]Epoch 234/250:  30%|██▉       | 11/37 [00:27<01:00,  2.32s/it]Epoch 234/250:  32%|███▏      | 12/37 [00:29<00:57,  2.31s/it]Epoch 234/250:  35%|███▌      | 13/37 [00:32<00:55,  2.31s/it]Epoch 234/250:  38%|███▊      | 14/37 [00:34<00:53,  2.31s/it]Epoch 234/250:  41%|████      | 15/37 [00:36<00:50,  2.31s/it]Epoch 234/250:  43%|████▎     | 16/37 [00:38<00:48,  2.30s/it]Epoch 234/250:  46%|████▌     | 17/37 [00:41<00:46,  2.30s/it]Epoch 234/250:  49%|████▊     | 18/37 [00:43<00:43,  2.30s/it]Epoch 234/250:  51%|█████▏    | 19/37 [00:45<00:41,  2.30s/it]Epoch 234/250:  54%|█████▍    | 20/37 [00:48<00:39,  2.30s/it]Epoch 234/250:  57%|█████▋    | 21/37 [00:50<00:36,  2.30s/it]Epoch 234/250:  59%|█████▉    | 22/37 [00:52<00:34,  2.30s/it]Epoch 234/250:  62%|██████▏   | 23/37 [00:55<00:32,  2.30s/it]Epoch 234/250:  65%|██████▍   | 24/37 [00:57<00:29,  2.30s/it]Epoch 234/250:  68%|██████▊   | 25/37 [00:59<00:27,  2.29s/it]Epoch 234/250:  70%|███████   | 26/37 [01:01<00:25,  2.30s/it]Epoch 234/250:  73%|███████▎  | 27/37 [01:04<00:22,  2.30s/it]Epoch 234/250:  76%|███████▌  | 28/37 [01:06<00:20,  2.30s/it]Epoch 234/250:  78%|███████▊  | 29/37 [01:08<00:18,  2.30s/it]Epoch 234/250:  81%|████████  | 30/37 [01:11<00:16,  2.30s/it]Epoch 234/250:  84%|████████▍ | 31/37 [01:13<00:13,  2.30s/it]Epoch 234/250:  86%|████████▋ | 32/37 [01:15<00:11,  2.30s/it]Epoch 234/250:  89%|████████▉ | 33/37 [01:18<00:09,  2.30s/it]Epoch 234/250:  92%|█████████▏| 34/37 [01:20<00:06,  2.30s/it]Epoch 234/250:  95%|█████████▍| 35/37 [01:22<00:04,  2.30s/it]Epoch 234/250:  97%|█████████▋| 36/37 [01:24<00:02,  2.30s/it]Epoch 234/250: 100%|██████████| 37/37 [01:25<00:00,  1.71s/it]Epoch 234/250: 100%|██████████| 37/37 [01:25<00:00,  2.31s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.30, max=11.23, clamp proportion=0.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.72, max=15.26, clamp proportion=3.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.53, max=13.58, clamp proportion=2.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.02, max=12.81, clamp proportion=0.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.83, max=11.06, clamp proportion=1.10%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-22.99, max=10.07, clamp proportion=0.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.68, max=11.09, clamp proportion=1.10%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.77, max=11.21, clamp proportion=0.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.02, max=13.86, clamp proportion=2.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.39, max=13.25, clamp proportion=0.85%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.39, max=11.77, clamp proportion=0.20%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.81, max=11.79, clamp proportion=1.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.75, max=13.31, clamp proportion=1.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.33, max=14.62, clamp proportion=2.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.51, max=13.40, clamp proportion=1.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.71, max=13.64, clamp proportion=0.98%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.60, max=16.54, clamp proportion=2.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-36.24, max=19.30, clamp proportion=2.86%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.61, max=11.74, clamp proportion=2.05%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.73, max=15.38, clamp proportion=2.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-21.89, max=9.37, clamp proportion=0.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.73, max=12.43, clamp proportion=1.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.07, max=11.72, clamp proportion=0.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.31, max=15.44, clamp proportion=1.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.48, max=13.43, clamp proportion=2.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.60, max=14.87, clamp proportion=3.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.30, max=13.47, clamp proportion=2.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.93, max=13.50, clamp proportion=1.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.99, max=12.59, clamp proportion=1.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.01, max=11.54, clamp proportion=1.03%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.80, max=15.08, clamp proportion=2.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.91, max=13.34, clamp proportion=2.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.23, max=17.10, clamp proportion=1.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.28, max=11.98, clamp proportion=0.83%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.50, max=14.76, clamp proportion=1.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.07, max=12.03, clamp proportion=2.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.05, max=11.61, clamp proportion=2.67%
+Epoch 234/250 - Total: 5.4034 | Recon: 0.9263, Percept: 2.8129, GAN: 0.5219, KL: 0.3637, tc: 2.5195, mi: 0.4123, dkld: 0.7051, Cls: 0.7785 | [Disc: 0.9133
+Epoch 235/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 235/250:   3%|▎         | 1/37 [00:03<02:10,  3.62s/it]Epoch 235/250:   5%|▌         | 2/37 [00:06<01:51,  3.19s/it]Epoch 235/250:   8%|▊         | 3/37 [00:09<01:43,  3.06s/it]Epoch 235/250:  11%|█         | 4/37 [00:11<01:31,  2.76s/it]Epoch 235/250:  14%|█▎        | 5/37 [00:14<01:23,  2.60s/it]Epoch 235/250:  16%|█▌        | 6/37 [00:16<01:17,  2.50s/it]Epoch 235/250:  19%|█▉        | 7/37 [00:18<01:12,  2.43s/it]Epoch 235/250:  22%|██▏       | 8/37 [00:20<01:09,  2.39s/it]Epoch 235/250:  24%|██▍       | 9/37 [00:23<01:06,  2.36s/it]Epoch 235/250:  27%|██▋       | 10/37 [00:25<01:03,  2.34s/it]Epoch 235/250:  30%|██▉       | 11/37 [00:28<01:05,  2.51s/it]Epoch 235/250:  32%|███▏      | 12/37 [00:31<01:05,  2.63s/it]Epoch 235/250:  35%|███▌      | 13/37 [00:34<01:05,  2.71s/it]Epoch 235/250:  38%|███▊      | 14/37 [00:37<01:03,  2.77s/it]Epoch 235/250:  41%|████      | 15/37 [00:40<01:01,  2.81s/it]Epoch 235/250:  43%|████▎     | 16/37 [00:42<00:59,  2.84s/it]Epoch 235/250:  46%|████▌     | 17/37 [00:45<00:57,  2.85s/it]Epoch 235/250:  49%|████▊     | 18/37 [00:48<00:54,  2.87s/it]Epoch 235/250:  51%|█████▏    | 19/37 [00:51<00:51,  2.88s/it]Epoch 235/250:  54%|█████▍    | 20/37 [00:54<00:49,  2.88s/it]Epoch 235/250:  57%|█████▋    | 21/37 [00:57<00:46,  2.89s/it]Epoch 235/250:  59%|█████▉    | 22/37 [01:00<00:43,  2.89s/it]Epoch 235/250:  62%|██████▏   | 23/37 [01:03<00:40,  2.89s/it]Epoch 235/250:  65%|██████▍   | 24/37 [01:06<00:37,  2.89s/it]Epoch 235/250:  68%|██████▊   | 25/37 [01:08<00:34,  2.90s/it]Epoch 235/250:  70%|███████   | 26/37 [01:11<00:31,  2.90s/it]Epoch 235/250:  73%|███████▎  | 27/37 [01:14<00:29,  2.90s/it]Epoch 235/250:  76%|███████▌  | 28/37 [01:17<00:26,  2.90s/it]Epoch 235/250:  78%|███████▊  | 29/37 [01:19<00:21,  2.72s/it]Epoch 235/250:  81%|████████  | 30/37 [01:22<00:18,  2.59s/it]Epoch 235/250:  84%|████████▍ | 31/37 [01:24<00:15,  2.50s/it]Epoch 235/250:  86%|████████▋ | 32/37 [01:26<00:12,  2.44s/it]Epoch 235/250:  89%|████████▉ | 33/37 [01:29<00:09,  2.40s/it]Epoch 235/250:  92%|█████████▏| 34/37 [01:31<00:07,  2.37s/it]Epoch 235/250:  95%|█████████▍| 35/37 [01:33<00:04,  2.34s/it]Epoch 235/250:  97%|█████████▋| 36/37 [01:36<00:02,  2.33s/it]Epoch 235/250: 100%|██████████| 37/37 [01:36<00:00,  1.74s/it]Epoch 235/250: 100%|██████████| 37/37 [01:36<00:00,  2.61s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.85, max=14.18, clamp proportion=2.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.78, max=11.43, clamp proportion=0.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.60, max=13.80, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.81, max=14.23, clamp proportion=2.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.95, max=13.89, clamp proportion=3.86%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.18, max=13.76, clamp proportion=1.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.08, max=14.08, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.75, max=15.20, clamp proportion=2.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.66, max=12.96, clamp proportion=0.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.67, max=16.42, clamp proportion=2.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.54, max=13.45, clamp proportion=2.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.83, max=16.06, clamp proportion=3.12%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.63, max=15.93, clamp proportion=2.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.77, max=12.83, clamp proportion=1.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.55, max=12.57, clamp proportion=1.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.40, max=13.49, clamp proportion=0.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.60, max=13.10, clamp proportion=1.20%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.65, max=11.59, clamp proportion=1.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.16, max=13.27, clamp proportion=2.10%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.12, max=13.11, clamp proportion=1.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.79, max=16.26, clamp proportion=2.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.72, max=15.40, clamp proportion=3.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.56, max=13.57, clamp proportion=2.69%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.43, max=14.27, clamp proportion=3.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-34.05, max=17.19, clamp proportion=2.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.65, max=14.17, clamp proportion=1.90%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.19, max=15.59, clamp proportion=1.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.94, max=13.48, clamp proportion=2.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.23, max=13.18, clamp proportion=2.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.63, max=11.51, clamp proportion=1.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.13, max=11.40, clamp proportion=1.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.73, max=12.14, clamp proportion=2.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.97, max=13.25, clamp proportion=2.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.25, max=14.69, clamp proportion=1.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.13, max=12.02, clamp proportion=2.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.55, max=11.99, clamp proportion=2.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-22.86, max=9.57, clamp proportion=1.47%
+Epoch 235/250 - Total: 5.3370 | Recon: 0.9218, Percept: 2.7922, GAN: 0.5196, KL: 0.3200, tc: 2.5168, mi: 0.4123, dkld: 0.2706, Cls: 0.7834 | [Disc: 0.8142
+Epoch 236/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 236/250:   3%|▎         | 1/37 [00:03<02:21,  3.92s/it]Epoch 236/250:   5%|▌         | 2/37 [00:06<01:56,  3.32s/it]Epoch 236/250:   8%|▊         | 3/37 [00:09<01:46,  3.13s/it]Epoch 236/250:  11%|█         | 4/37 [00:12<01:40,  3.04s/it]Epoch 236/250:  14%|█▎        | 5/37 [00:15<01:35,  2.99s/it]Epoch 236/250:  16%|█▌        | 6/37 [00:18<01:31,  2.96s/it]Epoch 236/250:  19%|█▉        | 7/37 [00:21<01:28,  2.94s/it]Epoch 236/250:  22%|██▏       | 8/37 [00:24<01:24,  2.93s/it]Epoch 236/250:  24%|██▍       | 9/37 [00:27<01:21,  2.92s/it]Epoch 236/250:  27%|██▋       | 10/37 [00:30<01:18,  2.91s/it]Epoch 236/250:  30%|██▉       | 11/37 [00:32<01:15,  2.90s/it]Epoch 236/250:  32%|███▏      | 12/37 [00:35<01:12,  2.90s/it]Epoch 236/250:  35%|███▌      | 13/37 [00:38<01:09,  2.90s/it]Epoch 236/250:  38%|███▊      | 14/37 [00:40<01:02,  2.72s/it]Epoch 236/250:  41%|████      | 15/37 [00:43<01:01,  2.77s/it]Epoch 236/250:  43%|████▎     | 16/37 [00:46<00:58,  2.81s/it]Epoch 236/250:  46%|████▌     | 17/37 [00:49<00:56,  2.83s/it]Epoch 236/250:  49%|████▊     | 18/37 [00:52<00:54,  2.86s/it]Epoch 236/250:  51%|█████▏    | 19/37 [00:55<00:51,  2.87s/it]Epoch 236/250:  54%|█████▍    | 20/37 [00:58<00:48,  2.88s/it]Epoch 236/250:  57%|█████▋    | 21/37 [01:01<00:46,  2.89s/it]Epoch 236/250:  59%|█████▉    | 22/37 [01:04<00:43,  2.89s/it]Epoch 236/250:  62%|██████▏   | 23/37 [01:07<00:40,  2.89s/it]Epoch 236/250:  65%|██████▍   | 24/37 [01:09<00:37,  2.89s/it]Epoch 236/250:  68%|██████▊   | 25/37 [01:12<00:34,  2.89s/it]Epoch 236/250:  70%|███████   | 26/37 [01:15<00:31,  2.89s/it]Epoch 236/250:  73%|███████▎  | 27/37 [01:18<00:28,  2.90s/it]Epoch 236/250:  76%|███████▌  | 28/37 [01:21<00:26,  2.89s/it]Epoch 236/250:  78%|███████▊  | 29/37 [01:24<00:23,  2.89s/it]Epoch 236/250:  81%|████████  | 30/37 [01:27<00:20,  2.90s/it]Epoch 236/250:  84%|████████▍ | 31/37 [01:30<00:17,  2.90s/it]Epoch 236/250:  86%|████████▋ | 32/37 [01:33<00:14,  2.90s/it]Epoch 236/250:  89%|████████▉ | 33/37 [01:36<00:11,  2.90s/it]Epoch 236/250:  92%|█████████▏| 34/37 [01:38<00:08,  2.90s/it]Epoch 236/250:  95%|█████████▍| 35/37 [01:41<00:05,  2.90s/it]Epoch 236/250:  97%|█████████▋| 36/37 [01:44<00:02,  2.90s/it]Epoch 236/250: 100%|██████████| 37/37 [01:45<00:00,  2.14s/it]Epoch 236/250: 100%|██████████| 37/37 [01:45<00:00,  2.84s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.79, max=13.41, clamp proportion=3.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.28, max=13.49, clamp proportion=1.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.44, max=12.81, clamp proportion=1.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.70, max=14.00, clamp proportion=1.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.75, max=12.21, clamp proportion=1.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.48, max=13.16, clamp proportion=2.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.76, max=13.51, clamp proportion=0.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.40, max=13.11, clamp proportion=1.90%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.45, max=13.18, clamp proportion=1.83%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.71, max=14.53, clamp proportion=2.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.26, max=12.63, clamp proportion=1.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.95, max=12.92, clamp proportion=1.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.37, max=12.50, clamp proportion=1.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.33, max=14.35, clamp proportion=2.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.29, max=15.30, clamp proportion=1.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.79, max=14.17, clamp proportion=3.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.71, max=15.58, clamp proportion=1.46%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.30, max=13.73, clamp proportion=4.96%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.84, max=11.75, clamp proportion=1.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.93, max=11.71, clamp proportion=0.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.31, max=14.58, clamp proportion=2.10%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.92, max=15.83, clamp proportion=1.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.51, max=15.70, clamp proportion=3.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.02, max=15.12, clamp proportion=4.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.63, max=12.76, clamp proportion=2.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.36, max=12.11, clamp proportion=1.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.92, max=12.66, clamp proportion=1.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.26, max=13.40, clamp proportion=1.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.23, max=13.57, clamp proportion=2.83%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.93, max=12.04, clamp proportion=1.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.77, max=13.43, clamp proportion=2.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.81, max=14.30, clamp proportion=3.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.25, max=12.81, clamp proportion=2.91%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.42, max=14.50, clamp proportion=3.47%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.21, max=14.97, clamp proportion=3.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.86, max=12.40, clamp proportion=1.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.35, max=9.16, clamp proportion=1.56%
+Epoch 236/250 - Total: 5.3106 | Recon: 0.9261, Percept: 2.7809, GAN: 0.5351, KL: 0.3097, tc: 2.5166, mi: 0.4123, dkld: 0.1685, Cls: 0.7587 | [Disc: 0.9805
+Epoch 237/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 237/250:   3%|▎         | 1/37 [00:03<01:54,  3.19s/it]Epoch 237/250:   5%|▌         | 2/37 [00:06<01:44,  2.99s/it]Epoch 237/250:   8%|▊         | 3/37 [00:08<01:40,  2.94s/it]Epoch 237/250:  11%|█         | 4/37 [00:11<01:28,  2.69s/it]Epoch 237/250:  14%|█▎        | 5/37 [00:14<01:28,  2.77s/it]Epoch 237/250:  16%|█▌        | 6/37 [00:17<01:27,  2.81s/it]Epoch 237/250:  19%|█▉        | 7/37 [00:19<01:25,  2.84s/it]Epoch 237/250:  22%|██▏       | 8/37 [00:22<01:22,  2.86s/it]Epoch 237/250:  24%|██▍       | 9/37 [00:25<01:20,  2.87s/it]Epoch 237/250:  27%|██▋       | 10/37 [00:28<01:17,  2.88s/it]Epoch 237/250:  30%|██▉       | 11/37 [00:31<01:15,  2.88s/it]Epoch 237/250:  32%|███▏      | 12/37 [00:34<01:12,  2.89s/it]Epoch 237/250:  35%|███▌      | 13/37 [00:37<01:09,  2.89s/it]Epoch 237/250:  38%|███▊      | 14/37 [00:40<01:06,  2.89s/it]Epoch 237/250:  41%|████      | 15/37 [00:43<01:03,  2.90s/it]Epoch 237/250:  43%|████▎     | 16/37 [00:46<01:00,  2.90s/it]Epoch 237/250:  46%|████▌     | 17/37 [00:48<00:57,  2.90s/it]Epoch 237/250:  49%|████▊     | 18/37 [00:51<00:55,  2.90s/it]Epoch 237/250:  51%|█████▏    | 19/37 [00:54<00:52,  2.90s/it]Epoch 237/250:  54%|█████▍    | 20/37 [00:57<00:49,  2.90s/it]Epoch 237/250:  57%|█████▋    | 21/37 [01:00<00:46,  2.90s/it]Epoch 237/250:  59%|█████▉    | 22/37 [01:03<00:43,  2.90s/it]Epoch 237/250:  62%|██████▏   | 23/37 [01:06<00:40,  2.90s/it]Epoch 237/250:  65%|██████▍   | 24/37 [01:09<00:37,  2.90s/it]Epoch 237/250:  68%|██████▊   | 25/37 [01:12<00:34,  2.90s/it]Epoch 237/250:  70%|███████   | 26/37 [01:15<00:31,  2.90s/it]Epoch 237/250:  73%|███████▎  | 27/37 [01:17<00:29,  2.90s/it]Epoch 237/250:  76%|███████▌  | 28/37 [01:20<00:26,  2.90s/it]Epoch 237/250:  78%|███████▊  | 29/37 [01:23<00:23,  2.90s/it]Epoch 237/250:  81%|████████  | 30/37 [01:26<00:20,  2.90s/it]Epoch 237/250:  84%|████████▍ | 31/37 [01:29<00:17,  2.90s/it]Epoch 237/250:  86%|████████▋ | 32/37 [01:32<00:14,  2.90s/it]Epoch 237/250:  89%|████████▉ | 33/37 [01:35<00:11,  2.90s/it]Epoch 237/250:  92%|█████████▏| 34/37 [01:38<00:08,  2.90s/it]Epoch 237/250:  95%|█████████▍| 35/37 [01:41<00:05,  2.90s/it]Epoch 237/250:  97%|█████████▋| 36/37 [01:43<00:02,  2.90s/it]Epoch 237/250: 100%|██████████| 37/37 [01:44<00:00,  2.15s/it]Epoch 237/250: 100%|██████████| 37/37 [01:44<00:00,  2.82s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.55, max=16.69, clamp proportion=2.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.23, max=11.81, clamp proportion=2.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-22.64, max=10.01, clamp proportion=0.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.66, max=15.18, clamp proportion=2.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.83, max=14.58, clamp proportion=3.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.13, max=14.72, clamp proportion=3.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.60, max=10.65, clamp proportion=0.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.04, max=13.04, clamp proportion=2.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.02, max=10.53, clamp proportion=0.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.78, max=15.50, clamp proportion=3.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.12, max=13.64, clamp proportion=2.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.26, max=13.51, clamp proportion=0.85%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.52, max=13.81, clamp proportion=3.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.00, max=12.17, clamp proportion=2.47%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.62, max=15.00, clamp proportion=2.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.76, max=14.88, clamp proportion=2.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.36, max=12.27, clamp proportion=0.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.49, max=16.97, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.15, max=15.87, clamp proportion=3.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.53, max=11.92, clamp proportion=1.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.53, max=14.34, clamp proportion=3.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.66, max=13.82, clamp proportion=2.08%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.04, max=12.47, clamp proportion=1.73%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.41, max=13.74, clamp proportion=3.74%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.27, max=15.74, clamp proportion=1.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.07, max=12.52, clamp proportion=1.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.33, max=14.67, clamp proportion=1.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.02, max=12.71, clamp proportion=2.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.24, max=14.10, clamp proportion=3.12%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.83, max=13.33, clamp proportion=0.90%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.60, max=13.63, clamp proportion=5.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.14, max=13.87, clamp proportion=2.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.81, max=15.77, clamp proportion=4.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.81, max=14.45, clamp proportion=4.10%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.38, max=11.70, clamp proportion=3.08%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.63, max=13.60, clamp proportion=2.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.21, max=9.17, clamp proportion=0.64%
+Epoch 237/250 - Total: 5.2701 | Recon: 0.9114, Percept: 2.7691, GAN: 0.5030, KL: 0.3228, tc: 2.5152, mi: 0.4123, dkld: 0.3005, Cls: 0.7637 | [Disc: 0.7207
+Epoch 238/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 238/250:   3%|▎         | 1/37 [00:03<02:18,  3.85s/it]Epoch 238/250:   5%|▌         | 2/37 [00:06<01:54,  3.29s/it]Epoch 238/250:   8%|▊         | 3/37 [00:09<01:36,  2.84s/it]Epoch 238/250:  11%|█         | 4/37 [00:11<01:34,  2.87s/it]Epoch 238/250:  14%|█▎        | 5/37 [00:14<01:32,  2.88s/it]Epoch 238/250:  16%|█▌        | 6/37 [00:17<01:29,  2.89s/it]Epoch 238/250:  19%|█▉        | 7/37 [00:20<01:26,  2.89s/it]Epoch 238/250:  22%|██▏       | 8/37 [00:23<01:24,  2.90s/it]Epoch 238/250:  24%|██▍       | 9/37 [00:26<01:21,  2.90s/it]Epoch 238/250:  27%|██▋       | 10/37 [00:29<01:18,  2.90s/it]Epoch 238/250:  30%|██▉       | 11/37 [00:31<01:10,  2.72s/it]Epoch 238/250:  32%|███▏      | 12/37 [00:33<01:04,  2.59s/it]Epoch 238/250:  35%|███▌      | 13/37 [00:36<01:00,  2.50s/it]Epoch 238/250:  38%|███▊      | 14/37 [00:39<01:00,  2.63s/it]Epoch 238/250:  41%|████      | 15/37 [00:42<00:59,  2.71s/it]Epoch 238/250:  43%|████▎     | 16/37 [00:44<00:58,  2.76s/it]Epoch 238/250:  46%|████▌     | 17/37 [00:47<00:56,  2.81s/it]Epoch 238/250:  49%|████▊     | 18/37 [00:50<00:53,  2.83s/it]Epoch 238/250:  51%|█████▏    | 19/37 [00:53<00:51,  2.85s/it]Epoch 238/250:  54%|█████▍    | 20/37 [00:56<00:48,  2.86s/it]Epoch 238/250:  57%|█████▋    | 21/37 [00:59<00:45,  2.87s/it]Epoch 238/250:  59%|█████▉    | 22/37 [01:02<00:43,  2.88s/it]Epoch 238/250:  62%|██████▏   | 23/37 [01:05<00:40,  2.88s/it]Epoch 238/250:  65%|██████▍   | 24/37 [01:08<00:37,  2.89s/it]Epoch 238/250:  68%|██████▊   | 25/37 [01:11<00:34,  2.89s/it]Epoch 238/250:  70%|███████   | 26/37 [01:13<00:31,  2.89s/it]Epoch 238/250:  73%|███████▎  | 27/37 [01:16<00:28,  2.89s/it]Epoch 238/250:  76%|███████▌  | 28/37 [01:19<00:26,  2.89s/it]Epoch 238/250:  78%|███████▊  | 29/37 [01:22<00:23,  2.90s/it]Epoch 238/250:  81%|████████  | 30/37 [01:25<00:20,  2.90s/it]Epoch 238/250:  84%|████████▍ | 31/37 [01:28<00:17,  2.90s/it]Epoch 238/250:  86%|████████▋ | 32/37 [01:31<00:14,  2.90s/it]Epoch 238/250:  89%|████████▉ | 33/37 [01:34<00:11,  2.90s/it]Epoch 238/250:  92%|█████████▏| 34/37 [01:37<00:08,  2.90s/it]Epoch 238/250:  95%|█████████▍| 35/37 [01:39<00:05,  2.89s/it]Epoch 238/250:  97%|█████████▋| 36/37 [01:42<00:02,  2.89s/it]Epoch 238/250: 100%|██████████| 37/37 [01:43<00:00,  2.14s/it]Epoch 238/250: 100%|██████████| 37/37 [01:43<00:00,  2.80s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.16, max=14.54, clamp proportion=3.86%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.46, max=15.56, clamp proportion=3.03%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.03, max=14.73, clamp proportion=2.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.41, max=14.22, clamp proportion=1.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.11, max=13.93, clamp proportion=1.90%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.41, max=13.58, clamp proportion=2.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-34.48, max=16.89, clamp proportion=2.86%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.41, max=15.48, clamp proportion=3.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.36, max=12.20, clamp proportion=1.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.23, max=13.53, clamp proportion=4.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.64, max=14.39, clamp proportion=3.10%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.89, max=10.56, clamp proportion=0.73%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.75, max=16.45, clamp proportion=3.74%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.31, max=15.55, clamp proportion=1.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.54, max=13.84, clamp proportion=3.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-34.39, max=16.67, clamp proportion=2.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.57, max=13.37, clamp proportion=2.12%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.81, max=13.73, clamp proportion=1.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-33.15, max=16.05, clamp proportion=2.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.08, max=15.43, clamp proportion=3.03%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.77, max=13.78, clamp proportion=2.91%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-33.68, max=16.13, clamp proportion=3.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.63, max=13.62, clamp proportion=3.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.48, max=12.05, clamp proportion=0.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.38, max=16.93, clamp proportion=2.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.46, max=11.74, clamp proportion=1.07%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.90, max=12.78, clamp proportion=3.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.92, max=13.22, clamp proportion=3.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.35, max=13.78, clamp proportion=2.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.31, max=14.72, clamp proportion=2.69%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.24, max=10.89, clamp proportion=0.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.81, max=11.70, clamp proportion=2.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.78, max=13.00, clamp proportion=2.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.97, max=16.00, clamp proportion=2.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.94, max=13.42, clamp proportion=0.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.38, max=13.33, clamp proportion=4.13%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-22.36, max=8.06, clamp proportion=0.37%
+Epoch 238/250 - Total: 5.3003 | Recon: 0.9125, Percept: 2.7695, GAN: 0.5190, KL: 0.3343, tc: 2.5149, mi: 0.4123, dkld: 0.4154, Cls: 0.7649 | [Disc: 0.7862
+Epoch 239/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 239/250:   3%|▎         | 1/37 [00:03<01:57,  3.26s/it]Epoch 239/250:   5%|▌         | 2/37 [00:05<01:35,  2.73s/it]Epoch 239/250:   8%|▊         | 3/37 [00:08<01:31,  2.69s/it]Epoch 239/250:  11%|█         | 4/37 [00:10<01:23,  2.54s/it]Epoch 239/250:  14%|█▎        | 5/37 [00:12<01:18,  2.45s/it]Epoch 239/250:  16%|█▌        | 6/37 [00:15<01:14,  2.40s/it]Epoch 239/250:  19%|█▉        | 7/37 [00:17<01:10,  2.36s/it]Epoch 239/250:  22%|██▏       | 8/37 [00:19<01:07,  2.34s/it]Epoch 239/250:  24%|██▍       | 9/37 [00:22<01:05,  2.33s/it]Epoch 239/250:  27%|██▋       | 10/37 [00:24<01:02,  2.32s/it]Epoch 239/250:  30%|██▉       | 11/37 [00:26<01:00,  2.31s/it]Epoch 239/250:  32%|███▏      | 12/37 [00:28<00:57,  2.31s/it]Epoch 239/250:  35%|███▌      | 13/37 [00:31<00:55,  2.31s/it]Epoch 239/250:  38%|███▊      | 14/37 [00:33<00:53,  2.31s/it]Epoch 239/250:  41%|████      | 15/37 [00:35<00:50,  2.31s/it]Epoch 239/250:  43%|████▎     | 16/37 [00:38<00:48,  2.31s/it]Epoch 239/250:  46%|████▌     | 17/37 [00:40<00:46,  2.30s/it]Epoch 239/250:  49%|████▊     | 18/37 [00:42<00:43,  2.30s/it]Epoch 239/250:  51%|█████▏    | 19/37 [00:45<00:41,  2.30s/it]Epoch 239/250:  54%|█████▍    | 20/37 [00:47<00:39,  2.30s/it]Epoch 239/250:  57%|█████▋    | 21/37 [00:49<00:36,  2.30s/it]Epoch 239/250:  59%|█████▉    | 22/37 [00:51<00:34,  2.30s/it]Epoch 239/250:  62%|██████▏   | 23/37 [00:54<00:32,  2.30s/it]Epoch 239/250:  65%|██████▍   | 24/37 [00:56<00:29,  2.30s/it]Epoch 239/250:  68%|██████▊   | 25/37 [00:58<00:27,  2.30s/it]Epoch 239/250:  70%|███████   | 26/37 [01:01<00:25,  2.30s/it]Epoch 239/250:  73%|███████▎  | 27/37 [01:03<00:22,  2.30s/it]Epoch 239/250:  76%|███████▌  | 28/37 [01:05<00:20,  2.30s/it]Epoch 239/250:  78%|███████▊  | 29/37 [01:08<00:18,  2.30s/it]Epoch 239/250:  81%|████████  | 30/37 [01:10<00:16,  2.30s/it]Epoch 239/250:  84%|████████▍ | 31/37 [01:12<00:13,  2.30s/it]Epoch 239/250:  86%|████████▋ | 32/37 [01:14<00:11,  2.30s/it]Epoch 239/250:  89%|████████▉ | 33/37 [01:17<00:09,  2.29s/it]Epoch 239/250:  92%|█████████▏| 34/37 [01:19<00:06,  2.30s/it]Epoch 239/250:  95%|█████████▍| 35/37 [01:21<00:04,  2.30s/it]Epoch 239/250:  97%|█████████▋| 36/37 [01:24<00:02,  2.30s/it]Epoch 239/250: 100%|██████████| 37/37 [01:24<00:00,  1.71s/it]Epoch 239/250: 100%|██████████| 37/37 [01:24<00:00,  2.29s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.68, max=11.83, clamp proportion=1.03%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.37, max=11.39, clamp proportion=1.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.90, max=13.73, clamp proportion=2.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.49, max=14.47, clamp proportion=5.35%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.03, max=16.20, clamp proportion=2.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.27, max=15.70, clamp proportion=2.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.34, max=13.58, clamp proportion=2.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.17, max=13.46, clamp proportion=2.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.24, max=12.46, clamp proportion=2.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.73, max=14.14, clamp proportion=2.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.48, max=15.15, clamp proportion=3.08%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.90, max=15.30, clamp proportion=3.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.88, max=13.40, clamp proportion=1.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.34, max=12.61, clamp proportion=2.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.46, max=14.10, clamp proportion=3.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.28, max=13.10, clamp proportion=1.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.85, max=13.21, clamp proportion=1.86%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.18, max=11.48, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.70, max=13.07, clamp proportion=1.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.79, max=12.92, clamp proportion=1.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.76, max=9.31, clamp proportion=0.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.96, max=16.32, clamp proportion=4.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.83, max=12.40, clamp proportion=3.30%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.71, max=15.30, clamp proportion=1.86%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.80, max=14.03, clamp proportion=2.86%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.61, max=16.13, clamp proportion=5.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.52, max=14.13, clamp proportion=1.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.37, max=14.08, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.48, max=14.51, clamp proportion=3.20%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.54, max=11.24, clamp proportion=1.68%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-33.04, max=16.59, clamp proportion=4.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.52, max=15.70, clamp proportion=3.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.65, max=13.10, clamp proportion=3.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.45, max=14.42, clamp proportion=3.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.50, max=16.97, clamp proportion=2.03%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.32, max=16.01, clamp proportion=2.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.92, max=12.48, clamp proportion=3.03%
+Epoch 239/250 - Total: 5.3004 | Recon: 0.9101, Percept: 2.7768, GAN: 0.5256, KL: 0.3275, tc: 2.5151, mi: 0.4123, dkld: 0.3478, Cls: 0.7604 | [Disc: 0.7333
+Epoch 240/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 240/250:   3%|▎         | 1/37 [00:03<01:53,  3.15s/it]Epoch 240/250:   5%|▌         | 2/37 [00:05<01:33,  2.68s/it]Epoch 240/250:   8%|▊         | 3/37 [00:07<01:25,  2.51s/it]Epoch 240/250:  11%|█         | 4/37 [00:10<01:19,  2.42s/it]Epoch 240/250:  14%|█▎        | 5/37 [00:12<01:16,  2.38s/it]Epoch 240/250:  16%|█▌        | 6/37 [00:14<01:13,  2.36s/it]Epoch 240/250:  19%|█▉        | 7/37 [00:17<01:10,  2.34s/it]Epoch 240/250:  22%|██▏       | 8/37 [00:19<01:07,  2.33s/it]Epoch 240/250:  24%|██▍       | 9/37 [00:21<01:05,  2.32s/it]Epoch 240/250:  27%|██▋       | 10/37 [00:23<01:02,  2.32s/it]Epoch 240/250:  30%|██▉       | 11/37 [00:26<01:00,  2.31s/it]Epoch 240/250:  32%|███▏      | 12/37 [00:28<00:57,  2.31s/it]Epoch 240/250:  35%|███▌      | 13/37 [00:30<00:55,  2.31s/it]Epoch 240/250:  38%|███▊      | 14/37 [00:33<00:53,  2.31s/it]Epoch 240/250:  41%|████      | 15/37 [00:35<00:50,  2.30s/it]Epoch 240/250:  43%|████▎     | 16/37 [00:37<00:48,  2.30s/it]Epoch 240/250:  46%|████▌     | 17/37 [00:40<00:49,  2.48s/it]Epoch 240/250:  49%|████▊     | 18/37 [00:43<00:49,  2.61s/it]Epoch 240/250:  51%|█████▏    | 19/37 [00:46<00:48,  2.70s/it]Epoch 240/250:  54%|█████▍    | 20/37 [00:49<00:46,  2.76s/it]Epoch 240/250:  57%|█████▋    | 21/37 [00:52<00:44,  2.80s/it]Epoch 240/250:  59%|█████▉    | 22/37 [00:55<00:42,  2.83s/it]Epoch 240/250:  62%|██████▏   | 23/37 [00:57<00:37,  2.67s/it]Epoch 240/250:  65%|██████▍   | 24/37 [00:59<00:33,  2.56s/it]Epoch 240/250:  68%|██████▊   | 25/37 [01:02<00:31,  2.67s/it]Epoch 240/250:  70%|███████   | 26/37 [01:05<00:30,  2.74s/it]Epoch 240/250:  73%|███████▎  | 27/37 [01:08<00:27,  2.79s/it]Epoch 240/250:  76%|███████▌  | 28/37 [01:11<00:25,  2.82s/it]Epoch 240/250:  78%|███████▊  | 29/37 [01:14<00:22,  2.85s/it]Epoch 240/250:  81%|████████  | 30/37 [01:17<00:20,  2.86s/it]Epoch 240/250:  84%|████████▍ | 31/37 [01:20<00:17,  2.88s/it]Epoch 240/250:  86%|████████▋ | 32/37 [01:23<00:14,  2.89s/it]Epoch 240/250:  89%|████████▉ | 33/37 [01:25<00:11,  2.89s/it]Epoch 240/250:  92%|█████████▏| 34/37 [01:28<00:08,  2.72s/it]Epoch 240/250:  95%|█████████▍| 35/37 [01:30<00:05,  2.59s/it]Epoch 240/250:  97%|█████████▋| 36/37 [01:32<00:02,  2.50s/it]Epoch 240/250: 100%|██████████| 37/37 [01:33<00:00,  1.86s/it]Epoch 240/250: 100%|██████████| 37/37 [01:33<00:00,  2.52s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.36, max=13.27, clamp proportion=2.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.59, max=14.56, clamp proportion=2.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.66, max=12.16, clamp proportion=1.10%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.71, max=15.68, clamp proportion=4.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.55, max=12.75, clamp proportion=2.83%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.18, max=16.10, clamp proportion=2.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.32, max=15.02, clamp proportion=2.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.61, max=15.02, clamp proportion=2.05%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.36, max=14.39, clamp proportion=4.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.30, max=12.54, clamp proportion=0.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.74, max=13.34, clamp proportion=2.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.41, max=14.98, clamp proportion=2.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.43, max=14.81, clamp proportion=3.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.44, max=13.23, clamp proportion=4.08%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.48, max=15.22, clamp proportion=2.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.04, max=13.78, clamp proportion=1.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.61, max=13.57, clamp proportion=1.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.41, max=14.64, clamp proportion=1.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.98, max=15.24, clamp proportion=4.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.42, max=16.23, clamp proportion=4.52%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.60, max=15.65, clamp proportion=3.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.78, max=11.73, clamp proportion=2.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.73, max=15.13, clamp proportion=1.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.15, max=15.02, clamp proportion=3.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-33.01, max=15.60, clamp proportion=2.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.22, max=15.34, clamp proportion=3.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.39, max=13.73, clamp proportion=3.47%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.47, max=13.52, clamp proportion=2.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.05, max=15.13, clamp proportion=1.68%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.65, max=14.88, clamp proportion=2.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.34, max=13.55, clamp proportion=4.52%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.41, max=15.03, clamp proportion=3.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.46, max=12.35, clamp proportion=2.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.46, max=13.09, clamp proportion=3.30%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.24, max=14.29, clamp proportion=3.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.28, max=14.22, clamp proportion=2.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.77, max=10.15, clamp proportion=3.68%
+Epoch 240/250 - Total: 5.2240 | Recon: 0.8859, Percept: 2.7323, GAN: 0.5270, KL: 0.3202, tc: 2.5135, mi: 0.4123, dkld: 0.2762, Cls: 0.7587 | [Disc: 2.2998
+Checkpoint saved at epoch 239 to outputs/res256_lat64_ep250_bat64_lrn0.0002_rec50.0_per10.0_gan0.1_kld0.1(tc0.01_mi0.1_dk1e-05)_cls0.25_pat16/checkpoints/checkpoint_epoch_239.pth
+Epoch 241/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 241/250:   3%|▎         | 1/37 [00:03<02:17,  3.83s/it]Epoch 241/250:   5%|▌         | 2/37 [00:06<01:55,  3.29s/it]Epoch 241/250:   8%|▊         | 3/37 [00:09<01:45,  3.11s/it]Epoch 241/250:  11%|█         | 4/37 [00:12<01:40,  3.03s/it]Epoch 241/250:  14%|█▎        | 5/37 [00:15<01:35,  2.98s/it]Epoch 241/250:  16%|█▌        | 6/37 [00:18<01:31,  2.96s/it]Epoch 241/250:  19%|█▉        | 7/37 [00:21<01:28,  2.94s/it]Epoch 241/250:  22%|██▏       | 8/37 [00:23<01:19,  2.73s/it]Epoch 241/250:  24%|██▍       | 9/37 [00:25<01:12,  2.60s/it]Epoch 241/250:  27%|██▋       | 10/37 [00:28<01:07,  2.51s/it]Epoch 241/250:  30%|██▉       | 11/37 [00:30<01:03,  2.44s/it]Epoch 241/250:  32%|███▏      | 12/37 [00:33<01:02,  2.51s/it]Epoch 241/250:  35%|███▌      | 13/37 [00:35<00:58,  2.45s/it]Epoch 241/250:  38%|███▊      | 14/37 [00:37<00:55,  2.40s/it]Epoch 241/250:  41%|████      | 15/37 [00:40<00:52,  2.37s/it]Epoch 241/250:  43%|████▎     | 16/37 [00:42<00:49,  2.36s/it]Epoch 241/250:  46%|████▌     | 17/37 [00:44<00:46,  2.34s/it]Epoch 241/250:  49%|████▊     | 18/37 [00:46<00:44,  2.33s/it]Epoch 241/250:  51%|█████▏    | 19/37 [00:49<00:41,  2.32s/it]Epoch 241/250:  54%|█████▍    | 20/37 [00:51<00:39,  2.32s/it]Epoch 241/250:  57%|█████▋    | 21/37 [00:53<00:37,  2.31s/it]Epoch 241/250:  59%|█████▉    | 22/37 [00:56<00:34,  2.31s/it]Epoch 241/250:  62%|██████▏   | 23/37 [00:58<00:32,  2.31s/it]Epoch 241/250:  65%|██████▍   | 24/37 [01:00<00:29,  2.30s/it]Epoch 241/250:  68%|██████▊   | 25/37 [01:03<00:27,  2.30s/it]Epoch 241/250:  70%|███████   | 26/37 [01:05<00:25,  2.30s/it]Epoch 241/250:  73%|███████▎  | 27/37 [01:07<00:23,  2.30s/it]Epoch 241/250:  76%|███████▌  | 28/37 [01:09<00:20,  2.30s/it]Epoch 241/250:  78%|███████▊  | 29/37 [01:12<00:18,  2.30s/it]Epoch 241/250:  81%|████████  | 30/37 [01:15<00:17,  2.48s/it]Epoch 241/250:  84%|████████▍ | 31/37 [01:18<00:15,  2.61s/it]Epoch 241/250:  86%|████████▋ | 32/37 [01:20<00:13,  2.69s/it]Epoch 241/250:  89%|████████▉ | 33/37 [01:23<00:11,  2.75s/it]Epoch 241/250:  92%|█████████▏| 34/37 [01:26<00:08,  2.80s/it]Epoch 241/250:  95%|█████████▍| 35/37 [01:29<00:05,  2.83s/it]Epoch 241/250:  97%|█████████▋| 36/37 [01:32<00:02,  2.85s/it]Epoch 241/250: 100%|██████████| 37/37 [01:32<00:00,  2.11s/it]Epoch 241/250: 100%|██████████| 37/37 [01:33<00:00,  2.51s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.01, max=11.82, clamp proportion=1.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.69, max=10.70, clamp proportion=2.20%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.62, max=15.20, clamp proportion=3.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.14, max=15.50, clamp proportion=3.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.22, max=13.33, clamp proportion=2.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.84, max=14.78, clamp proportion=2.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.62, max=13.07, clamp proportion=3.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-33.72, max=16.94, clamp proportion=3.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.04, max=13.77, clamp proportion=3.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.54, max=14.24, clamp proportion=1.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.58, max=10.95, clamp proportion=1.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.38, max=15.50, clamp proportion=3.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.51, max=14.94, clamp proportion=3.98%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.47, max=12.14, clamp proportion=3.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.70, max=12.31, clamp proportion=1.68%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.40, max=14.43, clamp proportion=2.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.59, max=12.88, clamp proportion=1.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.85, max=11.11, clamp proportion=0.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.03, max=12.74, clamp proportion=3.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.75, max=15.47, clamp proportion=2.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.63, max=11.77, clamp proportion=1.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.14, max=13.13, clamp proportion=1.98%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.16, max=14.50, clamp proportion=3.47%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.38, max=12.40, clamp proportion=3.98%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-33.09, max=15.63, clamp proportion=2.86%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.56, max=13.36, clamp proportion=2.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.19, max=14.35, clamp proportion=3.47%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.64, max=13.86, clamp proportion=3.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.93, max=15.93, clamp proportion=3.91%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.60, max=15.36, clamp proportion=1.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.06, max=11.61, clamp proportion=2.47%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.62, max=13.00, clamp proportion=3.03%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-34.42, max=16.56, clamp proportion=3.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.02, max=13.73, clamp proportion=3.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.33, max=14.48, clamp proportion=2.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.16, max=13.76, clamp proportion=2.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-20.74, max=5.63, clamp proportion=0.18%
+Epoch 241/250 - Total: 5.1120 | Recon: 0.8899, Percept: 2.7157, GAN: 0.4286, KL: 0.3189, tc: 2.5149, mi: 0.4123, dkld: 0.2616, Cls: 0.7590 | [Disc: 1.0690
+Epoch 242/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 242/250:   3%|▎         | 1/37 [00:03<01:56,  3.24s/it]Epoch 242/250:   5%|▌         | 2/37 [00:05<01:35,  2.72s/it]Epoch 242/250:   8%|▊         | 3/37 [00:07<01:26,  2.53s/it]Epoch 242/250:  11%|█         | 4/37 [00:10<01:21,  2.46s/it]Epoch 242/250:  14%|█▎        | 5/37 [00:12<01:17,  2.43s/it]Epoch 242/250:  16%|█▌        | 6/37 [00:14<01:13,  2.39s/it]Epoch 242/250:  19%|█▉        | 7/37 [00:17<01:10,  2.35s/it]Epoch 242/250:  22%|██▏       | 8/37 [00:19<01:07,  2.34s/it]Epoch 242/250:  24%|██▍       | 9/37 [00:21<01:05,  2.33s/it]Epoch 242/250:  27%|██▋       | 10/37 [00:24<01:02,  2.32s/it]Epoch 242/250:  30%|██▉       | 11/37 [00:27<01:05,  2.50s/it]Epoch 242/250:  32%|███▏      | 12/37 [00:29<01:05,  2.62s/it]Epoch 242/250:  35%|███▌      | 13/37 [00:32<01:05,  2.71s/it]Epoch 242/250:  38%|███▊      | 14/37 [00:35<01:03,  2.77s/it]Epoch 242/250:  41%|████      | 15/37 [00:38<01:01,  2.81s/it]Epoch 242/250:  43%|████▎     | 16/37 [00:41<00:59,  2.84s/it]Epoch 242/250:  46%|████▌     | 17/37 [00:44<00:57,  2.86s/it]Epoch 242/250:  49%|████▊     | 18/37 [00:47<00:54,  2.87s/it]Epoch 242/250:  51%|█████▏    | 19/37 [00:50<00:51,  2.88s/it]Epoch 242/250:  54%|█████▍    | 20/37 [00:52<00:46,  2.71s/it]Epoch 242/250:  57%|█████▋    | 21/37 [00:54<00:41,  2.58s/it]Epoch 242/250:  59%|█████▉    | 22/37 [00:57<00:40,  2.68s/it]Epoch 242/250:  62%|██████▏   | 23/37 [01:00<00:38,  2.75s/it]Epoch 242/250:  65%|██████▍   | 24/37 [01:03<00:36,  2.79s/it]Epoch 242/250:  68%|██████▊   | 25/37 [01:06<00:33,  2.82s/it]Epoch 242/250:  70%|███████   | 26/37 [01:09<00:31,  2.85s/it]Epoch 242/250:  73%|███████▎  | 27/37 [01:12<00:28,  2.86s/it]Epoch 242/250:  76%|███████▌  | 28/37 [01:15<00:25,  2.87s/it]Epoch 242/250:  78%|███████▊  | 29/37 [01:18<00:23,  2.88s/it]Epoch 242/250:  81%|████████  | 30/37 [01:20<00:20,  2.89s/it]Epoch 242/250:  84%|████████▍ | 31/37 [01:23<00:17,  2.89s/it]Epoch 242/250:  86%|████████▋ | 32/37 [01:26<00:14,  2.89s/it]Epoch 242/250:  89%|████████▉ | 33/37 [01:29<00:11,  2.89s/it]Epoch 242/250:  92%|█████████▏| 34/37 [01:32<00:08,  2.89s/it]Epoch 242/250:  95%|█████████▍| 35/37 [01:35<00:05,  2.90s/it]Epoch 242/250:  97%|█████████▋| 36/37 [01:38<00:02,  2.90s/it]Epoch 242/250: 100%|██████████| 37/37 [01:38<00:00,  2.15s/it]Epoch 242/250: 100%|██████████| 37/37 [01:38<00:00,  2.67s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.04, max=16.19, clamp proportion=2.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.50, max=15.38, clamp proportion=4.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.03, max=14.30, clamp proportion=3.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.26, max=17.19, clamp proportion=1.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.01, max=15.82, clamp proportion=5.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.03, max=13.56, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.41, max=16.70, clamp proportion=2.91%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.69, max=17.95, clamp proportion=3.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.43, max=16.18, clamp proportion=4.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.45, max=13.85, clamp proportion=1.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.66, max=14.91, clamp proportion=2.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.68, max=14.97, clamp proportion=3.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.87, max=17.69, clamp proportion=2.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.75, max=13.69, clamp proportion=1.07%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-33.20, max=18.41, clamp proportion=2.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.77, max=13.69, clamp proportion=3.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.43, max=15.33, clamp proportion=3.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.28, max=14.92, clamp proportion=3.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.40, max=12.60, clamp proportion=2.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.85, max=13.48, clamp proportion=3.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.56, max=14.59, clamp proportion=3.03%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.13, max=16.15, clamp proportion=1.98%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.50, max=13.30, clamp proportion=3.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.45, max=14.35, clamp proportion=1.83%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.50, max=13.56, clamp proportion=2.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.23, max=15.03, clamp proportion=3.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.77, max=13.20, clamp proportion=2.86%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-33.36, max=16.71, clamp proportion=3.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.58, max=15.50, clamp proportion=3.47%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-34.44, max=20.71, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.56, max=13.25, clamp proportion=1.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.92, max=15.07, clamp proportion=2.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.13, max=14.15, clamp proportion=2.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.24, max=14.08, clamp proportion=1.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.31, max=13.86, clamp proportion=1.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.31, max=14.05, clamp proportion=2.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.91, max=14.47, clamp proportion=4.04%
+Epoch 242/250 - Total: 5.4056 | Recon: 0.9074, Percept: 2.7527, GAN: 0.4870, KL: 0.4841, tc: 2.5165, mi: 0.4123, dkld: 1.9118, Cls: 0.7745 | [Disc: 0.8992
+Epoch 243/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 243/250:   3%|▎         | 1/37 [00:03<01:57,  3.26s/it]Epoch 243/250:   5%|▌         | 2/37 [00:05<01:34,  2.70s/it]Epoch 243/250:   8%|▊         | 3/37 [00:07<01:25,  2.52s/it]Epoch 243/250:  11%|█         | 4/37 [00:10<01:20,  2.43s/it]Epoch 243/250:  14%|█▎        | 5/37 [00:12<01:16,  2.39s/it]Epoch 243/250:  16%|█▌        | 6/37 [00:15<01:19,  2.56s/it]Epoch 243/250:  19%|█▉        | 7/37 [00:18<01:20,  2.67s/it]Epoch 243/250:  22%|██▏       | 8/37 [00:21<01:19,  2.74s/it]Epoch 243/250:  24%|██▍       | 9/37 [00:24<01:18,  2.79s/it]Epoch 243/250:  27%|██▋       | 10/37 [00:26<01:16,  2.83s/it]Epoch 243/250:  30%|██▉       | 11/37 [00:29<01:14,  2.85s/it]Epoch 243/250:  32%|███▏      | 12/37 [00:32<01:11,  2.86s/it]Epoch 243/250:  35%|███▌      | 13/37 [00:35<01:09,  2.88s/it]Epoch 243/250:  38%|███▊      | 14/37 [00:38<01:06,  2.88s/it]Epoch 243/250:  41%|████      | 15/37 [00:41<01:03,  2.89s/it]Epoch 243/250:  43%|████▎     | 16/37 [00:44<01:00,  2.89s/it]Epoch 243/250:  46%|████▌     | 17/37 [00:46<00:54,  2.71s/it]Epoch 243/250:  49%|████▊     | 18/37 [00:48<00:49,  2.59s/it]Epoch 243/250:  51%|█████▏    | 19/37 [00:51<00:45,  2.50s/it]Epoch 243/250:  54%|█████▍    | 20/37 [00:54<00:44,  2.62s/it]Epoch 243/250:  57%|█████▋    | 21/37 [00:57<00:43,  2.71s/it]Epoch 243/250:  59%|█████▉    | 22/37 [00:59<00:41,  2.76s/it]Epoch 243/250:  62%|██████▏   | 23/37 [01:02<00:39,  2.80s/it]Epoch 243/250:  65%|██████▍   | 24/37 [01:05<00:36,  2.83s/it]Epoch 243/250:  68%|██████▊   | 25/37 [01:08<00:34,  2.85s/it]Epoch 243/250:  70%|███████   | 26/37 [01:11<00:31,  2.86s/it]Epoch 243/250:  73%|███████▎  | 27/37 [01:14<00:28,  2.87s/it]Epoch 243/250:  76%|███████▌  | 28/37 [01:17<00:25,  2.88s/it]Epoch 243/250:  78%|███████▊  | 29/37 [01:20<00:23,  2.89s/it]Epoch 243/250:  81%|████████  | 30/37 [01:23<00:20,  2.89s/it]Epoch 243/250:  84%|████████▍ | 31/37 [01:26<00:17,  2.89s/it]Epoch 243/250:  86%|████████▋ | 32/37 [01:28<00:14,  2.89s/it]Epoch 243/250:  89%|████████▉ | 33/37 [01:31<00:11,  2.90s/it]Epoch 243/250:  92%|█████████▏| 34/37 [01:34<00:08,  2.90s/it]Epoch 243/250:  95%|█████████▍| 35/37 [01:37<00:05,  2.90s/it]Epoch 243/250:  97%|█████████▋| 36/37 [01:40<00:02,  2.89s/it]Epoch 243/250: 100%|██████████| 37/37 [01:40<00:00,  2.14s/it]Epoch 243/250: 100%|██████████| 37/37 [01:41<00:00,  2.73s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.08, max=14.59, clamp proportion=3.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.75, max=15.75, clamp proportion=1.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-22.98, max=12.46, clamp proportion=0.63%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.08, max=13.20, clamp proportion=1.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.66, max=16.67, clamp proportion=2.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.09, max=14.91, clamp proportion=2.86%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.82, max=15.73, clamp proportion=3.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.16, max=14.56, clamp proportion=2.86%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.90, max=16.78, clamp proportion=2.91%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.15, max=16.16, clamp proportion=1.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.12, max=16.44, clamp proportion=4.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.34, max=19.80, clamp proportion=2.83%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.71, max=13.70, clamp proportion=4.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.16, max=15.11, clamp proportion=2.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.94, max=13.79, clamp proportion=3.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.76, max=14.74, clamp proportion=3.30%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.45, max=13.39, clamp proportion=3.96%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.36, max=10.26, clamp proportion=1.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.62, max=14.35, clamp proportion=3.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.83, max=15.31, clamp proportion=2.83%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.71, max=12.10, clamp proportion=2.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.82, max=12.67, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.94, max=13.45, clamp proportion=2.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.52, max=11.68, clamp proportion=2.03%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.02, max=14.06, clamp proportion=2.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.48, max=13.18, clamp proportion=3.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.90, max=14.38, clamp proportion=3.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.47, max=14.91, clamp proportion=4.52%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.61, max=12.79, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.17, max=14.98, clamp proportion=2.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.23, max=11.88, clamp proportion=3.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.40, max=12.99, clamp proportion=2.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.74, max=13.88, clamp proportion=2.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.03, max=15.54, clamp proportion=1.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.91, max=13.70, clamp proportion=3.69%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.20, max=14.36, clamp proportion=2.47%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-22.83, max=10.06, clamp proportion=0.83%
+Epoch 243/250 - Total: 5.3183 | Recon: 0.9007, Percept: 2.7453, GAN: 0.5087, KL: 0.4094, tc: 2.5155, mi: 0.4123, dkld: 1.1662, Cls: 0.7542 | [Disc: 0.8882
+Epoch 244/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 244/250:   3%|▎         | 1/37 [00:03<01:55,  3.22s/it]Epoch 244/250:   5%|▌         | 2/37 [00:05<01:34,  2.71s/it]Epoch 244/250:   8%|▊         | 3/37 [00:08<01:35,  2.80s/it]Epoch 244/250:  11%|█         | 4/37 [00:10<01:25,  2.60s/it]Epoch 244/250:  14%|█▎        | 5/37 [00:13<01:20,  2.50s/it]Epoch 244/250:  16%|█▌        | 6/37 [00:15<01:15,  2.44s/it]Epoch 244/250:  19%|█▉        | 7/37 [00:17<01:11,  2.39s/it]Epoch 244/250:  22%|██▏       | 8/37 [00:20<01:08,  2.36s/it]Epoch 244/250:  24%|██▍       | 9/37 [00:22<01:05,  2.35s/it]Epoch 244/250:  27%|██▋       | 10/37 [00:24<01:03,  2.33s/it]Epoch 244/250:  30%|██▉       | 11/37 [00:26<01:00,  2.34s/it]Epoch 244/250:  32%|███▏      | 12/37 [00:29<00:58,  2.36s/it]Epoch 244/250:  35%|███▌      | 13/37 [00:31<00:56,  2.35s/it]Epoch 244/250:  38%|███▊      | 14/37 [00:34<00:54,  2.35s/it]Epoch 244/250:  41%|████      | 15/37 [00:36<00:53,  2.45s/it]Epoch 244/250:  43%|████▎     | 16/37 [00:39<00:50,  2.40s/it]Epoch 244/250:  46%|████▌     | 17/37 [00:41<00:47,  2.37s/it]Epoch 244/250:  49%|████▊     | 18/37 [00:43<00:44,  2.35s/it]Epoch 244/250:  51%|█████▏    | 19/37 [00:45<00:42,  2.34s/it]Epoch 244/250:  54%|█████▍    | 20/37 [00:48<00:39,  2.32s/it]Epoch 244/250:  57%|█████▋    | 21/37 [00:50<00:37,  2.32s/it]Epoch 244/250:  59%|█████▉    | 22/37 [00:52<00:34,  2.31s/it]Epoch 244/250:  62%|██████▏   | 23/37 [00:55<00:32,  2.31s/it]Epoch 244/250:  65%|██████▍   | 24/37 [00:57<00:29,  2.31s/it]Epoch 244/250:  68%|██████▊   | 25/37 [01:00<00:29,  2.49s/it]Epoch 244/250:  70%|███████   | 26/37 [01:03<00:28,  2.61s/it]Epoch 244/250:  73%|███████▎  | 27/37 [01:06<00:26,  2.70s/it]Epoch 244/250:  76%|███████▌  | 28/37 [01:08<00:23,  2.58s/it]Epoch 244/250:  78%|███████▊  | 29/37 [01:10<00:19,  2.49s/it]Epoch 244/250:  81%|████████  | 30/37 [01:13<00:17,  2.44s/it]Epoch 244/250:  84%|████████▍ | 31/37 [01:15<00:14,  2.40s/it]Epoch 244/250:  86%|████████▋ | 32/37 [01:17<00:11,  2.37s/it]Epoch 244/250:  89%|████████▉ | 33/37 [01:19<00:09,  2.35s/it]Epoch 244/250:  92%|█████████▏| 34/37 [01:22<00:06,  2.33s/it]Epoch 244/250:  95%|█████████▍| 35/37 [01:24<00:04,  2.32s/it]Epoch 244/250:  97%|█████████▋| 36/37 [01:26<00:02,  2.31s/it]Epoch 244/250: 100%|██████████| 37/37 [01:27<00:00,  1.73s/it]Epoch 244/250: 100%|██████████| 37/37 [01:27<00:00,  2.36s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.85, max=15.80, clamp proportion=4.98%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.29, max=14.46, clamp proportion=2.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.69, max=15.34, clamp proportion=2.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.30, max=15.20, clamp proportion=2.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.99, max=16.41, clamp proportion=3.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.21, max=11.54, clamp proportion=1.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.62, max=15.24, clamp proportion=3.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.54, max=15.69, clamp proportion=2.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.82, max=16.11, clamp proportion=2.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.71, max=15.25, clamp proportion=1.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.38, max=15.77, clamp proportion=3.12%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.95, max=13.76, clamp proportion=4.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.66, max=15.25, clamp proportion=4.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.95, max=14.52, clamp proportion=3.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.27, max=15.92, clamp proportion=2.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.99, max=12.74, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.80, max=14.86, clamp proportion=4.13%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.06, max=12.35, clamp proportion=1.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-34.94, max=19.47, clamp proportion=3.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.59, max=11.77, clamp proportion=2.12%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.80, max=14.48, clamp proportion=3.08%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.74, max=12.34, clamp proportion=1.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.05, max=13.35, clamp proportion=3.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.33, max=13.20, clamp proportion=2.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.98, max=13.35, clamp proportion=3.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.33, max=14.54, clamp proportion=2.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.98, max=14.40, clamp proportion=3.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.04, max=13.25, clamp proportion=3.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.99, max=12.68, clamp proportion=2.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.06, max=12.63, clamp proportion=2.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.17, max=12.47, clamp proportion=3.30%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.78, max=11.89, clamp proportion=2.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-21.94, max=11.19, clamp proportion=0.24%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.39, max=13.30, clamp proportion=1.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.33, max=14.86, clamp proportion=3.12%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.40, max=13.96, clamp proportion=3.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-21.73, max=9.76, clamp proportion=0.28%
+Epoch 244/250 - Total: 5.2541 | Recon: 0.8963, Percept: 2.7384, GAN: 0.4919, KL: 0.3827, tc: 2.5162, mi: 0.4122, dkld: 0.8991, Cls: 0.7448 | [Disc: 0.7622
+Epoch 245/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 245/250:   3%|▎         | 1/37 [00:03<02:11,  3.67s/it]Epoch 245/250:   5%|▌         | 2/37 [00:06<01:52,  3.22s/it]Epoch 245/250:   8%|▊         | 3/37 [00:09<01:44,  3.07s/it]Epoch 245/250:  11%|█         | 4/37 [00:12<01:39,  3.01s/it]Epoch 245/250:  14%|█▎        | 5/37 [00:14<01:28,  2.75s/it]Epoch 245/250:  16%|█▌        | 6/37 [00:16<01:20,  2.60s/it]Epoch 245/250:  19%|█▉        | 7/37 [00:19<01:15,  2.50s/it]Epoch 245/250:  22%|██▏       | 8/37 [00:21<01:10,  2.44s/it]Epoch 245/250:  24%|██▍       | 9/37 [00:23<01:07,  2.39s/it]Epoch 245/250:  27%|██▋       | 10/37 [00:26<01:03,  2.36s/it]Epoch 245/250:  30%|██▉       | 11/37 [00:28<01:00,  2.35s/it]Epoch 245/250:  32%|███▏      | 12/37 [00:30<00:58,  2.34s/it]Epoch 245/250:  35%|███▌      | 13/37 [00:33<00:55,  2.32s/it]Epoch 245/250:  38%|███▊      | 14/37 [00:35<00:53,  2.32s/it]Epoch 245/250:  41%|████      | 15/37 [00:38<00:54,  2.50s/it]Epoch 245/250:  43%|████▎     | 16/37 [00:40<00:51,  2.44s/it]Epoch 245/250:  46%|████▌     | 17/37 [00:42<00:47,  2.40s/it]Epoch 245/250:  49%|████▊     | 18/37 [00:45<00:44,  2.37s/it]Epoch 245/250:  51%|█████▏    | 19/37 [00:48<00:45,  2.53s/it]Epoch 245/250:  54%|█████▍    | 20/37 [00:51<00:44,  2.64s/it]Epoch 245/250:  57%|█████▋    | 21/37 [00:53<00:43,  2.72s/it]Epoch 245/250:  59%|█████▉    | 22/37 [00:56<00:41,  2.77s/it]Epoch 245/250:  62%|██████▏   | 23/37 [00:59<00:39,  2.81s/it]Epoch 245/250:  65%|██████▍   | 24/37 [01:02<00:36,  2.84s/it]Epoch 245/250:  68%|██████▊   | 25/37 [01:05<00:34,  2.85s/it]Epoch 245/250:  70%|███████   | 26/37 [01:08<00:31,  2.87s/it]Epoch 245/250:  73%|███████▎  | 27/37 [01:11<00:28,  2.88s/it]Epoch 245/250:  76%|███████▌  | 28/37 [01:14<00:25,  2.89s/it]Epoch 245/250:  78%|███████▊  | 29/37 [01:17<00:23,  2.89s/it]Epoch 245/250:  81%|████████  | 30/37 [01:20<00:20,  2.89s/it]Epoch 245/250:  84%|████████▍ | 31/37 [01:22<00:17,  2.89s/it]Epoch 245/250:  86%|████████▋ | 32/37 [01:25<00:14,  2.89s/it]Epoch 245/250:  89%|████████▉ | 33/37 [01:28<00:11,  2.90s/it]Epoch 245/250:  92%|█████████▏| 34/37 [01:31<00:08,  2.89s/it]Epoch 245/250:  95%|█████████▍| 35/37 [01:34<00:05,  2.89s/it]Epoch 245/250:  97%|█████████▋| 36/37 [01:37<00:02,  2.89s/it]Epoch 245/250: 100%|██████████| 37/37 [01:37<00:00,  2.14s/it]Epoch 245/250: 100%|██████████| 37/37 [01:37<00:00,  2.65s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.55, max=14.54, clamp proportion=2.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.23, max=11.94, clamp proportion=2.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.60, max=12.93, clamp proportion=3.69%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.90, max=12.82, clamp proportion=2.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.19, max=12.29, clamp proportion=3.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.28, max=13.98, clamp proportion=1.90%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.85, max=13.75, clamp proportion=2.08%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.76, max=12.60, clamp proportion=1.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.72, max=12.92, clamp proportion=2.98%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.84, max=14.26, clamp proportion=2.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.80, max=15.29, clamp proportion=2.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.22, max=14.18, clamp proportion=2.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.79, max=14.30, clamp proportion=2.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.82, max=12.34, clamp proportion=0.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.75, max=12.76, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.78, max=14.15, clamp proportion=3.74%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.52, max=13.02, clamp proportion=3.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-37.45, max=18.12, clamp proportion=1.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.56, max=14.11, clamp proportion=3.30%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.26, max=14.21, clamp proportion=2.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.72, max=15.42, clamp proportion=3.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.21, max=14.12, clamp proportion=3.69%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.55, max=14.09, clamp proportion=4.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.38, max=13.21, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.71, max=15.05, clamp proportion=2.98%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.78, max=11.63, clamp proportion=1.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.04, max=12.48, clamp proportion=2.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.51, max=13.40, clamp proportion=1.73%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.71, max=13.30, clamp proportion=1.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.94, max=8.83, clamp proportion=0.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.44, max=13.72, clamp proportion=3.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.10, max=15.44, clamp proportion=2.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.53, max=15.72, clamp proportion=2.20%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.28, max=14.80, clamp proportion=2.73%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.74, max=16.98, clamp proportion=2.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.13, max=13.72, clamp proportion=1.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.75, max=12.41, clamp proportion=4.04%
+Epoch 245/250 - Total: 5.2286 | Recon: 0.9025, Percept: 2.7434, GAN: 0.5025, KL: 0.3314, tc: 2.5194, mi: 0.4123, dkld: 0.3821, Cls: 0.7488 | [Disc: 0.7880
+Epoch 246/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 246/250:   3%|▎         | 1/37 [00:03<01:56,  3.24s/it]Epoch 246/250:   5%|▌         | 2/37 [00:05<01:34,  2.69s/it]Epoch 246/250:   8%|▊         | 3/37 [00:08<01:34,  2.79s/it]Epoch 246/250:  11%|█         | 4/37 [00:11<01:33,  2.83s/it]Epoch 246/250:  14%|█▎        | 5/37 [00:14<01:31,  2.86s/it]Epoch 246/250:  16%|█▌        | 6/37 [00:17<01:29,  2.87s/it]Epoch 246/250:  19%|█▉        | 7/37 [00:20<01:26,  2.88s/it]Epoch 246/250:  22%|██▏       | 8/37 [00:22<01:23,  2.88s/it]Epoch 246/250:  24%|██▍       | 9/37 [00:25<01:20,  2.89s/it]Epoch 246/250:  27%|██▋       | 10/37 [00:28<01:18,  2.89s/it]Epoch 246/250:  30%|██▉       | 11/37 [00:31<01:15,  2.89s/it]Epoch 246/250:  32%|███▏      | 12/37 [00:34<01:12,  2.90s/it]Epoch 246/250:  35%|███▌      | 13/37 [00:37<01:09,  2.90s/it]Epoch 246/250:  38%|███▊      | 14/37 [00:40<01:06,  2.90s/it]Epoch 246/250:  41%|████      | 15/37 [00:42<01:00,  2.73s/it]Epoch 246/250:  43%|████▎     | 16/37 [00:44<00:54,  2.60s/it]Epoch 246/250:  46%|████▌     | 17/37 [00:47<00:50,  2.51s/it]Epoch 246/250:  49%|████▊     | 18/37 [00:50<00:49,  2.63s/it]Epoch 246/250:  51%|█████▏    | 19/37 [00:53<00:48,  2.71s/it]Epoch 246/250:  54%|█████▍    | 20/37 [00:55<00:47,  2.77s/it]Epoch 246/250:  57%|█████▋    | 21/37 [00:58<00:44,  2.81s/it]Epoch 246/250:  59%|█████▉    | 22/37 [01:01<00:42,  2.83s/it]Epoch 246/250:  62%|██████▏   | 23/37 [01:04<00:39,  2.85s/it]Epoch 246/250:  65%|██████▍   | 24/37 [01:07<00:37,  2.87s/it]Epoch 246/250:  68%|██████▊   | 25/37 [01:10<00:34,  2.87s/it]Epoch 246/250:  70%|███████   | 26/37 [01:13<00:31,  2.88s/it]Epoch 246/250:  73%|███████▎  | 27/37 [01:16<00:28,  2.89s/it]Epoch 246/250:  76%|███████▌  | 28/37 [01:19<00:26,  2.89s/it]Epoch 246/250:  78%|███████▊  | 29/37 [01:22<00:23,  2.89s/it]Epoch 246/250:  81%|████████  | 30/37 [01:24<00:20,  2.90s/it]Epoch 246/250:  84%|████████▍ | 31/37 [01:27<00:17,  2.90s/it]Epoch 246/250:  86%|████████▋ | 32/37 [01:30<00:14,  2.90s/it]Epoch 246/250:  89%|████████▉ | 33/37 [01:33<00:11,  2.90s/it]Epoch 246/250:  92%|█████████▏| 34/37 [01:36<00:08,  2.90s/it]Epoch 246/250:  95%|█████████▍| 35/37 [01:39<00:05,  2.90s/it]Epoch 246/250:  97%|█████████▋| 36/37 [01:42<00:02,  2.90s/it]Epoch 246/250: 100%|██████████| 37/37 [01:42<00:00,  2.15s/it]Epoch 246/250: 100%|██████████| 37/37 [01:42<00:00,  2.78s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.73, max=15.41, clamp proportion=2.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.78, max=14.29, clamp proportion=1.83%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.71, max=13.29, clamp proportion=2.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.85, max=15.28, clamp proportion=3.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.27, max=11.41, clamp proportion=1.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.16, max=14.26, clamp proportion=2.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.15, max=13.38, clamp proportion=3.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.36, max=12.77, clamp proportion=2.73%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.59, max=14.73, clamp proportion=3.96%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.77, max=12.30, clamp proportion=2.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.05, max=13.24, clamp proportion=2.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.86, max=17.39, clamp proportion=2.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.90, max=12.89, clamp proportion=2.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.11, max=13.60, clamp proportion=2.69%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.24, max=14.26, clamp proportion=3.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.30, max=16.64, clamp proportion=1.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.53, max=13.58, clamp proportion=3.30%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.27, max=14.16, clamp proportion=4.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.66, max=15.26, clamp proportion=1.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.01, max=15.65, clamp proportion=3.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.86, max=16.41, clamp proportion=2.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.16, max=12.53, clamp proportion=2.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.27, max=12.63, clamp proportion=0.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.33, max=12.66, clamp proportion=3.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.57, max=15.22, clamp proportion=4.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.67, max=14.52, clamp proportion=4.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.98, max=14.48, clamp proportion=3.47%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.74, max=14.37, clamp proportion=1.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.62, max=11.88, clamp proportion=3.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.92, max=14.26, clamp proportion=3.69%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.84, max=13.43, clamp proportion=2.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.35, max=12.79, clamp proportion=2.12%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.91, max=15.71, clamp proportion=2.08%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.06, max=14.59, clamp proportion=2.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.34, max=13.98, clamp proportion=2.10%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.58, max=13.92, clamp proportion=3.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.24, max=11.18, clamp proportion=2.67%
+Epoch 246/250 - Total: 5.2748 | Recon: 0.8984, Percept: 2.7395, GAN: 0.5601, KL: 0.3241, tc: 2.5167, mi: 0.4123, dkld: 0.3122, Cls: 0.7527 | [Disc: 1.0805
+Epoch 247/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 247/250:   3%|▎         | 1/37 [00:03<02:19,  3.88s/it]Epoch 247/250:   5%|▌         | 2/37 [00:06<01:55,  3.30s/it]Epoch 247/250:   8%|▊         | 3/37 [00:09<01:46,  3.12s/it]Epoch 247/250:  11%|█         | 4/37 [00:12<01:40,  3.03s/it]Epoch 247/250:  14%|█▎        | 5/37 [00:14<01:28,  2.77s/it]Epoch 247/250:  16%|█▌        | 6/37 [00:17<01:20,  2.61s/it]Epoch 247/250:  19%|█▉        | 7/37 [00:19<01:15,  2.51s/it]Epoch 247/250:  22%|██▏       | 8/37 [00:21<01:10,  2.44s/it]Epoch 247/250:  24%|██▍       | 9/37 [00:24<01:07,  2.40s/it]Epoch 247/250:  27%|██▋       | 10/37 [00:26<01:03,  2.37s/it]Epoch 247/250:  30%|██▉       | 11/37 [00:28<01:01,  2.35s/it]Epoch 247/250:  32%|███▏      | 12/37 [00:30<00:58,  2.33s/it]Epoch 247/250:  35%|███▌      | 13/37 [00:33<00:55,  2.32s/it]Epoch 247/250:  38%|███▊      | 14/37 [00:35<00:53,  2.32s/it]Epoch 247/250:  41%|████      | 15/37 [00:37<00:50,  2.32s/it]Epoch 247/250:  43%|████▎     | 16/37 [00:40<00:48,  2.31s/it]Epoch 247/250:  46%|████▌     | 17/37 [00:42<00:46,  2.31s/it]Epoch 247/250:  49%|████▊     | 18/37 [00:44<00:43,  2.31s/it]Epoch 247/250:  51%|█████▏    | 19/37 [00:47<00:41,  2.30s/it]Epoch 247/250:  54%|█████▍    | 20/37 [00:49<00:39,  2.30s/it]Epoch 247/250:  57%|█████▋    | 21/37 [00:51<00:36,  2.30s/it]Epoch 247/250:  59%|█████▉    | 22/37 [00:54<00:34,  2.30s/it]Epoch 247/250:  62%|██████▏   | 23/37 [00:56<00:32,  2.30s/it]Epoch 247/250:  65%|██████▍   | 24/37 [00:58<00:29,  2.30s/it]Epoch 247/250:  68%|██████▊   | 25/37 [01:00<00:27,  2.30s/it]Epoch 247/250:  70%|███████   | 26/37 [01:03<00:27,  2.48s/it]Epoch 247/250:  73%|███████▎  | 27/37 [01:06<00:26,  2.61s/it]Epoch 247/250:  76%|███████▌  | 28/37 [01:09<00:24,  2.70s/it]Epoch 247/250:  78%|███████▊  | 29/37 [01:12<00:22,  2.76s/it]Epoch 247/250:  81%|████████  | 30/37 [01:15<00:19,  2.80s/it]Epoch 247/250:  84%|████████▍ | 31/37 [01:18<00:16,  2.83s/it]Epoch 247/250:  86%|████████▋ | 32/37 [01:21<00:14,  2.85s/it]Epoch 247/250:  89%|████████▉ | 33/37 [01:24<00:11,  2.86s/it]Epoch 247/250:  92%|█████████▏| 34/37 [01:27<00:08,  2.88s/it]Epoch 247/250:  95%|█████████▍| 35/37 [01:29<00:05,  2.88s/it]Epoch 247/250:  97%|█████████▋| 36/37 [01:32<00:02,  2.89s/it]Epoch 247/250: 100%|██████████| 37/37 [01:33<00:00,  2.14s/it]Epoch 247/250: 100%|██████████| 37/37 [01:33<00:00,  2.52s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.20, max=13.70, clamp proportion=1.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.63, max=17.25, clamp proportion=2.98%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-34.23, max=19.64, clamp proportion=2.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.24, max=11.88, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.85, max=12.15, clamp proportion=1.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.87, max=13.76, clamp proportion=4.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.35, max=12.62, clamp proportion=4.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.72, max=13.14, clamp proportion=2.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.89, max=11.62, clamp proportion=1.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.23, max=11.79, clamp proportion=3.52%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.11, max=13.07, clamp proportion=1.46%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.23, max=12.72, clamp proportion=1.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.19, max=11.37, clamp proportion=3.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.06, max=11.92, clamp proportion=1.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.33, max=11.61, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.85, max=13.59, clamp proportion=2.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.25, max=14.39, clamp proportion=5.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.45, max=11.12, clamp proportion=3.12%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.27, max=12.12, clamp proportion=2.83%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.38, max=11.32, clamp proportion=1.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.46, max=15.46, clamp proportion=2.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.72, max=9.97, clamp proportion=1.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.37, max=16.51, clamp proportion=3.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.42, max=11.01, clamp proportion=3.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.98, max=12.11, clamp proportion=1.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.61, max=12.35, clamp proportion=4.13%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.42, max=11.14, clamp proportion=1.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.81, max=12.27, clamp proportion=2.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.91, max=12.18, clamp proportion=0.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.53, max=14.38, clamp proportion=2.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.82, max=12.26, clamp proportion=3.00%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.46, max=13.11, clamp proportion=1.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.23, max=13.93, clamp proportion=2.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.12, max=10.34, clamp proportion=2.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.75, max=11.27, clamp proportion=1.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.10, max=13.89, clamp proportion=3.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.24, max=10.67, clamp proportion=1.65%
+Epoch 247/250 - Total: 5.2631 | Recon: 0.9051, Percept: 2.7380, GAN: 0.4928, KL: 0.3838, tc: 2.5192, mi: 0.4123, dkld: 0.9064, Cls: 0.7434 | [Disc: 0.7359
+Epoch 248/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 248/250:   3%|▎         | 1/37 [00:03<02:18,  3.85s/it]Epoch 248/250:   5%|▌         | 2/37 [00:06<01:55,  3.29s/it]Epoch 248/250:   8%|▊         | 3/37 [00:09<01:45,  3.11s/it]Epoch 248/250:  11%|█         | 4/37 [00:12<01:39,  3.03s/it]Epoch 248/250:  14%|█▎        | 5/37 [00:14<01:28,  2.77s/it]Epoch 248/250:  16%|█▌        | 6/37 [00:17<01:20,  2.61s/it]Epoch 248/250:  19%|█▉        | 7/37 [00:19<01:15,  2.51s/it]Epoch 248/250:  22%|██▏       | 8/37 [00:21<01:10,  2.45s/it]Epoch 248/250:  24%|██▍       | 9/37 [00:24<01:07,  2.40s/it]Epoch 248/250:  27%|██▋       | 10/37 [00:26<01:04,  2.37s/it]Epoch 248/250:  30%|██▉       | 11/37 [00:28<01:01,  2.35s/it]Epoch 248/250:  32%|███▏      | 12/37 [00:30<00:58,  2.33s/it]Epoch 248/250:  35%|███▌      | 13/37 [00:33<00:55,  2.32s/it]Epoch 248/250:  38%|███▊      | 14/37 [00:35<00:53,  2.32s/it]Epoch 248/250:  41%|████      | 15/37 [00:37<00:50,  2.31s/it]Epoch 248/250:  43%|████▎     | 16/37 [00:40<00:48,  2.31s/it]Epoch 248/250:  46%|████▌     | 17/37 [00:42<00:46,  2.31s/it]Epoch 248/250:  49%|████▊     | 18/37 [00:44<00:43,  2.30s/it]Epoch 248/250:  51%|█████▏    | 19/37 [00:47<00:41,  2.30s/it]Epoch 248/250:  54%|█████▍    | 20/37 [00:49<00:39,  2.30s/it]Epoch 248/250:  57%|█████▋    | 21/37 [00:51<00:36,  2.30s/it]Epoch 248/250:  59%|█████▉    | 22/37 [00:53<00:34,  2.30s/it]Epoch 248/250:  62%|██████▏   | 23/37 [00:56<00:32,  2.31s/it]Epoch 248/250:  65%|██████▍   | 24/37 [00:58<00:30,  2.31s/it]Epoch 248/250:  68%|██████▊   | 25/37 [01:00<00:27,  2.31s/it]Epoch 248/250:  70%|███████   | 26/37 [01:03<00:25,  2.31s/it]Epoch 248/250:  73%|███████▎  | 27/37 [01:05<00:23,  2.31s/it]Epoch 248/250:  76%|███████▌  | 28/37 [01:07<00:20,  2.31s/it]Epoch 248/250:  78%|███████▊  | 29/37 [01:10<00:18,  2.31s/it]Epoch 248/250:  81%|████████  | 30/37 [01:12<00:16,  2.30s/it]Epoch 248/250:  84%|████████▍ | 31/37 [01:14<00:13,  2.30s/it]Epoch 248/250:  86%|████████▋ | 32/37 [01:17<00:12,  2.49s/it]Epoch 248/250:  89%|████████▉ | 33/37 [01:20<00:10,  2.61s/it]Epoch 248/250:  92%|█████████▏| 34/37 [01:23<00:08,  2.70s/it]Epoch 248/250:  95%|█████████▍| 35/37 [01:26<00:05,  2.76s/it]Epoch 248/250:  97%|█████████▋| 36/37 [01:29<00:02,  2.80s/it]Epoch 248/250: 100%|██████████| 37/37 [01:29<00:00,  2.08s/it]Epoch 248/250: 100%|██████████| 37/37 [01:29<00:00,  2.43s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.04, max=12.42, clamp proportion=2.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.11, max=12.53, clamp proportion=3.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.75, max=12.58, clamp proportion=2.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.76, max=14.92, clamp proportion=3.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.84, max=13.71, clamp proportion=3.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.88, max=15.73, clamp proportion=1.68%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.02, max=12.02, clamp proportion=2.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.28, max=12.81, clamp proportion=1.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.61, max=12.99, clamp proportion=4.93%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.99, max=15.38, clamp proportion=3.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.35, max=15.16, clamp proportion=3.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.39, max=13.73, clamp proportion=4.20%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.42, max=12.15, clamp proportion=1.59%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.64, max=14.39, clamp proportion=6.23%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.75, max=14.29, clamp proportion=2.37%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.74, max=10.92, clamp proportion=1.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.61, max=13.16, clamp proportion=2.12%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.40, max=14.58, clamp proportion=4.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.64, max=12.89, clamp proportion=4.91%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.56, max=15.70, clamp proportion=2.08%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.03, max=16.07, clamp proportion=2.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.18, max=12.36, clamp proportion=2.08%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.88, max=13.67, clamp proportion=1.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.24, max=13.97, clamp proportion=1.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.65, max=12.87, clamp proportion=1.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.89, max=11.75, clamp proportion=2.98%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.64, max=17.77, clamp proportion=4.20%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.61, max=18.33, clamp proportion=1.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.95, max=15.84, clamp proportion=2.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.71, max=13.60, clamp proportion=2.86%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.45, max=15.32, clamp proportion=3.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.58, max=13.83, clamp proportion=3.96%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.47, max=13.02, clamp proportion=2.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.54, max=14.15, clamp proportion=4.05%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.76, max=14.36, clamp proportion=3.74%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.50, max=13.30, clamp proportion=3.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-20.23, max=6.04, clamp proportion=0.09%
+Epoch 248/250 - Total: 5.2198 | Recon: 0.8931, Percept: 2.7270, GAN: 0.5216, KL: 0.3425, tc: 2.5170, mi: 0.4122, dkld: 0.4961, Cls: 0.7356 | [Disc: 0.8569
+Epoch 249/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 249/250:   3%|▎         | 1/37 [00:03<01:54,  3.18s/it]Epoch 249/250:   5%|▌         | 2/37 [00:05<01:34,  2.70s/it]Epoch 249/250:   8%|▊         | 3/37 [00:07<01:26,  2.54s/it]Epoch 249/250:  11%|█         | 4/37 [00:10<01:21,  2.46s/it]Epoch 249/250:  14%|█▎        | 5/37 [00:13<01:23,  2.60s/it]Epoch 249/250:  16%|█▌        | 6/37 [00:15<01:23,  2.70s/it]Epoch 249/250:  19%|█▉        | 7/37 [00:18<01:22,  2.76s/it]Epoch 249/250:  22%|██▏       | 8/37 [00:21<01:21,  2.81s/it]Epoch 249/250:  24%|██▍       | 9/37 [00:24<01:19,  2.83s/it]Epoch 249/250:  27%|██▋       | 10/37 [00:27<01:16,  2.85s/it]Epoch 249/250:  30%|██▉       | 11/37 [00:30<01:14,  2.86s/it]Epoch 249/250:  32%|███▏      | 12/37 [00:33<01:11,  2.87s/it]Epoch 249/250:  35%|███▌      | 13/37 [00:36<01:09,  2.88s/it]Epoch 249/250:  38%|███▊      | 14/37 [00:39<01:06,  2.89s/it]Epoch 249/250:  41%|████      | 15/37 [00:42<01:03,  2.89s/it]Epoch 249/250:  43%|████▎     | 16/37 [00:44<01:00,  2.89s/it]Epoch 249/250:  46%|████▌     | 17/37 [00:47<00:57,  2.89s/it]Epoch 249/250:  49%|████▊     | 18/37 [00:50<00:54,  2.89s/it]Epoch 249/250:  51%|█████▏    | 19/37 [00:53<00:48,  2.72s/it]Epoch 249/250:  54%|█████▍    | 20/37 [00:55<00:44,  2.59s/it]Epoch 249/250:  57%|█████▋    | 21/37 [00:57<00:40,  2.50s/it]Epoch 249/250:  59%|█████▉    | 22/37 [00:59<00:36,  2.45s/it]Epoch 249/250:  62%|██████▏   | 23/37 [01:02<00:33,  2.40s/it]Epoch 249/250:  65%|██████▍   | 24/37 [01:04<00:30,  2.37s/it]Epoch 249/250:  68%|██████▊   | 25/37 [01:06<00:28,  2.35s/it]Epoch 249/250:  70%|███████   | 26/37 [01:09<00:25,  2.33s/it]Epoch 249/250:  73%|███████▎  | 27/37 [01:11<00:23,  2.32s/it]Epoch 249/250:  76%|███████▌  | 28/37 [01:13<00:20,  2.32s/it]Epoch 249/250:  78%|███████▊  | 29/37 [01:16<00:18,  2.31s/it]Epoch 249/250:  81%|████████  | 30/37 [01:18<00:16,  2.31s/it]Epoch 249/250:  84%|████████▍ | 31/37 [01:20<00:13,  2.31s/it]Epoch 249/250:  86%|████████▋ | 32/37 [01:22<00:11,  2.30s/it]Epoch 249/250:  89%|████████▉ | 33/37 [01:25<00:09,  2.30s/it]Epoch 249/250:  92%|█████████▏| 34/37 [01:27<00:06,  2.30s/it]Epoch 249/250:  95%|█████████▍| 35/37 [01:29<00:04,  2.30s/it]Epoch 249/250:  97%|█████████▋| 36/37 [01:32<00:02,  2.30s/it]Epoch 249/250: 100%|██████████| 37/37 [01:32<00:00,  1.72s/it]Epoch 249/250: 100%|██████████| 37/37 [01:32<00:00,  2.50s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.79, max=14.66, clamp proportion=4.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.91, max=15.00, clamp proportion=2.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-22.57, max=10.69, clamp proportion=0.95%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.93, max=15.19, clamp proportion=2.08%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-22.65, max=11.60, clamp proportion=0.51%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.26, max=15.93, clamp proportion=2.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-32.58, max=17.53, clamp proportion=3.91%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.53, max=15.64, clamp proportion=3.69%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.63, max=13.90, clamp proportion=2.56%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.20, max=16.01, clamp proportion=3.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.15, max=13.70, clamp proportion=2.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.25, max=13.34, clamp proportion=2.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.52, max=14.72, clamp proportion=4.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.78, max=14.33, clamp proportion=2.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.34, max=13.27, clamp proportion=4.57%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.17, max=12.47, clamp proportion=1.05%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.11, max=15.31, clamp proportion=4.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.10, max=15.13, clamp proportion=2.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.03, max=15.11, clamp proportion=4.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-22.40, max=11.83, clamp proportion=0.73%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.12, max=15.91, clamp proportion=2.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.11, max=16.18, clamp proportion=3.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.01, max=15.55, clamp proportion=2.42%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.76, max=14.86, clamp proportion=4.74%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.20, max=16.97, clamp proportion=2.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.95, max=15.71, clamp proportion=2.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.86, max=14.72, clamp proportion=3.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.44, max=17.01, clamp proportion=4.47%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.74, max=14.80, clamp proportion=1.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.85, max=11.08, clamp proportion=1.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.26, max=14.18, clamp proportion=3.78%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.53, max=13.50, clamp proportion=2.88%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.51, max=12.51, clamp proportion=3.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.64, max=11.62, clamp proportion=1.22%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.32, max=11.87, clamp proportion=2.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.77, max=16.51, clamp proportion=2.29%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-22.22, max=10.65, clamp proportion=1.19%
+Epoch 249/250 - Total: 5.2235 | Recon: 0.8994, Percept: 2.7269, GAN: 0.5124, KL: 0.3480, tc: 2.5197, mi: 0.4123, dkld: 0.5475, Cls: 0.7368 | [Disc: 0.7205
+Epoch 250/250:   0%|          | 0/37 [00:00<?, ?it/s]Epoch 250/250:   3%|▎         | 1/37 [00:03<02:08,  3.57s/it]Epoch 250/250:   5%|▌         | 2/37 [00:05<01:38,  2.83s/it]Epoch 250/250:   8%|▊         | 3/37 [00:08<01:27,  2.58s/it]Epoch 250/250:  11%|█         | 4/37 [00:10<01:21,  2.47s/it]Epoch 250/250:  14%|█▎        | 5/37 [00:12<01:17,  2.42s/it]Epoch 250/250:  16%|█▌        | 6/37 [00:15<01:13,  2.37s/it]Epoch 250/250:  19%|█▉        | 7/37 [00:17<01:10,  2.35s/it]Epoch 250/250:  22%|██▏       | 8/37 [00:19<01:07,  2.33s/it]Epoch 250/250:  24%|██▍       | 9/37 [00:21<01:05,  2.32s/it]Epoch 250/250:  27%|██▋       | 10/37 [00:24<01:02,  2.32s/it]Epoch 250/250:  30%|██▉       | 11/37 [00:26<01:00,  2.31s/it]Epoch 250/250:  32%|███▏      | 12/37 [00:28<00:57,  2.30s/it]Epoch 250/250:  35%|███▌      | 13/37 [00:31<00:55,  2.30s/it]Epoch 250/250:  38%|███▊      | 14/37 [00:33<00:52,  2.30s/it]Epoch 250/250:  41%|████      | 15/37 [00:35<00:50,  2.30s/it]Epoch 250/250:  43%|████▎     | 16/37 [00:38<00:48,  2.30s/it]Epoch 250/250:  46%|████▌     | 17/37 [00:40<00:45,  2.29s/it]Epoch 250/250:  49%|████▊     | 18/37 [00:42<00:43,  2.29s/it]Epoch 250/250:  51%|█████▏    | 19/37 [00:44<00:41,  2.30s/it]Epoch 250/250:  54%|█████▍    | 20/37 [00:47<00:39,  2.30s/it]Epoch 250/250:  57%|█████▋    | 21/37 [00:49<00:36,  2.31s/it]Epoch 250/250:  59%|█████▉    | 22/37 [00:52<00:36,  2.40s/it]Epoch 250/250:  62%|██████▏   | 23/37 [00:54<00:33,  2.37s/it]Epoch 250/250:  65%|██████▍   | 24/37 [00:56<00:30,  2.34s/it]Epoch 250/250:  68%|██████▊   | 25/37 [00:59<00:28,  2.34s/it]Epoch 250/250:  70%|███████   | 26/37 [01:01<00:25,  2.33s/it]Epoch 250/250:  73%|███████▎  | 27/37 [01:03<00:23,  2.32s/it]Epoch 250/250:  76%|███████▌  | 28/37 [01:05<00:20,  2.32s/it]Epoch 250/250:  78%|███████▊  | 29/37 [01:08<00:18,  2.31s/it]Epoch 250/250:  81%|████████  | 30/37 [01:10<00:16,  2.31s/it]Epoch 250/250:  84%|████████▍ | 31/37 [01:13<00:14,  2.38s/it]Epoch 250/250:  86%|████████▋ | 32/37 [01:16<00:12,  2.54s/it]Epoch 250/250:  89%|████████▉ | 33/37 [01:18<00:10,  2.64s/it]Epoch 250/250:  92%|█████████▏| 34/37 [01:21<00:08,  2.72s/it]Epoch 250/250:  95%|█████████▍| 35/37 [01:24<00:05,  2.77s/it]Epoch 250/250:  97%|█████████▋| 36/37 [01:27<00:02,  2.81s/it]Epoch 250/250: 100%|██████████| 37/37 [01:28<00:00,  2.09s/it]Epoch 250/250: 100%|██████████| 37/37 [01:28<00:00,  2.38s/it]
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.69, max=14.51, clamp proportion=4.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.05, max=16.66, clamp proportion=3.81%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.73, max=16.92, clamp proportion=3.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.19, max=14.51, clamp proportion=4.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.95, max=13.67, clamp proportion=3.12%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.13, max=13.42, clamp proportion=3.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-27.45, max=14.61, clamp proportion=4.54%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.35, max=15.97, clamp proportion=5.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-30.11, max=15.71, clamp proportion=2.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-33.43, max=16.67, clamp proportion=3.05%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.33, max=12.99, clamp proportion=1.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.64, max=15.53, clamp proportion=3.12%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.64, max=14.42, clamp proportion=3.15%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.11, max=15.22, clamp proportion=3.49%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.33, max=14.30, clamp proportion=4.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.51, max=13.42, clamp proportion=2.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.26, max=14.94, clamp proportion=3.69%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.77, max=13.18, clamp proportion=2.83%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.89, max=15.65, clamp proportion=3.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.33, max=13.67, clamp proportion=3.39%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.67, max=16.23, clamp proportion=2.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-29.40, max=14.48, clamp proportion=3.61%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-33.11, max=16.86, clamp proportion=3.44%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.69, max=13.48, clamp proportion=2.64%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.60, max=14.24, clamp proportion=3.25%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.16, max=12.47, clamp proportion=3.34%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-31.50, max=16.15, clamp proportion=2.32%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.68, max=11.47, clamp proportion=1.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-26.25, max=12.58, clamp proportion=3.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.26, max=12.08, clamp proportion=1.27%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.91, max=15.41, clamp proportion=4.03%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.48, max=14.65, clamp proportion=1.76%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.06, max=12.14, clamp proportion=2.66%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-25.52, max=13.63, clamp proportion=2.20%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-23.39, max=11.94, clamp proportion=1.17%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-28.45, max=14.89, clamp proportion=2.71%
+Warning: Clamping logvar required for stability in total KLD loss computation.
+min=-24.33, max=11.27, clamp proportion=2.67%
+Epoch 250/250 - Total: 5.2021 | Recon: 0.8874, Percept: 2.7069, GAN: 0.5341, KL: 0.3341, tc: 2.5161, mi: 0.4123, dkld: 0.4126, Cls: 0.7396 | [Disc: 0.9127
+Checkpoint saved at epoch 249 to outputs/res256_lat64_ep250_bat64_lrn0.0002_rec50.0_per10.0_gan0.1_kld0.1(tc0.01_mi0.1_dk1e-05)_cls0.25_pat16/checkpoints/checkpoint_epoch_249.pth
+Checkpoint saved at epoch 249 to outputs/res256_lat64_ep250_bat64_lrn0.0002_rec50.0_per10.0_gan0.1_kld0.1(tc0.01_mi0.1_dk1e-05)_cls0.25_pat16/checkpoints/checkpoint_epoch_249.pth
+year accuracy: 22.61%
+make accuracy: 44.79%
+body accuracy: 77.59%
+door accuracy: 95.88%
+Model saved to outputs/res256_lat64_ep250_bat64_lrn0.0002_rec50.0_per10.0_gan0.1_kld0.1(tc0.01_mi0.1_dk1e-05)_cls0.25_pat16/model.pth
+
+Total execution time: 6 hours, 50 minutes, 18.54 seconds
