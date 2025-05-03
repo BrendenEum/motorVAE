@@ -27,16 +27,17 @@ IMAGE_SIZE = 256
 BATCH_SIZE = 64
 EPOCHS = 250
 LATENT_DIM = 64
-LEARNING_RATE = 0.0002
+LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
+TRAIN_PROPORTION = 0.99 # Proportion of data to use for training. Validation is 1-p(train).
 
 # Create weights for different loss components
 RECON_WEIGHT = 50.0
 PERCEPTUAL_WEIGHT = 5.0
 GAN_WEIGHT = 0.1
 KLD_WEIGHT_START = 0.0001 # KLD Scheduler
-KLD_WEIGHT_END = 0.1
+KLD_WEIGHT_END = 0.75
 TC_WEIGHT = 0.02  # Total Correlation weight
 MI_WEIGHT = 0.2  # Mutual Information weight
 DKLD_WEIGHT = 0.00001  # Dimension-wise KL Divergence weight
@@ -655,7 +656,7 @@ def save_latent_traversals(model, dataloader, output_dir):
             z_travs = z.repeat(11, 1)
             
             # Create 11 points from -5 to 5
-            for i, val in enumerate(np.linspace(-5, 5, 11)):
+            for i, val in enumerate(np.linspace(-5, 5, 3)):
                 z_travs[i, dim] = val
             
             # Decode the traversal
@@ -1025,7 +1026,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
         
         # Extract and save the means, log variances, and sampled z
         with torch.no_grad():
-            batch = next(iter(val_loader))
+            batch = next(iter(train_loader))
             images = batch['image'].to(device)
             mu, logvar = model.encoder(images)
             z = model.reparameterize(mu, logvar)
@@ -1038,7 +1039,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
         create_umap_visualizations(z_samples, z_labels, output_dir)
     
     # Create interpolations
-    create_interpolation(model, val_loader, output_dir)
+    create_interpolation(model, train_loader, output_dir)
     
     # Calculate and save classification accuracy
     model.eval()
@@ -1100,7 +1101,7 @@ def main():
     )
 
     # Split into train and validation sets
-    train_size = int(0.05 * len(train_dataset)) # 0.95
+    train_size = int(TRAIN_PROPORTION * len(train_dataset))
     val_size = len(train_dataset) - train_size
     train_dataset, val_dataset = torch.utils.data.random_split(
         train_dataset, [train_size, val_size]
