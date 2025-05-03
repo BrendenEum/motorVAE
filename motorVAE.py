@@ -27,14 +27,14 @@ IMAGE_SIZE = 256
 BATCH_SIZE = 64
 EPOCHS = 250
 LATENT_DIM = 64
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.0002
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
 TRAIN_PROPORTION = 0.99 # Proportion of data to use for training. Validation is 1-p(train).
 
 # Create weights for different loss components
 RECON_WEIGHT = 50.0
-PERCEPTUAL_WEIGHT = 5.0
+PERCEPTUAL_WEIGHT = 2.5
 GAN_WEIGHT = 0.1
 KLD_WEIGHT_START = 0.0001 # KLD Scheduler
 KLD_WEIGHT_END = 0.75
