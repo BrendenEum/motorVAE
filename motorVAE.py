@@ -25,12 +25,12 @@ print(f"Using device: {device}")
 # Define hyperparameters
 IMAGE_SIZE = 256
 BATCH_SIZE = 64
-EPOCHS = 250
+EPOCHS = 200
 LATENT_DIM = 128
 LEARNING_RATE = 0.00015
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
-TRAIN_PROPORTION = 0.99 # Proportion of data to use for training. Validation is 1-p(train).
+TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 1-p(train).
 
 # Create weights for different loss components
 RECON_WEIGHT = 50.0
