@@ -24,7 +24,7 @@ print(f"Using device: {device}")
 
 # Define hyperparameters
 IMAGE_SIZE = 256
-BATCH_SIZE = 32
+BATCH_SIZE = 71
 EPOCHS = 200
 LATENT_DIM = 128
 LEARNING_RATE = 0.00015
