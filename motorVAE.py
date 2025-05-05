@@ -24,7 +24,7 @@ print(f"Using device: {device}")
 
 # Define hyperparameters
 IMAGE_SIZE = 256
-BATCH_SIZE = 71
+BATCH_SIZE = 32
 EPOCHS = 200
 LATENT_DIM = 128
 LEARNING_RATE = 0.00015
@@ -1113,6 +1113,7 @@ def main():
         train_dataset, 
         batch_size=BATCH_SIZE,
         shuffle=True,
+        drop_last=True,
         num_workers=4
     )
     
