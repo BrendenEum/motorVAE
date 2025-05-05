@@ -27,21 +27,21 @@ IMAGE_SIZE = 256
 BATCH_SIZE = 71
 EPOCHS = 200
 LATENT_DIM = 128
-LEARNING_RATE = 0.00015
+LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
 TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 1-p(train).
 
 # Create weights for different loss components
-RECON_WEIGHT = 50.0
-PERCEPTUAL_WEIGHT = 2.5
-GAN_WEIGHT = 0.1
+RECON_WEIGHT = 100.0
+PERCEPTUAL_WEIGHT = 5.0
+GAN_WEIGHT = 0.2
 KLD_WEIGHT_START = 0.0001 # KLD Scheduler
 KLD_WEIGHT_END = 0.75
-TC_WEIGHT = 0.02  # Total Correlation weight
-MI_WEIGHT = 0.2  # Mutual Information weight
-DKLD_WEIGHT = 0.00001  # Dimension-wise KL Divergence weight
-CLS_WEIGHT = 0.25  # Classifier weight
+TC_WEIGHT = 0.002  # Total Correlation weight
+MI_WEIGHT = 0.1  # Mutual Information weight
+DKLD_WEIGHT = 0.00002  # Dimension-wise KL Divergence weight
+CLS_WEIGHT = 0.20  # Classifier weight
 
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
 
