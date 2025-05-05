@@ -990,14 +990,15 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             save_reconstructions(model, train_loader, output_dir, epoch)
             
         # Also save tracking reconstruction
-        with torch.no_grad():
-            model.eval()  # Set to evaluation mode
-            tracking_recon, _, _, _ = model(tracking_image)
-            tracking_img = tracking_image[0].cpu().numpy()
-            tracking_rec = tracking_recon[0].cpu().numpy()
-            comparisons = [tracking_img[0], tracking_rec[0]]
-            save_image_grid(comparisons, os.path.join(output_dir, "tracking_epochs", f"tracking_{epoch}.png"), 
-                            nrow=2, title=f"{tracking_filename}: Epoch {epoch}")
+        #with torch.no_grad():
+        #    model.eval()  # Set to evaluation mode
+        #    tracking_recon, _, _, _ = model(tracking_image)
+        #    model.train()
+        #    tracking_img = tracking_image[0].cpu().numpy()
+        #    tracking_rec = tracking_recon[0].cpu().numpy()
+        #    comparisons = [tracking_img[0], tracking_rec[0]]
+        #    save_image_grid(comparisons, os.path.join(output_dir, "tracking_epochs", f"tracking_{epoch}.png"), 
+        #                    nrow=2, title=f"{tracking_filename}: Epoch {epoch}")
                 
         # Save checkpoint every CHECKPOINT_FREQ epochs
         if (epoch + 1) % CHECKPOINT_FREQ == 0:
