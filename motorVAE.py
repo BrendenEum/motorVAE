@@ -33,15 +33,15 @@ BETA2 = 0.999 # Default for Adam optimizer
 TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 1-p(train).
 
 # Create weights for different loss components
-RECON_WEIGHT = 75.0
-PERCEPTUAL_WEIGHT = 2.5
+RECON_WEIGHT = 85.0
+PERCEPTUAL_WEIGHT = 1.0
 GAN_WEIGHT = 0.2
 KLD_WEIGHT_START = 0.0001 # KLD Scheduler
-KLD_WEIGHT_END = 0.3
-TC_WEIGHT = 0.02  # Total Correlation weight
+KLD_WEIGHT_END = 0.1
+TC_WEIGHT = 0.002  # Total Correlation weight
 MI_WEIGHT = 0.2  # Mutual Information weight
 DKLD_WEIGHT = 0.00001  # Dimension-wise KL Divergence weight
-CLS_WEIGHT = 0.25  # Classifier weight
+CLS_WEIGHT = 0.2  # Classifier weight
 
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
 
