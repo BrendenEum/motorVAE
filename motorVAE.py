@@ -33,7 +33,7 @@ BETA2 = 0.999 # Default for Adam optimizer
 TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 1-p(train).
 
 # Create weights for different loss components
-RECON_WEIGHT = 125.0
+RECON_WEIGHT = 150.0
 PERCEPTUAL_WEIGHT = 2.0
 GAN_WEIGHT = 0.2
 KLD_WEIGHT_START = 0.0001 # KLD Scheduler
