@@ -25,7 +25,7 @@ print(f"Using device: {device}")
 # Define hyperparameters
 IMAGE_SIZE = 256
 BATCH_SIZE = 71
-EPOCHS = 200
+EPOCHS = 100
 LATENT_DIM = 128
 LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
@@ -34,14 +34,14 @@ TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 
 
 # Create weights for different loss components
 RECON_WEIGHT = 150.0
-PERCEPTUAL_WEIGHT = 2.0
-GAN_WEIGHT = 0.2
+PERCEPTUAL_WEIGHT = 5.0
+GAN_WEIGHT = 1.0
 KLD_WEIGHT_START = 0.0001 # KLD Scheduler
-KLD_WEIGHT_END = 0.2
+KLD_WEIGHT_END = 0.75
 TC_WEIGHT = 0.002  # Total Correlation weight
 MI_WEIGHT = 0.1  # Mutual Information weight
 DKLD_WEIGHT = 0.00002  # Dimension-wise KL Divergence weight
-CLS_WEIGHT = 0.2  # Classifier weight
+CLS_WEIGHT = 0.5  # Classifier weight
 
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
 
