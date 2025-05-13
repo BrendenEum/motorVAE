@@ -41,7 +41,7 @@ KLD_WEIGHT_END = 0.75
 TC_WEIGHT = 0.002  # Total Correlation weight
 MI_WEIGHT = 0.1  # Mutual Information weight
 DKLD_WEIGHT = 0.00002  # Dimension-wise KL Divergence weight
-CLS_WEIGHT = 0.5  # Classifier weight
+CLS_WEIGHT = 0.4  # Classifier weight
 
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
 
