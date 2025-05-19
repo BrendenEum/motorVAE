@@ -26,7 +26,7 @@ print(f"Using device: {device}")
 IMAGE_SIZE = 256
 BATCH_SIZE = 71
 EPOCHS = 100
-LATENT_DIM = 96
+LATENT_DIM = 128
 LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
@@ -647,25 +647,39 @@ def save_latent_traversals(model, dataloader, output_dir):
         batch = next(iter(dataloader))
         img = batch['image'][0:1].to(device)
         
-        # Encode the image
-        z, mu, logvar = model.encode(img)
+        # Encode the image to get the original latent vector
+        z_original, mu, logvar = model.encode(img)
+        
+        # Calculate standard deviation from logvar
+        std = torch.exp(0.5 * logvar)
         
         # Create latent traversals for each dimension
+        # We'll show: -2σ, -1σ, original, +1σ, +2σ
+        std_multipliers = [-2, -1, 0, 1, 2]
+        n_steps = len(std_multipliers)
+        
         for dim in range(LATENT_DIM):
-            traversal = []
-            z_travs = z.repeat(11, 1)
+            traversal_images = []
             
-            # Create 11 points from -5 to 5
-            for i, val in enumerate(np.linspace(-5, 5, 3)):
-                z_travs[i, dim] = val
+            # Create traversal for this dimension
+            for multiplier in std_multipliers:
+                # Copy the original latent vector
+                z_trav = z_original.clone()
+                
+                # Modify only the current dimension by adding std_multiplier * std
+                z_trav[0, dim] = mu[0, dim] + multiplier * std[0, dim]
+                
+                # Decode the modified latent vector
+                recon = model.decode(z_trav)
+                traversal_images.append(recon[0].cpu().numpy())
             
-            # Decode the traversal
-            recons = model.decode(z_travs)
-            recons = recons.cpu().numpy()
-            
-            # Save traversal
-            save_image_grid(recons, os.path.join(output_dir, "latent_traversals", f"dim_{dim}.png"), 
-                            nrow=11, title=f"Dimension {dim}")
+            # Save traversal for this dimension
+            save_image_grid(
+                traversal_images, 
+                os.path.join(output_dir, "latent_traversals", f"dim_{dim}.png"), 
+                nrow=n_steps, 
+                title=f"Dimension {dim}: -2 to 2 std dev"
+            )
 
 # Function to save losses
 def save_losses(all_losses, output_dir):
