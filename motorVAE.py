@@ -27,7 +27,7 @@ IMAGE_SIZE = 256
 BATCH_SIZE = 71
 EPOCHS = 100
 LATENT_DIM = 128
-LEARNING_RATE = 0.0002
+LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
 TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 1-p(train).
@@ -46,7 +46,7 @@ CLS_WEIGHT = 0.2  # Classifier weight
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
 
 # Number of patches for PatchGAN discriminator
-PATCH_SIZE = 16  # Size of each patch
+PATCH_SIZE = 32  # Size of each patch
 
 # Checkpoint saving frequency
 CHECKPOINT_FREQ = 10  # Save checkpoint every 10 epochs
