@@ -26,7 +26,7 @@ print(f"Using device: {device}")
 IMAGE_SIZE = 256
 BATCH_SIZE = 71
 EPOCHS = 100
-LATENT_DIM = 128
+LATENT_DIM = 96
 LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
@@ -46,7 +46,7 @@ CLS_WEIGHT = 0.2  # Classifier weight
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
 
 # Number of patches for PatchGAN discriminator
-PATCH_SIZE = 32  # Size of each patch
+PATCH_SIZE = 16  # Size of each patch
 
 # Checkpoint saving frequency
 CHECKPOINT_FREQ = 10  # Save checkpoint every 10 epochs
