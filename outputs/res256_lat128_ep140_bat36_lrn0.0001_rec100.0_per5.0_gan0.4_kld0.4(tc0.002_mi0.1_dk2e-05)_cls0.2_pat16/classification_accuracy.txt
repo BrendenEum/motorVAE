@@ -1,0 +1,4 @@
+year accuracy: 17.76%
+make accuracy: 51.24%
+body accuracy: 86.22%
+door accuracy: 97.09%
