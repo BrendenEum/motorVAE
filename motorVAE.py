@@ -26,7 +26,7 @@ print(f"Using device: {device}")
 IMAGE_SIZE = 256
 BATCH_SIZE = 71
 EPOCHS = 100
-LATENT_DIM = 96
+LATENT_DIM = 128
 LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
@@ -35,7 +35,7 @@ TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 
 # Create weights for different loss components
 RECON_WEIGHT = 100.0
 PERCEPTUAL_WEIGHT = 5.0
-GAN_WEIGHT = 0.2
+GAN_WEIGHT = 0.5
 KLD_WEIGHT_START = 0.00001 # KLD Scheduler
 KLD_WEIGHT_END = 0.1
 TC_WEIGHT = 0.002  # Total Correlation weight
