@@ -27,7 +27,7 @@ IMAGE_SIZE = 256
 BATCH_SIZE = 71
 EPOCHS = 100
 LATENT_DIM = 128
-LEARNING_RATE = 0.0002
+LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
 TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 1-p(train).
@@ -376,7 +376,6 @@ def kl_divergence(mu, logvar):
 
 def compute_tc_loss(z, mu, logvar, batch_size):
     global tc_nan_count
-    # Add epsilon for numerical stability
     eps = 1e-8
     
     # Clamp values for numerical stability
@@ -384,46 +383,56 @@ def compute_tc_loss(z, mu, logvar, batch_size):
     logvar = torch.clamp(logvar, min=-10, max=10)
     var = torch.clamp(torch.exp(logvar), min=eps, max=100)
     
-    # 1. Compute log q(z) - approximate marginal
-    log_qz_prob = torch.zeros(batch_size, batch_size, device=device)
+    # 1. Compute log q(z) - vectorized calculation
+    # Expand dimensions for broadcasting
+    z_expanded = z.unsqueeze(1)                     # [B, 1, D]
+    mu_expanded = mu.unsqueeze(0)                   # [1, B, D]
+    logvar_expanded = logvar.unsqueeze(0)           # [1, B, D]
+    var_expanded = var.unsqueeze(0)                 # [1, B, D]
     
-    for i in range(batch_size):
-        for j in range(batch_size):
-            z_centered = z[i] - mu[j]
-            log_det_sigma = torch.sum(logvar[j])
-            mahalanobis = torch.sum(z_centered.pow(2) / var[j])
-            log_qz_prob[i, j] = -0.5 * (log_det_sigma + mahalanobis + z.size(1) * torch.log(torch.tensor(2 * np.pi, device=device)))
+    # Compute log det sigma (sum of log variances across dimensions)
+    log_det_sigma = torch.sum(logvar_expanded, dim=2)  # [1, B]
+    
+    # Compute mahalanobis distance: (z - μ)^2 / σ^2
+    z_centered = z_expanded - mu_expanded           # [B, B, D]
+    mahalanobis = torch.sum(z_centered.pow(2) / var_expanded, dim=2)  # [B, B]
+    
+    # Compute log probabilities
+    log_prob_const = -0.5 * z.size(1) * torch.log(torch.tensor(2 * np.pi, device=device))
+    log_qz_prob = log_prob_const - 0.5 * (log_det_sigma + mahalanobis)  # [B, B]
     
     # Use log-sum-exp trick for numerical stability
     max_val, _ = torch.max(log_qz_prob, dim=1, keepdim=True)
     log_qz = torch.log(torch.sum(torch.exp(log_qz_prob - max_val), dim=1)) + max_val.squeeze(1)
     log_qz = log_qz - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
     
-    # 2. Compute log prod_j q(z_j) - product of marginals
-    # Compute marginals for each dimension
-    log_qzj_prob = torch.zeros(batch_size, batch_size, z.size(1), device=device)
+    # 2. Compute log q(z_j) for each dimension - vectorized
+    # Reshape for broadcasting across dimensions
+    z_expanded_d = z.unsqueeze(1)                   # [B, 1, D]
+    mu_expanded_d = mu.unsqueeze(0)                 # [1, B, D]
+    logvar_expanded_d = logvar.unsqueeze(0)         # [1, B, D]
+    var_expanded_d = var.unsqueeze(0)               # [1, B, D]
     
-    for i in range(batch_size):
-        for j in range(batch_size):
-            for d in range(z.size(1)):
-                log_qzj_prob[i, j, d] = -0.5 * (
-                    torch.log(2 * torch.tensor(np.pi, device=device)) + 
-                    logvar[j, d] + 
-                    (z[i, d] - mu[j, d]).pow(2) / var[j, d]
-                )
+    # Compute dimension-wise probabilities (for each dimension separately)
+    log_det_sigma_d = logvar_expanded_d             # [1, B, D]
+    z_centered_d = z_expanded_d - mu_expanded_d     # [B, B, D]
+    mahalanobis_d = z_centered_d.pow(2) / var_expanded_d  # [B, B, D]
     
-    # Compute log q(z_j) for each dimension using log-sum-exp
-    max_val_dim, _ = torch.max(log_qzj_prob, dim=1, keepdim=True)
-    log_qzj = torch.log(torch.sum(torch.exp(log_qzj_prob - max_val_dim), dim=1)) + max_val_dim.squeeze(1)
+    log_prob_const_d = -0.5 * torch.log(torch.tensor(2 * np.pi, device=device))
+    log_qzj_prob = log_prob_const_d - 0.5 * (log_det_sigma_d + mahalanobis_d)  # [B, B, D]
+    
+    # Sum log probs across batch dimension using log-sum-exp
+    max_val_d, _ = torch.max(log_qzj_prob, dim=1, keepdim=True)  # [B, 1, D]
+    log_qzj = torch.log(torch.sum(torch.exp(log_qzj_prob - max_val_d), dim=1)) + max_val_d.squeeze(1)  # [B, D]
     log_qzj = log_qzj - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
     
-    # Sum across dimensions to get log prod_j q(z_j)
-    log_qz_prod = torch.sum(log_qzj, dim=1)
+    # Sum across dimensions to get prod_j q(z_j)
+    log_qz_prod = torch.sum(log_qzj, dim=1)  # [B]
     
-    # Compute TC = KL(q(z) || prod_j q(z_j)) = E_q(z)[log q(z) - log prod_j q(z_j)]
+    # Compute TC = KL(q(z) || prod_j q(z_j))
     tc_loss = torch.mean(log_qz - log_qz_prod)
     
-    # Check for NaN/Inf values and replace with reasonable value if encountered
+    # Check for NaN/Inf
     if torch.isnan(tc_loss) or torch.isinf(tc_loss):
         tc_nan_count += 1
         print(f"Warning: TC loss is NaN or Inf, returning 0 (Total NaN occurrences: {tc_nan_count})")
@@ -431,10 +440,8 @@ def compute_tc_loss(z, mu, logvar, batch_size):
     
     return tc_loss
 
-
 def compute_mi_loss(z, mu, logvar, batch_size):
     global mi_nan_count
-    # Add epsilon for numerical stability
     eps = 1e-8
     
     # Clamp values for numerical stability
@@ -442,33 +449,34 @@ def compute_mi_loss(z, mu, logvar, batch_size):
     logvar = torch.clamp(logvar, min=-10, max=10)
     var = torch.clamp(torch.exp(logvar), min=eps, max=100)
     
-    # Compute log q(z|x)
-    log_qz_condx = torch.zeros(batch_size, device=device)
-    for i in range(batch_size):
-        log_det_sigma = torch.sum(logvar[i])
-        z_centered = z[i] - mu[i]
-        mahalanobis = torch.sum(z_centered.pow(2) / var[i])
-        log_qz_condx[i] = -0.5 * (log_det_sigma + mahalanobis + z.size(1) * torch.log(torch.tensor(2 * np.pi, device=device)))
+    # Compute log q(z|x) - vectorized
+    log_det_sigma = torch.sum(logvar, dim=1)  # [B]
+    z_centered_cond = z - mu                  # [B, D]
+    mahalanobis_cond = torch.sum(z_centered_cond.pow(2) / var, dim=1)  # [B]
+    log_qz_condx = -0.5 * (log_det_sigma + mahalanobis_cond + z.size(1) * torch.log(torch.tensor(2 * np.pi, device=device)))  # [B]
     
-    # Compute log q(z) - approximate marginal
-    log_qz_prob = torch.zeros(batch_size, batch_size, device=device)
+    # Compute log q(z) - vectorized (similar to TC loss)
+    z_expanded = z.unsqueeze(1)               # [B, 1, D]
+    mu_expanded = mu.unsqueeze(0)             # [1, B, D]
+    logvar_expanded = logvar.unsqueeze(0)     # [1, B, D]
+    var_expanded = var.unsqueeze(0)           # [1, B, D]
     
-    for i in range(batch_size):
-        for j in range(batch_size):
-            z_centered = z[i] - mu[j]
-            log_det_sigma = torch.sum(logvar[j])
-            mahalanobis = torch.sum(z_centered.pow(2) / var[j])
-            log_qz_prob[i, j] = -0.5 * (log_det_sigma + mahalanobis + z.size(1) * torch.log(torch.tensor(2 * np.pi, device=device)))
+    log_det_sigma_marg = torch.sum(logvar_expanded, dim=2)  # [1, B]
+    z_centered_marg = z_expanded - mu_expanded  # [B, B, D]
+    mahalanobis_marg = torch.sum(z_centered_marg.pow(2) / var_expanded, dim=2)  # [B, B]
     
-    # Use log-sum-exp trick for numerical stability
+    log_prob_const = -0.5 * z.size(1) * torch.log(torch.tensor(2 * np.pi, device=device))
+    log_qz_prob = log_prob_const - 0.5 * (log_det_sigma_marg + mahalanobis_marg)  # [B, B]
+    
+    # Use log-sum-exp trick
     max_val, _ = torch.max(log_qz_prob, dim=1, keepdim=True)
     log_qz = torch.log(torch.sum(torch.exp(log_qz_prob - max_val), dim=1)) + max_val.squeeze(1)
     log_qz = log_qz - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
     
-    # Compute MI = I(z;x) = KL(q(z,x) || q(z)q(x)) = E_q(z,x)[log q(z|x) - log q(z)]
+    # Compute MI = E_q(z,x)[log q(z|x) - log q(z)]
     mi_loss = torch.mean(log_qz_condx - log_qz)
     
-    # Check for NaN/Inf values and replace with reasonable value if encountered
+    # Check for NaN/Inf values
     if torch.isnan(mi_loss) or torch.isinf(mi_loss):
         mi_nan_count += 1
         print(f"Warning: MI loss is NaN or Inf, returning 0 (Total NaN occurrences: {mi_nan_count})")
