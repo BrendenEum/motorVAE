@@ -36,7 +36,7 @@ TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 
 RECON_WEIGHT = 100.0
 PERCEPTUAL_WEIGHT = 5.0
 GAN_WEIGHT = 0.2
-KLD_WEIGHT_START = 0.0001 # KLD Scheduler
+KLD_WEIGHT_START = 0.00001 # KLD Scheduler
 KLD_WEIGHT_END = 0.1
 TC_WEIGHT = 0.002  # Total Correlation weight
 MI_WEIGHT = 0.1  # Mutual Information weight
@@ -50,6 +50,9 @@ PATCH_SIZE = 16  # Size of each patch
 
 # Checkpoint saving frequency
 CHECKPOINT_FREQ = 10  # Save checkpoint every 10 epochs
+
+tc_nan_count = 0
+mi_nan_count = 0
 
 # Define custom dataset
 class VehicleDataset(Dataset):
@@ -372,52 +375,47 @@ def kl_divergence(mu, logvar):
     return kld
 
 def compute_tc_loss(z, mu, logvar, batch_size):
+    global tc_nan_count
     # Add epsilon for numerical stability
     eps = 1e-8
-
-    # Print a warning if clamping is necessary.
-    mu_clamp_pr = (((mu < -20) | (mu > 20)).sum().item() / mu.numel() * 100)
-    if mu_clamp_pr > 0:
-        print(f"Warning: Clamping mu required for stability in total KLD loss computation.")
-        print(f"min={mu.min().item():.2f}, max={mu.max().item():.2f}, clamp proportion={mu_clamp_pr:.2f}%")
-    logvar_clamp_pr = (((logvar < -20) | (logvar > 20)).sum().item() / logvar.numel() * 100)
-    if logvar_clamp_pr > 0:
-        print(f"Warning: Clamping logvar required for stability in total KLD loss computation.")
-        print(f"min={logvar.min().item():.2f}, max={logvar.max().item():.2f}, clamp proportion={logvar_clamp_pr:.2f}%")
     
-    # Clamp logvar for numerical stability
-    logvar_clipped = torch.clamp(logvar, min=-20, max=20)
+    # Clamp values for numerical stability
+    mu = torch.clamp(mu, min=-10, max=10)
+    logvar = torch.clamp(logvar, min=-10, max=10)
+    var = torch.clamp(torch.exp(logvar), min=eps, max=100)
     
     # 1. Compute log q(z) - approximate marginal
     log_qz_prob = torch.zeros(batch_size, batch_size, device=device)
+    
     for i in range(batch_size):
         for j in range(batch_size):
             z_centered = z[i] - mu[j]
-            var_j = torch.clamp(torch.exp(logvar_clipped[j]), min=eps)
-            log_qz_prob[i, j] = -0.5 * torch.sum(
-                torch.log(2 * torch.tensor(np.pi, device=device) * var_j) + 
-                z_centered.pow(2) / var_j
-            )
+            log_det_sigma = torch.sum(logvar[j])
+            mahalanobis = torch.sum(z_centered.pow(2) / var[j])
+            log_qz_prob[i, j] = -0.5 * (log_det_sigma + mahalanobis + z.size(1) * torch.log(torch.tensor(2 * np.pi, device=device)))
     
     # Use log-sum-exp trick for numerical stability
-    log_qz = torch.logsumexp(log_qz_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
+    max_val, _ = torch.max(log_qz_prob, dim=1, keepdim=True)
+    log_qz = torch.log(torch.sum(torch.exp(log_qz_prob - max_val), dim=1)) + max_val.squeeze(1)
+    log_qz = log_qz - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
     
     # 2. Compute log prod_j q(z_j) - product of marginals
-    # First compute marginals q(z_j) for each dimension
-    z_perm = z.unsqueeze(1)  # [B, 1, D]
-    mu_perm = mu.unsqueeze(0)  # [1, B, D]
-    logvar_perm = logvar_clipped.unsqueeze(0)  # [1, B, D]
+    # Compute marginals for each dimension
+    log_qzj_prob = torch.zeros(batch_size, batch_size, z.size(1), device=device)
     
-    # [B, B, D]
-    log_qzj_prob = -0.5 * (
-        torch.log(2 * torch.tensor(np.pi, device=device)) + 
-        logvar_perm + 
-        (z_perm - mu_perm).pow(2) / torch.clamp(torch.exp(logvar_perm), min=eps)
-    )
+    for i in range(batch_size):
+        for j in range(batch_size):
+            for d in range(z.size(1)):
+                log_qzj_prob[i, j, d] = -0.5 * (
+                    torch.log(2 * torch.tensor(np.pi, device=device)) + 
+                    logvar[j, d] + 
+                    (z[i, d] - mu[j, d]).pow(2) / var[j, d]
+                )
     
-    # Marginal log q(z_j) for each dimension j
-    # Sum across the batch dimension (1) and apply log-sum-exp
-    log_qzj = torch.logsumexp(log_qzj_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
+    # Compute log q(z_j) for each dimension using log-sum-exp
+    max_val_dim, _ = torch.max(log_qzj_prob, dim=1, keepdim=True)
+    log_qzj = torch.log(torch.sum(torch.exp(log_qzj_prob - max_val_dim), dim=1)) + max_val_dim.squeeze(1)
+    log_qzj = log_qzj - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
     
     # Sum across dimensions to get log prod_j q(z_j)
     log_qz_prod = torch.sum(log_qzj, dim=1)
@@ -425,39 +423,56 @@ def compute_tc_loss(z, mu, logvar, batch_size):
     # Compute TC = KL(q(z) || prod_j q(z_j)) = E_q(z)[log q(z) - log prod_j q(z_j)]
     tc_loss = torch.mean(log_qz - log_qz_prod)
     
+    # Check for NaN/Inf values and replace with reasonable value if encountered
+    if torch.isnan(tc_loss) or torch.isinf(tc_loss):
+        tc_nan_count += 1
+        print(f"Warning: TC loss is NaN or Inf, returning 0 (Total NaN occurrences: {tc_nan_count})")
+        return torch.tensor(0.0, device=device)
+    
     return tc_loss
 
+
 def compute_mi_loss(z, mu, logvar, batch_size):
+    global mi_nan_count
     # Add epsilon for numerical stability
     eps = 1e-8
     
-    # Clamp logvar for numerical stability
-    logvar_clipped = torch.clamp(logvar, min=-20, max=20)
-    var_term = torch.clamp(torch.exp(logvar_clipped), min=eps)
+    # Clamp values for numerical stability
+    mu = torch.clamp(mu, min=-10, max=10)
+    logvar = torch.clamp(logvar, min=-10, max=10)
+    var = torch.clamp(torch.exp(logvar), min=eps, max=100)
     
     # Compute log q(z|x)
-    log_qz_condx = -0.5 * torch.sum(
-        torch.log(2 * torch.tensor(np.pi, device=device) * var_term) + 
-        (z - mu).pow(2) / var_term, 
-        dim=1
-    )
+    log_qz_condx = torch.zeros(batch_size, device=device)
+    for i in range(batch_size):
+        log_det_sigma = torch.sum(logvar[i])
+        z_centered = z[i] - mu[i]
+        mahalanobis = torch.sum(z_centered.pow(2) / var[i])
+        log_qz_condx[i] = -0.5 * (log_det_sigma + mahalanobis + z.size(1) * torch.log(torch.tensor(2 * np.pi, device=device)))
     
     # Compute log q(z) - approximate marginal
     log_qz_prob = torch.zeros(batch_size, batch_size, device=device)
+    
     for i in range(batch_size):
         for j in range(batch_size):
             z_centered = z[i] - mu[j]
-            var_j = torch.clamp(torch.exp(logvar_clipped[j]), min=eps)
-            log_qz_prob[i, j] = -0.5 * torch.sum(
-                torch.log(2 * torch.tensor(np.pi, device=device) * var_j) + 
-                z_centered.pow(2) / var_j
-            )
+            log_det_sigma = torch.sum(logvar[j])
+            mahalanobis = torch.sum(z_centered.pow(2) / var[j])
+            log_qz_prob[i, j] = -0.5 * (log_det_sigma + mahalanobis + z.size(1) * torch.log(torch.tensor(2 * np.pi, device=device)))
     
     # Use log-sum-exp trick for numerical stability
-    log_qz = torch.logsumexp(log_qz_prob, dim=1) - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
+    max_val, _ = torch.max(log_qz_prob, dim=1, keepdim=True)
+    log_qz = torch.log(torch.sum(torch.exp(log_qz_prob - max_val), dim=1)) + max_val.squeeze(1)
+    log_qz = log_qz - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
     
     # Compute MI = I(z;x) = KL(q(z,x) || q(z)q(x)) = E_q(z,x)[log q(z|x) - log q(z)]
     mi_loss = torch.mean(log_qz_condx - log_qz)
+    
+    # Check for NaN/Inf values and replace with reasonable value if encountered
+    if torch.isnan(mi_loss) or torch.isinf(mi_loss):
+        mi_nan_count += 1
+        print(f"Warning: MI loss is NaN or Inf, returning 0 (Total NaN occurrences: {mi_nan_count})")
+        return torch.tensor(0.0, device=device)
     
     return mi_loss
 
@@ -475,6 +490,14 @@ def compute_dkld_loss(mu, logvar):
     if torch.abs(dkld_loss) > 1e10: print("Warning: DKLD loss is extreme")
     
     return dkld_loss
+
+def reset_nan_counters():
+    global tc_nan_count, mi_nan_count
+    tc_nan_count = 0
+    mi_nan_count = 0
+
+def print_nan_summary():
+    print(f"NaN Summary - TC: {tc_nan_count}, MI: {mi_nan_count}")
 
 # Function to calculate perceptual loss
 def perceptual_loss(real_features, fake_features):
@@ -813,6 +836,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     
     # Training loop
     for epoch in range(EPOCHS):
+        reset_nan_counters()
         model.train()
         epoch_losses = {k: 0.0 for k in all_losses.keys()}
         batch_count = 0
@@ -855,6 +879,12 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             
             # Create labels for random images (0s)
             rand_labels = torch.zeros_like(rand_preds)
+
+            # Clamp predictions to (0,1) before BCE loss calculations
+            eps = 1e-8
+            real_preds = torch.clamp(real_preds, min=0.0 + eps, max=1.0 - eps)
+            fake_preds = torch.clamp(fake_preds, min=0.0 + eps, max=1.0 - eps)
+            rand_preds = torch.clamp(rand_preds, min=0.0 + eps, max=1.0 - eps)
             
             # Compute discriminator loss
             d_loss_real = bce_loss(real_preds, real_labels)
@@ -864,7 +894,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             
             # Update discriminator
             d_loss.backward()
-            #torch.nn.utils.clip_grad_norm_(model.discriminator.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.discriminator.parameters(), max_norm=1.0)
             optim_disc.step()
             
             # ------------------------------
@@ -944,12 +974,12 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             
             # Update encoder & decoder
             total_loss.backward()
-            #torch.nn.utils.clip_grad_norm_(model.encoder.parameters(), max_norm=1.0)
-            #torch.nn.utils.clip_grad_norm_(model.decoder.parameters(), max_norm=1.0)
-            #torch.nn.utils.clip_grad_norm_(model.year_classifier.parameters(), max_norm=1.0)
-            #torch.nn.utils.clip_grad_norm_(model.make_classifier.parameters(), max_norm=1.0)
-            #torch.nn.utils.clip_grad_norm_(model.body_classifier.parameters(), max_norm=1.0)
-            #torch.nn.utils.clip_grad_norm_(model.door_classifier.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.encoder.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.decoder.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.year_classifier.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.make_classifier.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.body_classifier.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.door_classifier.parameters(), max_norm=1.0)
             optim_encoder.step()
             optim_decoder.step()
             optim_year.step()
@@ -998,6 +1028,9 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
               f"dkld: {epoch_losses['dkld']:.4f}, " +
               f"Cls: {epoch_losses['cls']:.4f} " +
               f"| Disc: {epoch_losses['disc']:.4f}")
+        
+        # Print NaN summary at the end of each epoch
+        print_nan_summary()
         
         # Save reconstructions for tracking
         if (epoch + 1) % 10 == 0 or epoch == 0 or epoch == EPOCHS - 1:
