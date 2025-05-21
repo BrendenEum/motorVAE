@@ -27,7 +27,7 @@ IMAGE_SIZE = 256
 BATCH_SIZE = 71
 EPOCHS = 100
 LATENT_DIM = 128
-LEARNING_RATE = 0.0002
+LEARNING_RATE = 0.00018
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
 TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 1-p(train).
@@ -35,9 +35,9 @@ TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 
 # Create weights for different loss components
 RECON_WEIGHT = 100.0
 PERCEPTUAL_WEIGHT = 5.0
-GAN_WEIGHT = 0.2
+GAN_WEIGHT = 0.5
 KLD_WEIGHT_START = 0.00001 # KLD Scheduler
-KLD_WEIGHT_END = 0.1
+KLD_WEIGHT_END = 0.5
 TC_WEIGHT = 0.002  # Total Correlation weight
 MI_WEIGHT = 0.1  # Mutual Information weight
 DKLD_WEIGHT = 0.00002  # Dimension-wise KL Divergence weight
@@ -383,60 +383,67 @@ def compute_tc_loss(z, mu, logvar, batch_size):
     logvar = torch.clamp(logvar, min=-10, max=10)
     var = torch.clamp(torch.exp(logvar), min=eps, max=100)
     
-    # 1. Compute log q(z) - vectorized calculation
-    # Expand dimensions for broadcasting
+    # 1. Compute log q(z) - marginal distribution
+    # For each sample z_i, compute log q(z_i) = log(1/N * sum_j q(z_i | x_j))
     z_expanded = z.unsqueeze(1)                     # [B, 1, D]
     mu_expanded = mu.unsqueeze(0)                   # [1, B, D]
-    logvar_expanded = logvar.unsqueeze(0)           # [1, B, D]
     var_expanded = var.unsqueeze(0)                 # [1, B, D]
     
-    # Compute log det sigma (sum of log variances across dimensions)
-    log_det_sigma = torch.sum(logvar_expanded, dim=2)  # [1, B]
+    # Compute log q(z_i | x_j) for all i,j pairs
+    # log N(z_i; mu_j, var_j) = -0.5 * [D*log(2π) + sum_d(log(var_j_d) + (z_i_d - mu_j_d)^2 / var_j_d)]
+    log_2pi = torch.log(torch.tensor(2 * np.pi, device=z.device))
     
-    # Compute mahalanobis distance: (z - μ)^2 / σ^2
-    z_centered = z_expanded - mu_expanded           # [B, B, D]
+    # Compute log determinant: sum of log variances across dimensions
+    log_det = torch.sum(torch.log(var_expanded), dim=2)  # [1, B]
+    
+    # Compute squared Mahalanobis distance
+    z_centered = z_expanded - mu_expanded               # [B, B, D]
     mahalanobis = torch.sum(z_centered.pow(2) / var_expanded, dim=2)  # [B, B]
     
-    # Compute log probabilities
-    log_prob_const = -0.5 * z.size(1) * torch.log(torch.tensor(2 * np.pi, device=device))
-    log_qz_prob = log_prob_const - 0.5 * (log_det_sigma + mahalanobis)  # [B, B]
+    # Compute log probabilities: log q(z_i | x_j)
+    log_qz_given_x = -0.5 * (z.size(1) * log_2pi + log_det + mahalanobis)  # [B, B]
     
-    # Use log-sum-exp trick for numerical stability
-    max_val, _ = torch.max(log_qz_prob, dim=1, keepdim=True)
-    log_qz = torch.log(torch.sum(torch.exp(log_qz_prob - max_val), dim=1)) + max_val.squeeze(1)
-    log_qz = log_qz - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
+    # Compute log q(z_i) = log(1/N * sum_j q(z_i | x_j)) using log-sum-exp trick
+    max_val = torch.max(log_qz_given_x, dim=1, keepdim=True)[0]  # [B, 1]
+    log_qz = torch.log(torch.mean(torch.exp(log_qz_given_x - max_val), dim=1)) + max_val.squeeze(1)  # [B]
     
-    # 2. Compute log q(z_j) for each dimension - vectorized
-    # Reshape for broadcasting across dimensions
-    z_expanded_d = z.unsqueeze(1)                   # [B, 1, D]
-    mu_expanded_d = mu.unsqueeze(0)                 # [1, B, D]
-    logvar_expanded_d = logvar.unsqueeze(0)         # [1, B, D]
-    var_expanded_d = var.unsqueeze(0)               # [1, B, D]
+    # 2. Compute log prod_j q(z_j) - product of marginals
+    # For each dimension j, compute log q(z_i_j) = log(1/N * sum_k q(z_i_j | x_k_j))
+    log_qzj_list = []
     
-    # Compute dimension-wise probabilities (for each dimension separately)
-    log_det_sigma_d = logvar_expanded_d             # [1, B, D]
-    z_centered_d = z_expanded_d - mu_expanded_d     # [B, B, D]
-    mahalanobis_d = z_centered_d.pow(2) / var_expanded_d  # [B, B, D]
+    for j in range(z.size(1)):  # For each dimension
+        z_j = z[:, j:j+1]                           # [B, 1]
+        mu_j = mu[:, j:j+1]                         # [B, 1] 
+        var_j = var[:, j:j+1]                       # [B, 1]
+        
+        z_j_expanded = z_j.unsqueeze(1)             # [B, 1, 1]
+        mu_j_expanded = mu_j.unsqueeze(0)           # [1, B, 1]
+        var_j_expanded = var_j.unsqueeze(0)         # [1, B, 1]
+        
+        # Compute log q(z_i_j | x_k_j) for all i,k pairs
+        log_det_j = torch.log(var_j_expanded).squeeze(2)  # [1, B]
+        z_centered_j = z_j_expanded - mu_j_expanded       # [B, B, 1]
+        mahalanobis_j = (z_centered_j.pow(2) / var_j_expanded).squeeze(2)  # [B, B]
+        
+        log_qzj_given_x = -0.5 * (log_2pi + log_det_j + mahalanobis_j)  # [B, B]
+        
+        # Compute log q(z_i_j) using log-sum-exp trick
+        max_val_j = torch.max(log_qzj_given_x, dim=1, keepdim=True)[0]  # [B, 1]
+        log_qzj = torch.log(torch.mean(torch.exp(log_qzj_given_x - max_val_j), dim=1)) + max_val_j.squeeze(1)  # [B]
+        
+        log_qzj_list.append(log_qzj)
     
-    log_prob_const_d = -0.5 * torch.log(torch.tensor(2 * np.pi, device=device))
-    log_qzj_prob = log_prob_const_d - 0.5 * (log_det_sigma_d + mahalanobis_d)  # [B, B, D]
+    # Sum log q(z_j) across dimensions to get log prod_j q(z_j)
+    log_qz_prod = torch.stack(log_qzj_list, dim=1).sum(dim=1)  # [B]
     
-    # Sum log probs across batch dimension using log-sum-exp
-    max_val_d, _ = torch.max(log_qzj_prob, dim=1, keepdim=True)  # [B, 1, D]
-    log_qzj = torch.log(torch.sum(torch.exp(log_qzj_prob - max_val_d), dim=1)) + max_val_d.squeeze(1)  # [B, D]
-    log_qzj = log_qzj - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
-    
-    # Sum across dimensions to get prod_j q(z_j)
-    log_qz_prod = torch.sum(log_qzj, dim=1)  # [B]
-    
-    # Compute TC = KL(q(z) || prod_j q(z_j))
+    # 3. Compute TC = E[log q(z) - log prod_j q(z_j)]
     tc_loss = torch.mean(log_qz - log_qz_prod)
     
     # Check for NaN/Inf
     if torch.isnan(tc_loss) or torch.isinf(tc_loss):
         tc_nan_count += 1
         print(f"Warning: TC loss is NaN or Inf, returning 0 (Total NaN occurrences: {tc_nan_count})")
-        return torch.tensor(0.0, device=device)
+        return torch.tensor(0.0, device=z.device)
     
     return tc_loss
 
@@ -449,38 +456,43 @@ def compute_mi_loss(z, mu, logvar, batch_size):
     logvar = torch.clamp(logvar, min=-10, max=10)
     var = torch.clamp(torch.exp(logvar), min=eps, max=100)
     
-    # Compute log q(z|x) - vectorized
-    log_det_sigma = torch.sum(logvar, dim=1)  # [B]
-    z_centered_cond = z - mu                  # [B, D]
-    mahalanobis_cond = torch.sum(z_centered_cond.pow(2) / var, dim=1)  # [B]
-    log_qz_condx = -0.5 * (log_det_sigma + mahalanobis_cond + z.size(1) * torch.log(torch.tensor(2 * np.pi, device=device)))  # [B]
+    # 1. Compute log q(z|x) - conditional distribution (encoder)
+    # log N(z; mu, var) = -0.5 * [D*log(2π) + sum_d(log(var_d) + (z_d - mu_d)^2 / var_d)]
+    log_2pi = torch.log(torch.tensor(2 * np.pi, device=z.device))
     
-    # Compute log q(z) - vectorized (similar to TC loss)
-    z_expanded = z.unsqueeze(1)               # [B, 1, D]
-    mu_expanded = mu.unsqueeze(0)             # [1, B, D]
-    logvar_expanded = logvar.unsqueeze(0)     # [1, B, D]
-    var_expanded = var.unsqueeze(0)           # [1, B, D]
+    # For each sample i, compute log q(z_i | x_i)
+    log_det_cond = torch.sum(torch.log(var), dim=1)          # [B] - sum over dimensions
+    z_centered_cond = z - mu                                 # [B, D]
+    mahalanobis_cond = torch.sum(z_centered_cond.pow(2) / var, dim=1)  # [B] - sum over dimensions
     
-    log_det_sigma_marg = torch.sum(logvar_expanded, dim=2)  # [1, B]
-    z_centered_marg = z_expanded - mu_expanded  # [B, B, D]
-    mahalanobis_marg = torch.sum(z_centered_marg.pow(2) / var_expanded, dim=2)  # [B, B]
+    log_qz_given_x = -0.5 * (z.size(1) * log_2pi + log_det_cond + mahalanobis_cond)  # [B]
     
-    log_prob_const = -0.5 * z.size(1) * torch.log(torch.tensor(2 * np.pi, device=device))
-    log_qz_prob = log_prob_const - 0.5 * (log_det_sigma_marg + mahalanobis_marg)  # [B, B]
+    # 2. Compute log q(z) - marginal distribution
+    # For each sample z_i, compute log q(z_i) = log(1/N * sum_j q(z_i | x_j))
+    z_expanded = z.unsqueeze(1)                     # [B, 1, D]
+    mu_expanded = mu.unsqueeze(0)                   # [1, B, D]
+    var_expanded = var.unsqueeze(0)                 # [1, B, D]
     
-    # Use log-sum-exp trick
-    max_val, _ = torch.max(log_qz_prob, dim=1, keepdim=True)
-    log_qz = torch.log(torch.sum(torch.exp(log_qz_prob - max_val), dim=1)) + max_val.squeeze(1)
-    log_qz = log_qz - torch.log(torch.tensor(batch_size, dtype=torch.float, device=device))
+    # Compute log q(z_i | x_j) for all i,j pairs
+    log_det_marg = torch.sum(torch.log(var_expanded), dim=2)  # [1, B] - sum over dimensions
+    z_centered_marg = z_expanded - mu_expanded               # [B, B, D]
+    mahalanobis_marg = torch.sum(z_centered_marg.pow(2) / var_expanded, dim=2)  # [B, B] - sum over dimensions
     
-    # Compute MI = E_q(z,x)[log q(z|x) - log q(z)]
-    mi_loss = torch.mean(log_qz_condx - log_qz)
+    # Compute log probabilities: log q(z_i | x_j)
+    log_qz_given_all_x = -0.5 * (z.size(1) * log_2pi + log_det_marg + mahalanobis_marg)  # [B, B]
+    
+    # Compute log q(z_i) = log(1/N * sum_j q(z_i | x_j)) using log-sum-exp trick
+    max_val = torch.max(log_qz_given_all_x, dim=1, keepdim=True)[0]  # [B, 1]
+    log_qz = torch.log(torch.mean(torch.exp(log_qz_given_all_x - max_val), dim=1)) + max_val.squeeze(1)  # [B]
+    
+    # 3. Compute MI = E[log q(z|x) - log q(z)]
+    mi_loss = torch.mean(log_qz_given_x - log_qz)
     
     # Check for NaN/Inf values
     if torch.isnan(mi_loss) or torch.isinf(mi_loss):
         mi_nan_count += 1
         print(f"Warning: MI loss is NaN or Inf, returning 0 (Total NaN occurrences: {mi_nan_count})")
-        return torch.tensor(0.0, device=device)
+        return torch.tensor(0.0, device=z.device)
     
     return mi_loss
 
