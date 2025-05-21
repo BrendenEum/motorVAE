@@ -34,8 +34,8 @@ TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 
 
 # Create weights for different loss components
 RECON_WEIGHT = 100.0
-PERCEPTUAL_WEIGHT = 5.0
-GAN_WEIGHT = 1.5
+PERCEPTUAL_WEIGHT = 1.0
+GAN_WEIGHT = 0.2
 KLD_WEIGHT_START = 0.00001 # KLD Scheduler
 KLD_WEIGHT_END = 0.1
 TC_WEIGHT = 0.002  # Total Correlation weight
