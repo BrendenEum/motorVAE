@@ -24,10 +24,10 @@ print(f"Using device: {device}")
 
 # Define hyperparameters
 IMAGE_SIZE = 256
-BATCH_SIZE = 53
+BATCH_SIZE = 71
 EPOCHS = 100
 LATENT_DIM = 128
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.0002
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
 TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 1-p(train).
