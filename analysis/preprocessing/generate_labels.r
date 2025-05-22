@@ -163,3 +163,13 @@ write.csv(cd, "/Users/brenden/Desktop/motorVAE/data/labels_evox_256x256_1-4.csv"
 if (total_errors>0) {
   write.csv(unexpected_files, "/Users/brenden/Desktop/motorVAE/data/unexpected_filenames.csv", row.names = FALSE)
 }
+
+
+###########################
+# Save unique Year-Make-Model
+###########################
+
+# Only save 
+data <- cd[cd$brand!="other", c("year", "brand", "model")]
+data <- unique(data)
+write.csv(data, "/Users/brenden/Desktop/motorVAE/data/year-make-model.csv", row.names = FALSE)
