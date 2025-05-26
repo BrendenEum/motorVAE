@@ -25,9 +25,9 @@ print(f"Using device: {device}")
 # Define hyperparameters
 IMAGE_SIZE = 256
 BATCH_SIZE = 71
-EPOCHS = 100
+EPOCHS = 200
 LATENT_DIM = 128
-LEARNING_RATE = 0.0003
+LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
 BETA2 = 0.999 # Default for Adam optimizer
 TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 1-p(train).
@@ -35,9 +35,9 @@ TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 
 # Create weights for different loss components
 RECON_WEIGHT = 100.0
 PERCEPTUAL_WEIGHT = 5.0
-GAN_WEIGHT = 0.5
+GAN_WEIGHT = 0.2
 KLD_WEIGHT_START = 0.00001 # KLD Scheduler
-KLD_WEIGHT_END = 0.5
+KLD_WEIGHT_END = 0.1
 TC_WEIGHT = 0.002  # Total Correlation weight
 MI_WEIGHT = 0.1  # Mutual Information weight
 DKLD_WEIGHT = 0.00002  # Dimension-wise KL Divergence weight
@@ -541,10 +541,12 @@ def create_output_folder(config):
     
     # Create subdirectories
     recon_epochs_dir = os.path.join(output_dir, "reconstructions_epochs")
+    sample_epochs_dir = os.path.join(output_dir, "rsamples_epochs")
     tracking_epochs_dir = os.path.join(output_dir, "tracking_epochs")
     latent_traversals_dir = os.path.join(output_dir, "latent_traversals")
     checkpoint_dir = os.path.join(output_dir, "checkpoints")
     os.makedirs(recon_epochs_dir, exist_ok=True)
+    os.makedirs(sample_epochs_dir, exist_ok=True)
     os.makedirs(tracking_epochs_dir, exist_ok=True)
     os.makedirs(latent_traversals_dir, exist_ok=True)
     os.makedirs(checkpoint_dir, exist_ok=True)
@@ -651,24 +653,11 @@ def save_reconstructions(model, dataloader, output_dir, epoch):
             comparisons.extend([real_images[i][0], recon_images[i][0]])
         
         # Save image grid
-        save_image_grid(comparisons, os.path.join(output_dir, "reconstructions_epochs", f"epoch_{epoch}.png"), 
+        save_image_grid(comparisons, os.path.join(output_dir, "reconstructions_epochs", f"recon_epoch_{epoch}.png"), 
                         nrow=2, title=f"Epoch {epoch}")
-    
-    # Also save final reconstructions if this is the last epoch
-    if epoch == EPOCHS - 1:
-        # Create side-by-side comparisons for 10 examples
-        n_examples = min(10, real_images.size(0) if isinstance(real_images, torch.Tensor) else len(real_images))
-        comparisons = []
-        for i in range(n_examples):
-            comparisons.extend([real_images[i if isinstance(real_images, list) else 0], 
-                               recon_images[i if isinstance(recon_images, list) else 0]])
-        
-        # Save image grid
-        save_image_grid(comparisons, os.path.join(output_dir, "reconstructions.png"), 
-                        nrow=2, title="Real vs Reconstructed")
 
 # Function to save random samples
-def save_random_samples(model, output_dir):
+def save_random_samples(model, output_dir, epoch):
     model.eval()
     with torch.no_grad():
         # Generate random samples
@@ -679,7 +668,7 @@ def save_random_samples(model, output_dir):
         samples = samples.cpu().numpy()
         
         # Save image grid
-        save_image_grid(samples, os.path.join(output_dir, "samples.png"), 
+        save_image_grid(samples, os.path.join(output_dir, "rsamples_epochs", f"sample_epoch_{epoch}.png"), 
                         nrow=5, title="Random Samples")
 
 # Function to save latent traversals
@@ -797,6 +786,7 @@ def create_umap_visualizations(z_samples, labels, output_dir):
         plt.savefig(os.path.join(output_dir, f"umap_{label_type}.png"))
         plt.close()
 
+"""
 # Function to create interpolation between two images
 def create_interpolation(model, dataloader, output_dir):
     model.eval()
@@ -819,6 +809,45 @@ def create_interpolation(model, dataloader, output_dir):
         # Save interpolation
         save_image_grid(interpolations, os.path.join(output_dir, "interpolation.png"), 
                         nrow=5, title="Interpolation between two random cars")
+"""
+
+# Function to create interpolation between two images
+def create_interpolation(model, dataloader, output_dir):
+    model.eval()
+    with torch.no_grad():
+        # Get two random images
+        batch = next(iter(dataloader))
+        img1, img2 = batch['image'][0:1].to(device), batch['image'][1:2].to(device)
+        
+        # Encode the images
+        z1, _, _ = model.encode(img1)
+        z2, _, _ = model.encode(img2)
+        
+        # Start with the first original image (reconstructed from z1)
+        interpolations = []
+        
+        # Add the first original car (reconstructed)
+        recon1 = model.decode(z1)
+        interpolations.append(recon1[0].cpu().numpy())
+        
+        # Create interpolations (excluding endpoints since we're adding them separately)
+        for alpha in np.linspace(0.25, 0.75, 3):  # 3 intermediate steps
+            z_interp = alpha * z2 + (1 - alpha) * z1  # Note: swapped order for intuitive left-to-right
+            recon = model.decode(z_interp)
+            interpolations.append(recon[0].cpu().numpy())
+        
+        # Add the second original car (reconstructed)
+        recon2 = model.decode(z2)
+        interpolations.append(recon2[0].cpu().numpy())
+        
+        # Save interpolation (now we have 5 images total: original1, interp1, interp2, interp3, original2)
+        save_image_grid(interpolations, os.path.join(output_dir, "interpolation.png"), 
+                        nrow=5, title="Interpolation between two cars")
+        
+        # Optional: Also save the actual original images for comparison
+        originals = [img1[0].cpu().numpy(), img2[0].cpu().numpy()]
+        save_image_grid(originals, os.path.join(output_dir, "interpolation_originals.png"),
+                        nrow=2, title="Original input images")
 
 # Main training function
 def train_vaegan(model, train_loader, val_loader, output_dir):
@@ -1055,6 +1084,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
         # Save reconstructions for tracking
         if (epoch + 1) % 10 == 0 or epoch == 0 or epoch == EPOCHS - 1:
             save_reconstructions(model, train_loader, output_dir, epoch)
+            save_random_samples(model, output_dir, epoch)
             
         # Also save tracking reconstruction
         #with torch.no_grad():
@@ -1083,7 +1113,6 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     
     # Save final outputs
     save_losses(all_losses, output_dir)
-    save_random_samples(model, output_dir)
     save_latent_traversals(model, train_loader, output_dir)
     
     # Save latent vectors
