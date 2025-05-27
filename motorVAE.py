@@ -525,7 +525,7 @@ def create_output_folder(config):
         f"rec{RECON_WEIGHT}_per{PERCEPTUAL_WEIGHT}_gan{GAN_WEIGHT}_"
         f"kld{KLD_WEIGHT_END}(tc{TC_WEIGHT}_mi{MI_WEIGHT}_dk{DKLD_WEIGHT})_cls{CLS_WEIGHT}_pat{PATCH_SIZE}"
     )
-         = os.path.join("outputs", folder_name)
+    output_dir = os.path.join("outputs", folder_name)
     os.makedirs(output_dir, exist_ok=True)
     
     # Create subdirectories
