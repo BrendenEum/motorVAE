@@ -25,7 +25,7 @@ print(f"Using device: {device}")
 # Define hyperparameters
 IMAGE_SIZE = 256
 BATCH_SIZE = 71
-EPOCHS = 200
+EPOCHS = 100
 LATENT_DIM = 128
 LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
@@ -37,7 +37,7 @@ RECON_WEIGHT = 100.0
 PERCEPTUAL_WEIGHT = 5.0
 GAN_WEIGHT = 0.2
 KLD_WEIGHT_START = 0.00001 # KLD Scheduler
-KLD_WEIGHT_END = 0.1
+KLD_WEIGHT_END = 0.08
 TC_WEIGHT = 0.002  # Total Correlation weight
 MI_WEIGHT = 0.1  # Mutual Information weight
 DKLD_WEIGHT = 0.00002  # Dimension-wise KL Divergence weight
