@@ -25,7 +25,7 @@ print(f"Using device: {device}")
 # Define hyperparameters
 IMAGE_SIZE = 256
 BATCH_SIZE = 71
-EPOCHS = 100
+EPOCHS = 200
 LATENT_DIM = 128
 LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
@@ -37,7 +37,7 @@ RECON_WEIGHT = 100.0
 PERCEPTUAL_WEIGHT = 5.0
 GAN_WEIGHT = 0.2
 KLD_WEIGHT_START = 0.00001 # KLD Scheduler
-KLD_WEIGHT_END = 0.06
+KLD_WEIGHT_END = 0.1
 TC_WEIGHT = 0.002  # Total Correlation weight
 MI_WEIGHT = 0.1  # Mutual Information weight
 DKLD_WEIGHT = 0.00002  # Dimension-wise KL Divergence weight
@@ -536,7 +536,7 @@ def create_output_folder(config):
         f"rec{RECON_WEIGHT}_per{PERCEPTUAL_WEIGHT}_gan{GAN_WEIGHT}_"
         f"kld{KLD_WEIGHT_END}(tc{TC_WEIGHT}_mi{MI_WEIGHT}_dk{DKLD_WEIGHT})_cls{CLS_WEIGHT}_pat{PATCH_SIZE}"
     )
-    output_dir = os.path.join("outputs", folder_name)
+         = os.path.join("outputs", folder_name)
     os.makedirs(output_dir, exist_ok=True)
     
     # Create subdirectories
@@ -826,9 +826,9 @@ def create_interpolation(model, dataloader, output_dir):
         # Start with the first original image (reconstructed from z1)
         interpolations = []
         
-        # Add the first original car (reconstructed)
-        recon1 = model.decode(z1)
-        interpolations.append(recon1[0].cpu().numpy())
+        # Add the first original car
+        #recon1 = model.decode(z1) # if you want the reconstructed original
+        interpolations.append(img1[0].cpu().numpy())
         
         # Create interpolations (excluding endpoints since we're adding them separately)
         for alpha in np.linspace(0.25, 0.75, 3):  # 3 intermediate steps
@@ -837,17 +837,12 @@ def create_interpolation(model, dataloader, output_dir):
             interpolations.append(recon[0].cpu().numpy())
         
         # Add the second original car (reconstructed)
-        recon2 = model.decode(z2)
-        interpolations.append(recon2[0].cpu().numpy())
+        #recon2 = model.decode(z2) # if you want the reconstructed original
+        interpolations.append(img2[0].cpu().numpy())
         
         # Save interpolation (now we have 5 images total: original1, interp1, interp2, interp3, original2)
         save_image_grid(interpolations, os.path.join(output_dir, "interpolation.png"), 
                         nrow=5, title="Interpolation between two cars")
-        
-        # Optional: Also save the actual original images for comparison
-        originals = [img1[0].cpu().numpy(), img2[0].cpu().numpy()]
-        save_image_grid(originals, os.path.join(output_dir, "interpolation_originals.png"),
-                        nrow=2, title="Original input images")
 
 # Main training function
 def train_vaegan(model, train_loader, val_loader, output_dir):
