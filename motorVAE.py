@@ -375,67 +375,53 @@ def kl_divergence(mu, logvar):
     kld = -0.5 * torch.mean(torch.sum(1 + logvar_clamped - mu.pow(2) - logvar_clamped.exp(), dim=1))
     return kld
 
+# Alternative simplified version that's more stable but less theoretically precise
 def compute_tc_loss(z, mu, logvar):
     """
-    Direct computation of Total Correlation as KL(q(z) || ∏q(z_j))
-    Based on β-TC-VAE approach, not Factor-VAE
+    Simplified TC loss that's more numerically stable
+    Uses sample-based approximation with better numerical properties
     """
     batch_size, latent_dim = z.shape
     
-    # More conservative clamping
-    mu = torch.clamp(mu, min=-3, max=3)
-    logvar = torch.clamp(logvar, min=-6, max=6)  # Variance range: [~0.002, ~400]
+    # Conservative clamping
+    mu = torch.clamp(mu, min=-10, max=10)
+    logvar = torch.clamp(logvar, min=-10, max=10)
     
-    # 1. Compute log q(z) - joint marginal
-    log_qz = gaussian_log_density(z, mu, logvar)
+    # Method 1: Use the current batch as an approximation of the full dataset
+    # This is what Factor-VAE does and tends to be more stable
     
-    # 2. Compute log ∏q(z_j) - product of marginals
-    log_qz_prod = 0
-    for j in range(latent_dim):
-        log_qzj = gaussian_log_density(
-            z[:, j:j+1], 
-            mu[:, j:j+1], 
-            logvar[:, j:j+1]
-        )
-        log_qz_prod += log_qzj
+    # Compute log q(z_i|x_i) - the encoder's output for each sample
+    var = torch.exp(logvar).clamp(min=1e-6)
+    log_qz_given_x = -0.5 * torch.sum(
+        math.log(2 * math.pi) + logvar + (z - mu).pow(2) / var, 
+        dim=1
+    )  # [B]
     
-    # 3. TC = E[log q(z) - log ∏q(z_j)]
-    tc_loss = torch.mean(log_qz - log_qz_prod)
+    # Compute log q(z_i) by marginalizing over the batch
+    # For each sample z_i, compute its probability under all encoders in the batch
+    z_expanded = z.unsqueeze(1)        # [B, 1, D]
+    mu_expanded = mu.unsqueeze(0)      # [1, B, D]
+    var_expanded = var.unsqueeze(0)    # [1, B, D]
     
-    # Sanity check and clamping
-    if torch.abs(tc_loss) > 10:
-        print(f"Warning: TC loss = {tc_loss.item():.3f}, clamping")
-        tc_loss = torch.clamp(tc_loss, min=-5, max=10)
+    # Log probabilities of each z under each encoder
+    diff = z_expanded - mu_expanded    # [B, B, D]
+    log_probs = -0.5 * torch.sum(
+        math.log(2 * math.pi) + torch.log(var_expanded) + diff.pow(2) / var_expanded,
+        dim=2
+    )  # [B, B]
+    
+    # Marginal log q(z_i) using log-mean-exp
+    log_qz = torch.logsumexp(log_probs, dim=1) - math.log(batch_size)  # [B]
+    
+    # TC loss
+    tc_loss = torch.mean(log_qz_given_x - log_qz)
+    
+    # Stability checks
+    if torch.isnan(tc_loss) or torch.isinf(tc_loss):
+        print("WARNING: tc_loss nan or infinite. Replacing with 0.0, but you should check this.")
+        return torch.tensor(0.0, device=z.device, requires_grad=True)
     
     return tc_loss
-
-def gaussian_log_density(z, mu, logvar):
-    """
-    Compute log q(z) = log(1/N Σ_i q(z | x_i)) for Gaussian mixture
-    """
-    batch_size = mu.shape[0]
-    
-    # Expand for broadcasting
-    z_exp = z.unsqueeze(1)                    # [B, 1, D]
-    mu_exp = mu.unsqueeze(0)                  # [1, B, D]
-    logvar_exp = logvar.unsqueeze(0)          # [1, B, D]
-    
-    # Compute log N(z; mu_i, exp(logvar_i))
-    var_exp = torch.exp(logvar_exp).clamp(min=1e-6)
-    
-    # More stable computation
-    diff = z_exp - mu_exp                     # [B, B, D]
-    mahalanobis = torch.sum(diff.pow(2) / var_exp, dim=2)  # [B, B]
-    log_det = torch.sum(logvar_exp, dim=2)    # [B, B]
-    
-    # Log density for each pair
-    log_2pi = math.log(2 * math.pi)
-    log_density = -0.5 * (z.size(1) * log_2pi + log_det + mahalanobis)  # [B, B]
-    
-    # Use logsumexp for numerical stability
-    log_qz = torch.logsumexp(log_density, dim=1) - math.log(batch_size)  # [B]
-    
-    return log_qz
 
 def compute_mi_loss(z, mu, logvar, batch_size):
     global mi_nan_count
