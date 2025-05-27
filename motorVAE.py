@@ -37,7 +37,7 @@ RECON_WEIGHT = 100.0
 PERCEPTUAL_WEIGHT = 5.0
 GAN_WEIGHT = 0.2
 KLD_WEIGHT_START = 0.00001 # KLD Scheduler
-KLD_WEIGHT_END = 0.12
+KLD_WEIGHT_END = 0.1
 TC_WEIGHT = 0.002  # Total Correlation weight
 MI_WEIGHT = 0.1  # Mutual Information weight
 DKLD_WEIGHT = 0.00002  # Dimension-wise KL Divergence weight
@@ -374,78 +374,67 @@ def kl_divergence(mu, logvar):
     kld = -0.5 * torch.mean(torch.sum(1 + logvar_clamped - mu.pow(2) - logvar_clamped.exp(), dim=1))
     return kld
 
-def compute_tc_loss(z, mu, logvar, batch_size):
-    global tc_nan_count
-    eps = 1e-8
+def compute_tc_loss(z, mu, logvar):
+    """
+    Direct computation of Total Correlation as KL(q(z) || ∏q(z_j))
+    Based on β-TC-VAE approach, not Factor-VAE
+    """
+    batch_size, latent_dim = z.shape
     
-    # Clamp values for numerical stability
-    mu = torch.clamp(mu, min=-10, max=10)
-    logvar = torch.clamp(logvar, min=-10, max=10)
-    var = torch.clamp(torch.exp(logvar), min=eps, max=100)
+    # More conservative clamping
+    mu = torch.clamp(mu, min=-3, max=3)
+    logvar = torch.clamp(logvar, min=-6, max=6)  # Variance range: [~0.002, ~400]
     
-    # 1. Compute log q(z) - marginal distribution
-    # For each sample z_i, compute log q(z_i) = log(1/N * sum_j q(z_i | x_j))
-    z_expanded = z.unsqueeze(1)                     # [B, 1, D]
-    mu_expanded = mu.unsqueeze(0)                   # [1, B, D]
-    var_expanded = var.unsqueeze(0)                 # [1, B, D]
+    # 1. Compute log q(z) - joint marginal
+    log_qz = gaussian_log_density(z, mu, logvar)
     
-    # Compute log q(z_i | x_j) for all i,j pairs
-    # log N(z_i; mu_j, var_j) = -0.5 * [D*log(2π) + sum_d(log(var_j_d) + (z_i_d - mu_j_d)^2 / var_j_d)]
-    log_2pi = torch.log(torch.tensor(2 * np.pi, device=z.device))
+    # 2. Compute log ∏q(z_j) - product of marginals
+    log_qz_prod = 0
+    for j in range(latent_dim):
+        log_qzj = gaussian_log_density(
+            z[:, j:j+1], 
+            mu[:, j:j+1], 
+            logvar[:, j:j+1]
+        )
+        log_qz_prod += log_qzj
     
-    # Compute log determinant: sum of log variances across dimensions
-    log_det = torch.sum(torch.log(var_expanded), dim=2)  # [1, B]
-    
-    # Compute squared Mahalanobis distance
-    z_centered = z_expanded - mu_expanded               # [B, B, D]
-    mahalanobis = torch.sum(z_centered.pow(2) / var_expanded, dim=2)  # [B, B]
-    
-    # Compute log probabilities: log q(z_i | x_j)
-    log_qz_given_x = -0.5 * (z.size(1) * log_2pi + log_det + mahalanobis)  # [B, B]
-    
-    # Compute log q(z_i) = log(1/N * sum_j q(z_i | x_j)) using log-sum-exp trick
-    max_val = torch.max(log_qz_given_x, dim=1, keepdim=True)[0]  # [B, 1]
-    log_qz = torch.log(torch.mean(torch.exp(log_qz_given_x - max_val), dim=1)) + max_val.squeeze(1)  # [B]
-    
-    # 2. Compute log prod_j q(z_j) - product of marginals
-    # For each dimension j, compute log q(z_i_j) = log(1/N * sum_k q(z_i_j | x_k_j))
-    log_qzj_list = []
-    
-    for j in range(z.size(1)):  # For each dimension
-        z_j = z[:, j:j+1]                           # [B, 1]
-        mu_j = mu[:, j:j+1]                         # [B, 1] 
-        var_j = var[:, j:j+1]                       # [B, 1]
-        
-        z_j_expanded = z_j.unsqueeze(1)             # [B, 1, 1]
-        mu_j_expanded = mu_j.unsqueeze(0)           # [1, B, 1]
-        var_j_expanded = var_j.unsqueeze(0)         # [1, B, 1]
-        
-        # Compute log q(z_i_j | x_k_j) for all i,k pairs
-        log_det_j = torch.log(var_j_expanded).squeeze(2)  # [1, B]
-        z_centered_j = z_j_expanded - mu_j_expanded       # [B, B, 1]
-        mahalanobis_j = (z_centered_j.pow(2) / var_j_expanded).squeeze(2)  # [B, B]
-        
-        log_qzj_given_x = -0.5 * (log_2pi + log_det_j + mahalanobis_j)  # [B, B]
-        
-        # Compute log q(z_i_j) using log-sum-exp trick
-        max_val_j = torch.max(log_qzj_given_x, dim=1, keepdim=True)[0]  # [B, 1]
-        log_qzj = torch.log(torch.mean(torch.exp(log_qzj_given_x - max_val_j), dim=1)) + max_val_j.squeeze(1)  # [B]
-        
-        log_qzj_list.append(log_qzj)
-    
-    # Sum log q(z_j) across dimensions to get log prod_j q(z_j)
-    log_qz_prod = torch.stack(log_qzj_list, dim=1).sum(dim=1)  # [B]
-    
-    # 3. Compute TC = E[log q(z) - log prod_j q(z_j)]
+    # 3. TC = E[log q(z) - log ∏q(z_j)]
     tc_loss = torch.mean(log_qz - log_qz_prod)
     
-    # Check for NaN/Inf
-    if torch.isnan(tc_loss) or torch.isinf(tc_loss):
-        tc_nan_count += 1
-        print(f"Warning: TC loss is NaN or Inf, returning 0 (Total NaN occurrences: {tc_nan_count})")
-        return torch.tensor(0.0, device=z.device)
+    # Sanity check and clamping
+    if torch.abs(tc_loss) > 10:
+        print(f"Warning: TC loss = {tc_loss.item():.3f}, clamping")
+        tc_loss = torch.clamp(tc_loss, min=-5, max=10)
     
     return tc_loss
+
+def gaussian_log_density(z, mu, logvar):
+    """
+    Compute log q(z) = log(1/N Σ_i q(z | x_i)) for Gaussian mixture
+    """
+    batch_size = mu.shape[0]
+    
+    # Expand for broadcasting
+    z_exp = z.unsqueeze(1)                    # [B, 1, D]
+    mu_exp = mu.unsqueeze(0)                  # [1, B, D]
+    logvar_exp = logvar.unsqueeze(0)          # [1, B, D]
+    
+    # Compute log N(z; mu_i, exp(logvar_i))
+    var_exp = torch.exp(logvar_exp).clamp(min=1e-6)
+    
+    # More stable computation
+    diff = z_exp - mu_exp                     # [B, B, D]
+    mahalanobis = torch.sum(diff.pow(2) / var_exp, dim=2)  # [B, B]
+    log_det = torch.sum(logvar_exp, dim=2)    # [B, B]
+    
+    # Log density for each pair
+    log_2pi = math.log(2 * math.pi)
+    log_density = -0.5 * (z.size(1) * log_2pi + log_det + mahalanobis)  # [B, B]
+    
+    # Use logsumexp for numerical stability
+    log_qz = torch.logsumexp(log_density, dim=1) - math.log(batch_size)  # [B]
+    
+    return log_qz
 
 def compute_mi_loss(z, mu, logvar, batch_size):
     global mi_nan_count
@@ -682,24 +671,19 @@ def save_latent_traversals(model, dataloader, output_dir):
         # Encode the image to get the original latent vector
         z_original, mu, logvar = model.encode(img)
         
-        # Calculate standard deviation from logvar
-        std = torch.exp(0.5 * logvar)
-        
-        # Create latent traversals for each dimension
-        # We'll show: -2σ, -1σ, original, +1σ, +2σ
-        std_multipliers = [-2, -1, 0, 1, 2]
-        n_steps = len(std_multipliers)
+        # Use a fixed range around the mean
+        n_steps = 7
+        traversal_range = torch.linspace(-3, 3, n_steps, device=device)
         
         for dim in range(LATENT_DIM):
             traversal_images = []
             
-            # Create traversal for this dimension
-            for multiplier in std_multipliers:
-                # Copy the original latent vector
-                z_trav = z_original.clone()
+            for val in traversal_range:
+                # Start with the mean
+                z_trav = mu.clone()
                 
-                # Modify only the current dimension by adding std_multiplier * std
-                z_trav[0, dim] = mu[0, dim] + multiplier * std[0, dim]
+                # Set the current dimension to the traversal value
+                z_trav[0, dim] = val
                 
                 # Decode the modified latent vector
                 recon = model.decode(z_trav)
@@ -708,9 +692,9 @@ def save_latent_traversals(model, dataloader, output_dir):
             # Save traversal for this dimension
             save_image_grid(
                 traversal_images, 
-                os.path.join(output_dir, "latent_traversals", f"dim_{dim}.png"), 
+                os.path.join(output_dir, "latent_traversals", f"dim_{dim:03d}.png"), 
                 nrow=n_steps, 
-                title=f"Dimension {dim}: -2 to 2 std dev"
+                title=f"Dimension {dim}: Range -3 to +3"
             )
 
 # Function to save losses
@@ -982,7 +966,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             gen_loss = gen_loss_fake + gen_loss_rand
             
             # Compute KL divergence components
-            tc_loss = compute_tc_loss(z.detach(), mu.detach(), logvar.detach(), batch_size)
+            tc_loss = compute_tc_loss(z.detach(), mu.detach(), logvar.detach())
             mi_loss = compute_mi_loss(z.detach(), mu.detach(), logvar.detach(), batch_size)
             dkld_loss = compute_dkld_loss(mu.detach(), logvar.detach())
 
@@ -1076,10 +1060,11 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
         # Print NaN summary at the end of each epoch
         print_nan_summary()
         
-        # Save reconstructions for tracking
+        # Save reconstructions, samples, and losses for tracking
         if (epoch + 1) % 10 == 0 or epoch == 0 or epoch == EPOCHS - 1:
             save_reconstructions(model, train_loader, output_dir, epoch)
             save_random_samples(model, output_dir, epoch)
+            save_losses(all_losses, output_dir)
             
         # Also save tracking reconstruction
         #with torch.no_grad():
@@ -1107,7 +1092,6 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
         z_samples = np.concatenate(z_samples, axis=0)
     
     # Save final outputs
-    save_losses(all_losses, output_dir)
     save_latent_traversals(model, train_loader, output_dir)
     
     # Save latent vectors
