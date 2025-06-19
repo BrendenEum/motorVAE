@@ -1,0 +1,858 @@
+---
+title: "NAcc Regression Model Recovery"
+output:
+  html_document:
+    df_print: paged
+---
+
+Author: Brenden Eum (2025)
+
+This notebook uses simulations to test different ways we can regress NAcc activity on latent distributions from motorVAEGAN.
+
+The goal is to simulate NAcc activity then to see if we recover the original parameters.
+
+* in the Table of Contents indicates sections that have writing.
+
+# Preamble
+
+## Start Fresh
+```{r}
+rm(list=ls())
+set.seed(4)
+library(tidyverse)
+library(glmnet)
+library(patchwork)
+library(boot)
+```
+
+## Simulate True Data, NAcc=f(X1,X2)
+
+```{r}
+nCars = 100
+nDim = 4
+beta0 <<- 1
+beta1 <<- 2
+beta2 <<- 3
+
+truth = matrix(rnorm(nCars*nDim, mean=0, sd=1), nrow=nCars, ncol=nDim) %>% data.frame() # True cars
+truth$NAcc = beta0 + beta1*truth$X1 + beta2*truth$X2 # NAcc activity based on first 2 features
+
+truth %>% summarise(across(everything(), list(mean = mean, sd = sd)))
+```
+
+
+# Case 0: True Latent Vector*
+
+Run an elastic net regression, selecting alpha via leave-one-out cross-validation (LOOCV).
+
+Results of the elastic net regression are stored in final_coefficients. The optimal alpha selected was 0.3, weighting ridge slightly over lasso. Elastic net successfully recovers the data-generating coefficients.
+
+```{r}
+# Prepare data for glmnet (needs matrix format)
+X_true <- truth[,c("X1","X2","X3","X4")] %>% as.matrix()  
+Y_true <- truth$NAcc %>% as.matrix()                  
+
+# Define alpha values to test
+alpha_values <- seq(0, 1, by = 0.1)
+
+# Placeholder
+cv_results <- data.frame(alpha = alpha_values, cv_error = NA)
+
+for(i in 1:length(alpha_values)) {
+  # Fit model with current alpha using LOOCV
+  cv_fit <- cv.glmnet(
+    x = X_true, 
+    y = Y_true, 
+    alpha = alpha_values[i],
+    nfolds = nrow(truth),  # LOOCV: nfolds = number of observations
+    type.measure = "mse",   # Use mean squared error
+    grouped = F
+  )
+  
+  # Store the minimum CV error
+  cv_results$cv_error[i] <- min(cv_fit$cvm)
+}
+
+# Find optimal alpha
+optimal_alpha <- cv_results$alpha[which.min(cv_results$cv_error)]
+
+# Fit final model with optimal alpha
+final_cv_fit <- cv.glmnet(
+  x = X_true, 
+  y = Y_true, 
+  alpha = optimal_alpha,
+  nfolds = nrow(truth),
+  type.measure = "mse",
+  grouped = F
+)
+
+# Extract coefficients at lambda.min
+final_coefficients <- coef(final_cv_fit, s = "lambda.min")
+print(final_coefficients)
+
+# Plot CV results
+ggplot(cv_results, aes(x = alpha, y = cv_error)) +
+  geom_line() +
+  geom_point(size = 2) +
+  
+  geom_vline(xintercept = optimal_alpha, color = "red", linetype = "dashed") +
+  
+  labs(
+    y = "LOOCV MSE",
+    x = "Elastic Net Alpha (Ridge to Lasso)"
+  ) +
+  theme_bw() +
+  coord_cartesian(ylim=c(0.01,0.012)) +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+
+# Case 1: Sampling w Precise Means*
+
+- Fix latent sd to 0.2. 
+- Latent mean for each car is equal to it's actual value at that dimension.
+
+## Functions
+
+```{r}
+# Generate dataset
+Gen_Precise_Data <- function(nSamples=10, nCars=100, truth=data.frame(), lat_sd=0.2) {
+  Sampled_Data = data.frame()
+
+  for (i in c(1:nSamples)) {
+    .X1_Sampled = rnorm(nCars, mean=truth$X1, sd=lat_sd)
+    .X2_Sampled = rnorm(nCars, mean=truth$X2, sd=lat_sd)
+    .X3_Sampled = rnorm(nCars, mean=truth$X3, sd=lat_sd)
+    .X4_Sampled = rnorm(nCars, mean=truth$X4, sd=lat_sd)
+    .new_df = data.frame(
+      NAcc=truth$NAcc, 
+      X1=.X1_Sampled, X2=.X2_Sampled, X3=.X3_Sampled, X4=.X4_Sampled
+    )
+    Sampled_Data = bind_rows(Sampled_Data, .new_df)
+  }
+  
+  # Prepare data for glmnet (needs matrix format)
+  X <- Sampled_Data[,c("X1","X2","X3","X4")] %>% as.matrix()  
+  Y <- Sampled_Data$NAcc %>% as.matrix()          
+  
+  # Return as a list
+  return(list(X=X, Y=Y))
+}
+```
+
+```{r}
+# Get best alpha for elastic net
+Get_Elastic_Alpha <- function(Y=matrix(), X=matrix(), truth=data.frame()) {
+  
+  # Define alpha values to test
+  alpha_values <- seq(0.05, 1, by = 0.05)
+  
+  # Placeholder
+  cv_results <- data.frame(alpha = alpha_values, cv_error = NA)
+  
+  for(i in 1:length(alpha_values)) {
+    print(paste0("Testing alpha: ", alpha_values[i]))
+    # Fit model with current alpha using LOOCV
+    cv_fit <- cv.glmnet(
+      x = X, 
+      y = Y, 
+      alpha = alpha_values[i],
+      nfolds = nrow(truth),  # LOOCV: nfolds = number of observations
+      type.measure = "mse",   # Use mean squared error
+      grouped = F
+    )
+    print(cv_fit)
+    
+    # Store the minimum CV error
+    cv_results$cv_error[i] <- min(cv_fit$cvm)
+  }
+  
+  # Find optimal alpha
+  optimal_alpha <- cv_results$alpha[which.min(cv_results$cv_error)]
+  return(list(alpha=optimal_alpha, cv=cv_results))
+}
+```
+
+```{r}
+# Print elastic net coefficients
+Plot_Elastic_Coef <- function(Y, X, optimal_alpha, title) {
+  
+  # Fit final model with optimal alpha
+  final_cv_fit <- cv.glmnet(
+    x = X, 
+    y = Y, 
+    alpha = optimal_alpha,
+    nfolds = nrow(X),
+    type.measure = "mse",
+    grouped = F
+  )
+  
+  # Extract coefficients at lambda.min
+  final_coefficients <- coef(final_cv_fit, s = "lambda.1se")
+  
+  # Extract coefficients and create data frame for plotting
+  coef_df <- data.frame(
+    variable = rownames(final_coefficients),
+    coefficient = as.vector(final_coefficients),
+    true_value = c(beta0, beta1, beta2, 0, 0)  # True values: intercept, X1, X2, X3, X4
+  )
+  
+  # Plot coefficients vs true values
+  p = ggplot(coef_df, aes(x = variable)) +
+    geom_col(aes(y = coefficient, fill = "Estimated"), alpha = 0.7, width = 0.6) +
+    geom_point(aes(y = true_value, color = "True Value"), size = 3) +
+    geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) +
+    labs(
+      title = title,
+      y = "Coefficient Value"
+    ) +
+    scale_fill_manual(values = c("Estimated" = "steelblue")) +
+    scale_color_manual(values = c("True Value" = "red")) +
+    theme_minimal() +
+    theme(
+      legend.title = element_blank(),
+      axis.title.x = element_blank()
+    )
+  
+  return(p)
+}
+```
+
+## Results: Latent sd & nSamples
+
+lat_sd = .2, N = 5
+
+```{r}
+set.seed(4)
+nSamples = 5
+lat_sd = 0.2
+
+Data = Gen_Precise_Data(nSamples=nSamples, nCars=nCars, truth=truth, lat_sd=lat_sd)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+c1p1 = Plot_Elastic_Coef(Y, X, optimal_alpha, title = "lat_sd = .2, N = 5")
+
+# Plot CV results
+ggplot(cv_results, aes(x = alpha, y = cv_error)) +
+  geom_line() +
+  geom_point(size = 2) +
+  
+  geom_vline(xintercept = optimal_alpha, color = "red", linetype = "dashed") +
+  
+  labs(
+    title = "lat_sd = .2, N = 10",
+    y = "LOOCV MSE",
+    x = "Elastic Net Alpha (Ridge to Lasso)"
+  ) +
+  theme_bw() +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+lat_sd = .2, N = 100
+
+```{r}
+set.seed(4)
+nSamples = 100
+lat_sd = 0.2
+
+Data = Gen_Precise_Data(nSamples=nSamples, nCars=nCars, truth=truth, lat_sd=lat_sd)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+c1p2 = Plot_Elastic_Coef(Y, X, optimal_alpha, title = "lat_sd = .2, N = 100")
+
+# Plot CV results
+ggplot(cv_results, aes(x = alpha, y = cv_error)) +
+  geom_line() +
+  geom_point(size = 2) +
+  
+  geom_vline(xintercept = optimal_alpha, color = "red", linetype = "dashed") +
+  
+  labs(
+    title = "lat_sd = .2, N = 100",
+    y = "LOOCV MSE",
+    x = "Elastic Net Alpha (Ridge to Lasso)"
+  ) +
+  theme_bw() +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+lat_sd = .5, N = 5
+
+```{r}
+set.seed(4)
+nSamples = 5
+lat_sd = 0.5
+
+Data = Gen_Precise_Data(nSamples=nSamples, nCars=nCars, truth=truth, lat_sd=lat_sd)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+c1p3 = Plot_Elastic_Coef(Y, X, optimal_alpha, title = "lat_sd = .5, N = 5")
+
+# Plot CV results
+ggplot(cv_results, aes(x = alpha, y = cv_error)) +
+  geom_line() +
+  geom_point(size = 2) +
+  
+  geom_vline(xintercept = optimal_alpha, color = "red", linetype = "dashed") +
+  
+  labs(
+    title = "lat_sd = .5, N = 10",
+    y = "LOOCV MSE",
+    x = "Elastic Net Alpha (Ridge to Lasso)"
+  ) +
+  theme_bw() +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+lat_sd = .5, N = 100
+
+```{r}
+set.seed(4)
+nSamples = 100
+lat_sd = 0.5
+
+Data = Gen_Precise_Data(nSamples=nSamples, nCars=nCars, truth=truth, lat_sd=lat_sd)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+c1p4 = Plot_Elastic_Coef(Y, X, optimal_alpha, title = "lat_sd = .5, N = 100")
+
+# Plot CV results
+ggplot(cv_results, aes(x = alpha, y = cv_error)) +
+  geom_line() +
+  geom_point(size = 2) +
+  
+  geom_vline(xintercept = optimal_alpha, color = "red", linetype = "dashed") +
+  
+  labs(
+    title = "lat_sd = .5, N = 100",
+    y = "LOOCV MSE",
+    x = "Elastic Net Alpha (Ridge to Lasso)"
+  ) +
+  theme_bw() +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+### Combine Plots*
+
+Coefficients are estimated with bias towards 0 as latent standard deviation grows. Despite not having confidence intervals, we can see X1 and X2 are still estimated quite away from 0 compared to X3 and X4.
+
+This suggests we may be able to determine which variables are significant in NAcc activity, though we may not be able to accurately say how much each variable contributes to activity.
+
+```{r}
+p_Case1 = (c1p1 + c1p2) / (c1p3 + c1p4) +
+  plot_layout(guides = "collect") 
+plot(p_Case1)
+```
+
+## Supp: Sampling More & Uneven sd
+
+lat_sd = .5, N = 300*
+
+Sampling more does not eliminate the bias in recovered parameters.
+
+```{r}
+set.seed(4)
+nSamples = 300
+lat_sd = 0.5
+
+Data = Gen_Precise_Data(nSamples=nSamples, nCars=nCars, truth=truth, lat_sd=lat_sd)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+Plot_Elastic_Coef(Y, X, optimal_alpha, title = "lat_sd = .5, N = 300")
+```
+
+lat_sd (.5,.2), N = 100*
+
+Results are robust even if the true variables have wider latent sd than the fake variables.
+
+```{r}
+set.seed(4)
+nSamples = 100
+
+Sampled_Data = data.frame()
+
+for (i in c(1:nSamples)) {
+  .X1_Sampled = rnorm(nCars, mean=truth$X1, sd=.5)
+  .X2_Sampled = rnorm(nCars, mean=truth$X2, sd=.5)
+  .X3_Sampled = rnorm(nCars, mean=truth$X3, sd=.2)
+  .X4_Sampled = rnorm(nCars, mean=truth$X4, sd=.2)
+  .new_df = data.frame(
+    NAcc=truth$NAcc, 
+    X1=.X1_Sampled, X2=.X2_Sampled, X3=.X3_Sampled, X4=.X4_Sampled
+  )
+  Sampled_Data = bind_rows(Sampled_Data, .new_df)
+}
+
+# Prepare data for glmnet (needs matrix format)
+X <- Sampled_Data[,c("X1","X2","X3","X4")] %>% as.matrix()  
+Y <- Sampled_Data$NAcc %>% as.matrix() 
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+Plot_Elastic_Coef(Y, X, optimal_alpha, title="lat_sd (.5,.2), N = 100")
+```
+
+
+
+# Case 2: Sampling w Noisy Means*
+
+What if our latent means are not centered on the true latent value of the car? We introduce noise to the mean, lat_mu_noise.
+
+Theoretically, this should be the same thing as adding noise to the latent distribution. This is because X~N(m1, v1), where m1~N(m2, v2), is the same as X~N(m2, v1+v2).
+
+## Functions
+
+```{r}
+# Generate dataset
+Gen_Noisy_Data <- function(
+    nSamples=10, nCars=100, truth=data.frame(), lat_sd=0.2, lat_mu_noise=0.2
+  ) {
+  
+  Sampled_Data = data.frame()
+
+  for (i in c(1:nSamples)) {
+    .X1_Sampled = rnorm(nCars, mean=rnorm(nCars,truth$X1,lat_mu_noise), sd=lat_sd)
+    .X2_Sampled = rnorm(nCars, mean=rnorm(nCars,truth$X2,lat_mu_noise), sd=lat_sd)
+    .X3_Sampled = rnorm(nCars, mean=rnorm(nCars,truth$X3,lat_mu_noise), sd=lat_sd)
+    .X4_Sampled = rnorm(nCars, mean=rnorm(nCars,truth$X4,lat_mu_noise), sd=lat_sd)
+    .new_df = data.frame(
+      NAcc=truth$NAcc, 
+      X1=.X1_Sampled, X2=.X2_Sampled, X3=.X3_Sampled, X4=.X4_Sampled
+    )
+    Sampled_Data = bind_rows(Sampled_Data, .new_df)
+  }
+  
+  # Prepare data for glmnet (needs matrix format)
+  X <- Sampled_Data[,c("X1","X2","X3","X4")] %>% as.matrix()  
+  Y <- Sampled_Data$NAcc %>% as.matrix()          
+  
+  # Return as a list
+  return(list(X=X, Y=Y))
+}
+```
+
+
+## Results: Source of Noise
+
+lat_sd = .2, mu_sd = .2, N = 100
+
+```{r}
+set.seed(4)
+nSamples = 100
+lat_sd = 0.2
+mu_sd = 0.2
+
+Data = Gen_Noisy_Data(nSamples=nSamples, nCars=nCars, truth=truth, 
+                      lat_sd=lat_sd, lat_mu_noise=mu_sd)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+c2p1 = Plot_Elastic_Coef(Y, X, optimal_alpha, title="lat_sd = .2, mu_sd = .2, N = 100")
+
+# Plot CV results
+ggplot(cv_results, aes(x = alpha, y = cv_error)) +
+  geom_line() +
+  geom_point(size = 2) +
+  
+  geom_vline(xintercept = optimal_alpha, color = "red", linetype = "dashed") +
+  
+  labs(
+    y = "LOOCV MSE",
+    x = "Elastic Net Alpha (Ridge to Lasso)"
+  ) +
+  theme_bw() +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+lat_sd = .2, mu_sd = .5, N = 100
+
+```{r}
+set.seed(4)
+nSamples = 10
+lat_sd = 0.2
+mu_sd = 0.5
+
+Data = Gen_Noisy_Data(nSamples=nSamples, nCars=nCars, truth=truth, 
+                      lat_sd=lat_sd, lat_mu_noise=mu_sd)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+c2p2 = Plot_Elastic_Coef(Y, X, optimal_alpha, title="lat_sd = .2, mu_sd = .5, N = 100")
+
+# Plot CV results
+ggplot(cv_results, aes(x = alpha, y = cv_error)) +
+  geom_line() +
+  geom_point(size = 2) +
+  
+  geom_vline(xintercept = optimal_alpha, color = "red", linetype = "dashed") +
+  
+  labs(
+    y = "LOOCV MSE",
+    x = "Elastic Net Alpha (Ridge to Lasso)"
+  ) +
+  theme_bw() +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+lat_sd = .5, mu_sd = .2, N = 100
+
+```{r}
+set.seed(4)
+nSamples = 10
+lat_sd = 0.5
+mu_sd = 0.2
+
+Data = Gen_Noisy_Data(nSamples=nSamples, nCars=nCars, truth=truth, 
+                      lat_sd=lat_sd, lat_mu_noise=mu_sd)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+c2p3 = Plot_Elastic_Coef(Y, X, optimal_alpha, title="lat_sd = .5, mu_sd = .2, N = 100")
+
+# Plot CV results
+ggplot(cv_results, aes(x = alpha, y = cv_error)) +
+  geom_line() +
+  geom_point(size = 2) +
+  
+  geom_vline(xintercept = optimal_alpha, color = "red", linetype = "dashed") +
+  
+  labs(
+    y = "LOOCV MSE",
+    x = "Elastic Net Alpha (Ridge to Lasso)"
+  ) +
+  theme_bw() +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+lat_sd = .5, mu_sd = .5, N = 100
+
+```{r}
+set.seed(4)
+nSamples = 10
+lat_sd = 0.5
+mu_sd = 0.5
+
+Data = Gen_Noisy_Data(nSamples=nSamples, nCars=nCars, truth=truth, 
+                      lat_sd=lat_sd, lat_mu_noise=mu_sd)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+c2p4 = Plot_Elastic_Coef(Y, X, optimal_alpha, title="lat_sd = .5, mu_sd = .5, N = 100")
+
+# Plot CV results
+ggplot(cv_results, aes(x = alpha, y = cv_error)) +
+  geom_line() +
+  geom_point(size = 2) +
+  
+  geom_vline(xintercept = optimal_alpha, color = "red", linetype = "dashed") +
+  
+  labs(
+    y = "LOOCV MSE",
+    x = "Elastic Net Alpha (Ridge to Lasso)"
+  ) +
+  theme_bw() +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+### Combine Plots*
+
+Confirming that where the noise enters in is irrelevant, since the addition of two random normal variables equals a random normal variable with the variances summed.
+
+Results are similar to Case 1. We have larger bias, but we're still able to distinguish which variables are true versus fake.
+
+```{r}
+p_Case2 = (c2p1 + c2p2) / (c2p3 + c2p4) +
+  plot_layout(guides = "collect")
+plot(p_Case2)
+```
+
+## Supp: Limit of sd*
+
+Based on the last result, we don't need to differentiate between lat_sd and mu_sd. But where is the limit of lat_sd?
+
+lat_sd = .75, N = 100
+
+```{r}
+set.seed(4)
+nSamples = 100
+lat_sd = .75
+
+Data = Gen_Precise_Data(nSamples=nSamples, nCars=nCars, truth=truth, lat_sd=lat_sd)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+c2sp1 = Plot_Elastic_Coef(Y, X, optimal_alpha, title = "lat_sd = .75, N = 100")
+```
+
+lat_sd = 1, N = 100
+
+```{r}
+set.seed(4)
+nSamples = 100
+lat_sd = 1
+
+Data = Gen_Precise_Data(nSamples=nSamples, nCars=nCars, truth=truth, lat_sd=lat_sd)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+c2sp2 = Plot_Elastic_Coef(Y, X, optimal_alpha, title = "lat_sd = 1, N = 100")
+```
+
+lat_sd = 1.5, N = 100
+
+```{r}
+set.seed(4)
+nSamples = 100
+lat_sd = 1.5
+
+Data = Gen_Precise_Data(nSamples=nSamples, nCars=nCars, truth=truth, lat_sd=lat_sd)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+c2sp3 = Plot_Elastic_Coef(Y, X, optimal_alpha, title = "lat_sd = 1.5, N = 100")
+```
+
+lat_sd = 3, N = 100
+
+```{r}
+set.seed(4)
+nSamples = 100
+lat_sd = 3
+
+Data = Gen_Precise_Data(nSamples=nSamples, nCars=nCars, truth=truth, lat_sd=lat_sd)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+c2sp4 = Plot_Elastic_Coef(Y, X, optimal_alpha, title = "lat_sd = 3, N = 100")
+```
+
+### Combine Plots*
+
+By about lat_sd = 3, we start to question whether X1 and X2 are significant.
+
+```{r}
+p_Case2_Supp1 = (c2sp1 + c2sp2) / (c2sp3 + c2sp4) +
+  plot_layout(guides = "collect")
+plot(p_Case2_Supp1)
+```
+
+
+# Case 3: Individual NAcc
+
+## Generate data
+
+```{r}
+set.seed(4)
+nSubj = 50
+
+orig = matrix(rnorm(nCars*nDim, mean=0, sd=1), nrow=nCars, ncol=nDim) %>% data.frame() # True cars
+truth = orig
+
+for (s in c(1:nSubj)){
+  add_me = orig
+  b0 = rnorm(1, beta0, sd=1)
+  b1 = rnorm(1, beta1, sd=1)
+  b2 = rnorm(1, beta2, sd=1)
+  add_me$NAcc = b0 + b1*add_me$X1 + b2*add_me$X2
+  truth = bind_rows(truth, add_me)
+}
+truth = na.omit(truth)
+
+truth %>% summarise(across(everything(), list(mean = mean, sd = sd)))
+```
+
+## Recovery
+
+```{r}
+Data = Gen_Precise_Data(nSamples=10, nCars=nCars, truth=truth, lat_sd=1.0)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+c3p1 = Plot_Elastic_Coef(Y, X, optimal_alpha, title = "lat_sd = 1.0, N = 10")
+
+# Plot CV results
+# ggplot(cv_results, aes(x = alpha, y = cv_error)) +
+#   geom_line() +
+#   geom_point(size = 2) +
+#   
+#   geom_vline(xintercept = optimal_alpha, color = "red", linetype = "dashed") +
+#   
+#   labs(
+#     title = "lat_sd = .2, N = 10",
+#     y = "LOOCV MSE",
+#     x = "Elastic Net Alpha (Ridge to Lasso)"
+#   ) +
+#   theme_bw() +
+#   scale_x_continuous(breaks = seq(0, 1, 0.1))
+
+plot(c3p1)
+```
+
+
+
+# Case X: Latent (M,SD) as Variables
+
+What if we just regress NAcc activity on latent mean and sd?
+
+## Functions
+
+```{r}
+# Generate dataset
+Gen_Direct_Data <- function(nCars=100, truth=data.frame(), lat_sd=0.2, 
+                            lat_mu_noise=0.2, lat_sd_noise=0.2) {
+  
+  truth$X1_Mean = rnorm(nCars, mean=truth$X1, sd=lat_mu_noise)
+  truth$X1_SD = rnorm(nCars, mean=lat_sd, sd=lat_sd_noise)
+  truth$X2_Mean = rnorm(nCars, mean=truth$X2, sd=lat_mu_noise)
+  truth$X2_SD = rnorm(nCars, mean=lat_sd, sd=lat_sd_noise)
+  truth$X3_Mean = rnorm(nCars, mean=truth$X3, sd=lat_mu_noise)
+  truth$X3_SD = rnorm(nCars, mean=lat_sd, sd=lat_sd_noise)
+  truth$X4_Mean = rnorm(nCars, mean=truth$X4, sd=lat_mu_noise)
+  truth$X4_SD = rnorm(nCars, mean=lat_sd, sd=lat_sd_noise)
+  
+  # Prepare data for glmnet (needs matrix format)
+  voi = c("X1_Mean","X2_Mean","X3_Mean","X4_Mean", "X1_SD","X2_SD","X3_SD","X4_SD")
+  X <- truth[,voi] %>% as.matrix()  
+  Y <- truth$NAcc %>% as.matrix()          
+  
+  # Return as a list
+  return(list(X=X, Y=Y))
+}
+```
+
+## Results: Noise on latent statistics*
+
+IT DOESNT WORK.
+
+lat_mu_noise = 0.2, lat_sd_noise = 0.2
+
+```{r}
+set.seed(4)
+lat_sd = 0.2
+lat_mu_noise = 0.1
+lat_sd_noise = 0.1
+
+Data = Gen_Direct_Data(nCars=nCars, truth=truth, lat_sd=lat_sd,
+                       lat_mu_noise=lat_mu_noise, lat_sd_noise=lat_sd_noise)
+X = Data$X
+Y = Data$Y
+
+alpha_results = Get_Elastic_Alpha(Y, X, truth)
+optimal_alpha = alpha_results$alpha
+cv_results = alpha_results$cv
+
+# Fit final model with optimal alpha
+final_cv_fit <- cv.glmnet(
+  x = X, 
+  y = Y, 
+  alpha = optimal_alpha,
+  nfolds = nrow(X),
+  type.measure = "mse",
+  grouped = F
+)
+
+# Extract coefficients at lambda.min
+final_coefficients <- coef(final_cv_fit, s = "lambda.min")
+
+# Extract coefficients and create data frame for plotting
+coef_df <- data.frame(
+  variable = rownames(final_coefficients),
+  coefficient = as.vector(final_coefficients),
+  true_value = c(beta0, beta1, beta2, 0, 0, 0, 0, 0, 0)  # True values: intercept, X1, X2, X3, X4
+)
+
+# Plot coefficients vs true values
+ggplot(coef_df, aes(x = variable)) +
+  geom_col(aes(y = coefficient, fill = "Estimated"), alpha = 0.7, width = 0.6) +
+  geom_point(aes(y = true_value, color = "True Value"), size = 3) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) +
+  labs(
+    title = "e_mu = .2, e_sd = .2",
+    y = "Coefficient Value"
+  ) +
+  scale_fill_manual(values = c("Estimated" = "steelblue")) +
+  scale_color_manual(values = c("True Value" = "red")) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(),
+    axis.title.x = element_blank()
+  )
+
+# Plot CV results
+ggplot(cv_results, aes(x = alpha, y = cv_error)) +
+  geom_line() +
+  geom_point(size = 2) +
+  
+  geom_vline(xintercept = optimal_alpha, color = "red", linetype = "dashed") +
+  
+  labs(
+    title = "e_mu = .2, e_sd = .2",
+    y = "LOOCV MSE",
+    x = "Elastic Net Alpha (Ridge to Lasso)"
+  ) +
+  theme_bw() +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
