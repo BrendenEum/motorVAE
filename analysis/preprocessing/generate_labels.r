@@ -137,8 +137,9 @@ sales_data = read.csv("/Users/brenden/Desktop/motorVAE/data/autodealerdata_proce
 cd = cd %>% left_join(sales_data, by=c("year","make","model"))
 cd <- cd %>%
   mutate(sales = cut(avg_annual_sales, 
-                         breaks = 3, 
-                         labels = c("Low", "Medium", "High")))
+                     breaks = quantile(avg_annual_sales, probs = c(0, 0.33, 0.67, 1), na.rm = TRUE),
+                     labels = c("Low", "Medium", "High"),
+                     include.lowest = TRUE))
 
 
 ###########################

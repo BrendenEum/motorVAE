@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=def-webbr
-#SBATCH --time=00-48:00:00 # DD-HH:MM:SS
-#SBATCH --gres=gpu:v100l:1
+#SBATCH --time=00-20:00:00 # DD-HH:MM:SS
+#SBATCH --gres=gpu:v100:1
 #SBATCH --mem=40000M
 #SBATCH --ntasks=1 
 #SBATCH --cpus-per-task=4
