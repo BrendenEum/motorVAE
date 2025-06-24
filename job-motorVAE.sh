@@ -1,9 +1,7 @@
 #!/bin/bash
-#SBATCH --account=def-webbr
+#SBATCH --account=def-webbr_gpu
 #SBATCH --time=00-20:00:00 # DD-HH:MM:SS
 #SBATCH --gpus=nvidia_h100_80gb_hbm3_3g.40gb:1
-#SBATCH --mem=40000M
-#SBATCH --ntasks=1 
 #SBATCH --cpus-per-task=4
 #SBATCH --output=logs/%j.out
 
