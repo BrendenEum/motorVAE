@@ -1,0 +1,87 @@
+/localscratch/spool/slurmd/job14180/slurm_script: line 10: cd: /home/beum/scratch/motorVAE: No such file or directory
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) mii/1.1.2
+
+The following have been reloaded with a version change:
+  1) StdEnv/2023 => StdEnv/2020
+  2) flexiblas/3.3.1 => flexiblas/3.0.4
+  3) gcc/12.3 => gcc/9.3.0
+  4) gcccore/.12.3 => gcccore/.9.3.0
+  5) gentoo/2023 => gentoo/2020
+  6) libfabric/1.18.0 => libfabric/1.10.1
+  7) openmpi/4.1.5 => openmpi/4.0.3
+  8) ucx/1.14.1 => ucx/1.8.0
+
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) libfabric/1.10.1     2) openmpi/4.0.3     3) ucx/1.8.0
+
+Downloading: "https://download.pytorch.org/models/vgg16-397923af.pth" to /home/beum/.cache/torch/hub/checkpoints/vgg16-397923af.pth
+Using device: cuda
+Outputs will be saved to: outputs/res256_lat128_ep100_bat71_lrn0.0001_rec100.0_per5.0_gan0.2_kld0.08(tc0.2_mi0.1_dk2e-05)_cls0.2_pat16
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_1.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_2.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_4.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_3.png not found.
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_4.png not found.
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_3.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_1.png not found.
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_2.png not found.
+Found 46426 valid images
+Number of classes - Year: 19, Make: 28, Body: 8, Door: 2, Sales: 4
+Traceback (most recent call last):
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/urllib/request.py", line 1346, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/http/client.py", line 1257, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/http/client.py", line 1303, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/http/client.py", line 1252, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/http/client.py", line 1012, in _send_output
+    self.send(msg)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/http/client.py", line 952, in send
+    self.connect()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/http/client.py", line 1419, in connect
+    super().connect()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/http/client.py", line 923, in connect
+    self.sock = self._create_connection(
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/socket.py", line 843, in create_connection
+    raise err
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/socket.py", line 831, in create_connection
+    sock.connect(sa)
+OSError: [Errno 101] Network is unreachable
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 1296, in <module>
+    main()
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 1241, in main
+    model = VAEGAN(
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 335, in __init__
+    self.perceptual_loss = PerceptualLoss()
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 287, in __init__
+    vgg = models.vgg16(pretrained=True)
+  File "/lustre10/scratch/beum/motorVAE/env/lib/python3.9/site-packages/torchvision/models/vgg.py", line 162, in vgg16
+    return _vgg('vgg16', 'D', False, pretrained, progress, **kwargs)
+  File "/lustre10/scratch/beum/motorVAE/env/lib/python3.9/site-packages/torchvision/models/vgg.py", line 99, in _vgg
+    state_dict = load_state_dict_from_url(model_urls[arch],
+  File "/lustre10/scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/hub.py", line 586, in load_state_dict_from_url
+    download_url_to_file(url, cached_file, hash_prefix, progress=progress)
+  File "/lustre10/scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/hub.py", line 452, in download_url_to_file
+    u = urlopen(req)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/urllib/request.py", line 214, in urlopen
+    return opener.open(url, data, timeout)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/urllib/request.py", line 517, in open
+    response = self._open(req, data)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/urllib/request.py", line 534, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/urllib/request.py", line 494, in _call_chain
+    result = func(*args)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/urllib/request.py", line 1389, in https_open
+    return self.do_open(http.client.HTTPSConnection, req,
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2020/avx512/Core/python/3.9.6/lib/python3.9/urllib/request.py", line 1349, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno 101] Network is unreachable>
