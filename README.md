@@ -34,7 +34,8 @@ Request an interactive session.
 
 ```
 cd /home/beum/scratch/motorVAE
-salloc --account=def-webbr --time=00:59:00 --gres=gpu:v100l:1 --mem=40000M --ntasks=1 --cpus-per-task=4
+#salloc --account=def-webbr --time=00:59:00 --gpus=nvidia_h100_80gb_hbm3_3g.40gb:1 --mem=40000M --ntasks=1 --cpus-per-task=4
+salloc --account="def-webbr_gpu" --gpus=nvidia_h100_80gb_hbm3_3g.40gb:1
 ```
 
 Load all the modules.

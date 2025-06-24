@@ -1,8 +1,7 @@
 #!/bin/bash
 #SBATCH --account=def-webbr
 #SBATCH --time=00-20:00:00 # DD-HH:MM:SS
-#SBATCH --export=ALL,DISABLE_DCGM=1
-#SBATCH --gpus-per-node=1
+#SBATCH --gpus=nvidia_h100_80gb_hbm3_3g.40gb:1
 #SBATCH --mem=40000M
 #SBATCH --ntasks=1 
 #SBATCH --cpus-per-task=4
