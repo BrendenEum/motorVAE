@@ -1084,22 +1084,64 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     # Save final outputs
     save_latent_traversals(model, train_loader, output_dir)
     
-    # Save latent vectors
+    # Save latent vectors as CSV files with filenames
     if len(z_samples) > 0:
-        mu_path = os.path.join(output_dir, "latent_mu.npy")
-        logvar_path = os.path.join(output_dir, "latent_logvar.npy")
-        z_path = os.path.join(output_dir, "latent_z.npy")
+        mu_path = os.path.join(output_dir, "latent_mu.csv")
+        logvar_path = os.path.join(output_dir, "latent_logvar.csv")
+        z_path = os.path.join(output_dir, "latent_z.csv")
         
-        # Extract and save the means, log variances, and sampled z
+        # Collect latent vectors and filenames from entire training set
+        model.eval()
+        all_mu = []
+        all_logvar = []
+        all_z = []
+        all_filenames = []
+        
         with torch.no_grad():
-            batch = next(iter(train_loader))
-            images = batch['image'].to(device)
-            mu, logvar = model.encoder(images)
-            z = model.reparameterize(mu, logvar)
-            
-            np.save(mu_path, mu.cpu().numpy())
-            np.save(logvar_path, logvar.cpu().numpy())
-            np.save(z_path, z.cpu().numpy())
+            for batch in tqdm(train_loader, desc="Extracting latent vectors"):
+                images = batch['image'].to(device)
+                filenames = batch['filename']
+                
+                mu, logvar = model.encoder(images)
+                z = model.reparameterize(mu, logvar)
+                
+                all_mu.append(mu.cpu().numpy())
+                all_logvar.append(logvar.cpu().numpy())
+                all_z.append(z.cpu().numpy())
+                all_filenames.extend(filenames)
+        
+        # Concatenate all batches
+        all_mu = np.concatenate(all_mu, axis=0)
+        all_logvar = np.concatenate(all_logvar, axis=0)
+        all_z = np.concatenate(all_z, axis=0)
+        
+        # Create column names
+        mu_columns = ['filename'] + [f'mu_{i}' for i in range(LATENT_DIM)]
+        logvar_columns = ['filename'] + [f'logvar_{i}' for i in range(LATENT_DIM)]
+        z_columns = ['filename'] + [f'z_{i}' for i in range(LATENT_DIM)]
+        
+        # Create DataFrames
+        mu_df = pd.DataFrame(np.column_stack([all_filenames, all_mu]), columns=mu_columns)
+        logvar_df = pd.DataFrame(np.column_stack([all_filenames, all_logvar]), columns=logvar_columns)
+        z_df = pd.DataFrame(np.column_stack([all_filenames, all_z]), columns=z_columns)
+        
+        # Convert numeric columns to float (pandas imports as string when using column_stack)
+        for col in mu_columns[1:]:
+            mu_df[col] = pd.to_numeric(mu_df[col])
+        for col in logvar_columns[1:]:
+            logvar_df[col] = pd.to_numeric(logvar_df[col])
+        for col in z_columns[1:]:
+            z_df[col] = pd.to_numeric(z_df[col])
+        
+        # Save as CSV files
+        mu_df.to_csv(mu_path, index=False)
+        logvar_df.to_csv(logvar_path, index=False)
+        z_df.to_csv(z_path, index=False)
+        
+        print(f"Saved latent vectors to CSV files:")
+        print(f"  - {mu_path} ({mu_df.shape})")
+        print(f"  - {logvar_path} ({logvar_df.shape})")
+        print(f"  - {z_path} ({z_df.shape})")
         
         # Create UMAP visualizations
         create_umap_visualizations(z_samples, z_labels, output_dir)
