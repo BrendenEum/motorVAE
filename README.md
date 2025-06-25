@@ -41,7 +41,8 @@ salloc --account="def-webbr_gpu" --gpus=nvidia_h100_80gb_hbm3_3g.40gb:1 --time=0
 Load all the modules.
 
 ```
-module load StdEnv/2020 python/3.9.6 cuda/11.4 scipy-stack/2021a
+#module load StdEnv/2020 python/3.9.6 cuda/11.4 scipy-stack/2021a
+module load StdEnv/2020 python/3.9.6 cuda/12.2 scipy-stack/2021a
 ```
 
 >*First-time setup*: If it's your first time ever running this code, you'll need to set up the virtual environment and install all the required libraries with (1) `virtualenv --no-download env`, (2) `source env/bin/activate`, (3) `pip install -r requirements.txt`. I think `virtualenv` is different on Compute Canada, so you may want to use `venv` on a local computer.

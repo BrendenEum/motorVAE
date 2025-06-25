@@ -986,26 +986,29 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             z_cls = z.detach().clone()
             z_cls.requires_grad = True
             
+            # Filter out samples without sales labels BEFORE computing logits
+            valid_sales_mask = sales_labels != -1
+            if valid_sales_mask.sum() > 0:  # Only compute loss if we have valid samples
+                # Only pass valid samples through the classifier
+                valid_z_cls = z_cls[valid_sales_mask]
+                valid_sales_labels = sales_labels[valid_sales_mask]
+                
+                # Compute logits only for valid samples
+                valid_sales_logits = model.sales_classifier(valid_z_cls)
+                sales_loss = ce_loss(valid_sales_logits, valid_sales_labels)
+            else:
+                sales_loss = torch.tensor(0.0, device=device, requires_grad=True)
+
+            # For the other classifiers, keep as is:
             year_logits = model.year_classifier(z_cls)
             make_logits = model.make_classifier(z_cls)
             body_logits = model.body_classifier(z_cls)
             door_logits = model.door_classifier(z_cls)
-            sales_logits = model.sales_classifier(z_cls)
-            
+
             year_loss = ce_loss(year_logits, year_labels)
             make_loss = ce_loss(make_logits, make_labels)
             body_loss = ce_loss(body_logits, body_labels)
             door_loss = ce_loss(door_logits, door_labels)
-            #sales_loss = ce_loss(sales_logits, sales_labels)
-
-            # Filter out samples without sales labels
-            valid_sales_mask = sales_labels != -1
-            if valid_sales_mask.sum() > 0:  # Only compute loss if we have valid samples
-                valid_sales_logits = sales_logits[valid_sales_mask]
-                valid_sales_labels = sales_labels[valid_sales_mask]
-                sales_loss = ce_loss(valid_sales_logits, valid_sales_labels)
-            else:
-                sales_loss = torch.tensor(0.0, device=device)  # No loss contribution
             
             cls_loss = year_loss + make_loss + body_loss + door_loss + sales_loss
             
@@ -1142,8 +1145,8 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     # Calculate and save classification accuracy
     model.eval()
     correct = {'year': 0, 'make': 0, 'body': 0, 'door': 0, 'sales': 0}
-    total = 0
-    
+    total = {'year': 0, 'make': 0, 'body': 0, 'door': 0, 'sales': 0}  # Track totals separately
+
     with torch.no_grad():
         for batch in val_loader:
             images = batch['image'].to(device)
@@ -1154,35 +1157,47 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             sales_labels = batch['sales'].to(device)
             
             z, _, _ = model.encode(images)
-            year_logits, make_logits, body_logits, door_logits, sales_logits = model.classify(z)
-
+            
+            # For year, make, body, door - all samples are valid
+            year_logits, make_logits, body_logits, door_logits, _ = model.classify(z)
+            
             _, year_preds = torch.max(year_logits, 1)
             _, make_preds = torch.max(make_logits, 1)
             _, body_preds = torch.max(body_logits, 1)
             _, door_preds = torch.max(door_logits, 1)
-            _, sales_preds = torch.max(sales_logits, 1)
+            
+            batch_size = year_labels.size(0)
             
             correct['year'] += (year_preds == year_labels).sum().item()
             correct['make'] += (make_preds == make_labels).sum().item()
             correct['body'] += (body_preds == body_labels).sum().item()
             correct['door'] += (door_preds == door_labels).sum().item()
-            #correct['sales'] += (sales_preds == sales_labels).sum().item()
-
+            
+            total['year'] += batch_size
+            total['make'] += batch_size
+            total['body'] += batch_size
+            total['door'] += batch_size
+            
+            # For sales - only valid samples
             valid_sales_mask = sales_labels != -1
             if valid_sales_mask.sum() > 0:
-                valid_sales_logits = sales_logits[valid_sales_mask]
+                valid_z = z[valid_sales_mask]
                 valid_sales_labels = sales_labels[valid_sales_mask]
+                valid_sales_logits = model.sales_classifier(valid_z)
                 _, sales_preds = torch.max(valid_sales_logits, 1)
                 correct['sales'] += (sales_preds == valid_sales_labels).sum().item()
+                total['sales'] += valid_sales_mask.sum().item()
 
-            total += year_labels.size(0)
-    
     # Calculate and save accuracies
     with open(os.path.join(output_dir, "classification_accuracy.txt"), "w") as f:
-        for label_type, count in correct.items():
-            accuracy = 100 * count / total
-            f.write(f"{label_type} accuracy: {accuracy:.2f}%\n")
-            print(f"{label_type} accuracy: {accuracy:.2f}%")
+        for label_type in ['year', 'make', 'body', 'door', 'sales']:
+            if total[label_type] > 0:
+                accuracy = 100 * correct[label_type] / total[label_type]
+                f.write(f"{label_type} accuracy: {accuracy:.2f}% ({correct[label_type]}/{total[label_type]})\n")
+                print(f"{label_type} accuracy: {accuracy:.2f}% ({correct[label_type]}/{total[label_type]})")
+            else:
+                f.write(f"{label_type} accuracy: N/A (no valid samples)\n")
+                print(f"{label_type} accuracy: N/A (no valid samples)")
     
     return model, all_losses
 
