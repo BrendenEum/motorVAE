@@ -26,7 +26,7 @@ print(f"Using device: {device}")
 # Define hyperparameters
 IMAGE_SIZE = 256
 BATCH_SIZE = 71
-EPOCHS = 100
+EPOCHS = 150
 LATENT_DIM = 128
 LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
