@@ -85,10 +85,9 @@ class VehicleDataset(Dataset):
         self.make_classes = len(self.labels_df['make'].unique())
         self.body_classes = len(self.labels_df['body'].unique())
         self.door_classes = len(self.labels_df['door'].unique())
-        self.sales_classes = len(self.labels_df['sales'].unique())
         
         print(f"Found {len(self.img_files)} valid images")
-        print(f"Number of classes - Year: {self.year_classes}, Make: {self.make_classes}, Body: {self.body_classes}, Door: {self.door_classes}, Sales: {self.sales_classes}")
+        print(f"Number of classes - Year: {self.year_classes}, Make: {self.make_classes}, Body: {self.body_classes}, Door: {self.door_classes}")
 
     def __len__(self):
         return len(self.img_files)
@@ -104,14 +103,6 @@ class VehicleDataset(Dataset):
         make = torch.tensor(labels['make'], dtype=torch.long)
         body = torch.tensor(labels['body'], dtype=torch.long)
         door = torch.tensor(labels['door'], dtype=torch.long)
-        #sales = torch.tensor(labels['sales'], dtype=torch.long)
-
-        # Check if sales label is NaN and handle appropriately
-        sales_val = labels['sales']
-        if pd.isna(sales_val):
-            sales = torch.tensor(-1, dtype=torch.long)  # Use -1 as "no label" indicator
-        else:
-            sales = torch.tensor(sales_val, dtype=torch.long)
 
         if self.transform:
             image = self.transform(image)
@@ -122,7 +113,6 @@ class VehicleDataset(Dataset):
             'make': make, 
             'body': body, 
             'door': door,
-            'sales': sales,
             'filename': img_name
         }
 
@@ -317,7 +307,7 @@ class PerceptualLoss(nn.Module):
 
 # Define the full VAE-GAN model
 class VAEGAN(nn.Module):
-    def __init__(self, latent_dim, year_classes, make_classes, body_classes, door_classes, sales_classes):
+    def __init__(self, latent_dim, year_classes, make_classes, body_classes, door_classes):
         super(VAEGAN, self).__init__()
         
         # Initialize components
@@ -329,8 +319,7 @@ class VAEGAN(nn.Module):
         self.year_classifier = Classifier(latent_dim, year_classes)
         self.make_classifier = Classifier(latent_dim, make_classes)
         self.body_classifier = Classifier(latent_dim, body_classes)
-        self.door_classifier = Classifier(latent_dim, door_classes)
-        self.sales_classifier = Classifier(latent_dim, sales_classes)  
+        self.door_classifier = Classifier(latent_dim, door_classes) 
         
         # Initialize perceptual loss
         self.perceptual_loss = PerceptualLoss()
@@ -368,9 +357,8 @@ class VAEGAN(nn.Module):
         make_logits = self.make_classifier(z)
         body_logits = self.body_classifier(z)
         door_logits = self.door_classifier(z)
-        sales_logits = self.sales_classifier(z)
         
-        return year_logits, make_logits, body_logits, door_logits, sales_logits
+        return year_logits, make_logits, body_logits, door_logits
     
     def forward(self, x):
         # Full forward pass
@@ -554,8 +542,7 @@ def save_checkpoint(model, optimizers, epoch, losses, output_dir):
         'year_classifier': optimizers['year_classifier'].state_dict(),
         'make_classifier': optimizers['make_classifier'].state_dict(),
         'body_classifier': optimizers['body_classifier'].state_dict(),
-        'door_classifier': optimizers['door_classifier'].state_dict(),
-        'sales_classifier': optimizers['sales_classifier'].state_dict()
+        'door_classifier': optimizers['door_classifier'].state_dict()
     }
     
     # Create checkpoint
@@ -585,7 +572,6 @@ def load_checkpoint(model, optimizers, checkpoint_path):
     optimizers['make_classifier'].load_state_dict(checkpoint['optimizer_states']['make_classifier'])
     optimizers['body_classifier'].load_state_dict(checkpoint['optimizer_states']['body_classifier'])
     optimizers['door_classifier'].load_state_dict(checkpoint['optimizer_states']['door_classifier'])
-    optimizers['sales_classifier'].load_state_dict(checkpoint['optimizer_states']['sales_classifier'])
     
     start_epoch = checkpoint['epoch'] + 1
     losses = checkpoint['losses']
@@ -746,7 +732,6 @@ def save_losses(all_losses, output_dir):
     plt.plot(all_losses['make_cls'], label='Make')
     plt.plot(all_losses['body_cls'], label='Body')
     plt.plot(all_losses['door_cls'], label='Door')
-    plt.plot(all_losses['sales_cls'], label='Sales')
     plt.title('Classification Losses')
     plt.xlabel('Epoch')
     plt.legend()
@@ -764,7 +749,7 @@ def create_umap_visualizations(z_samples, labels, output_dir):
     embedding = reducer.fit_transform(z_samples)
     
     # Create separate plots for each label type
-    label_types = ['year', 'make', 'body', 'door', 'sales']
+    label_types = ['year', 'make', 'body', 'door']
     
     for label_type in label_types:
         plt.figure(figsize=(10, 8))
@@ -841,8 +826,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     optim_year = optim.Adam(model.year_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
     optim_make = optim.Adam(model.make_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
     optim_body = optim.Adam(model.body_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
-    optim_door = optim.Adam(model.door_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))  
-    optim_sales = optim.Adam(model.sales_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))  
+    optim_door = optim.Adam(model.door_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2)) 
     
     # Loss functions
     bce_loss = nn.BCELoss()
@@ -853,12 +837,12 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     all_losses = {
         'total': [], 'recon': [], 'perceptual': [], 'disc': [], 'gan': [],
         'kl': [], 'tc': [], 'mi': [], 'dkld': [], 'cls': [],
-        'year_cls': [], 'make_cls': [], 'body_cls': [], 'door_cls': [], 'sales_cls': []
+        'year_cls': [], 'make_cls': [], 'body_cls': [], 'door_cls': []
     }
     
     # Lists to store latent vectors for later analysis
     z_samples = []
-    z_labels = {'year': [], 'make': [], 'body': [], 'door': [], 'sales': []}
+    z_labels = {'year': [], 'make': [], 'body': [], 'door': []}
     
     # Select a random car for reconstruction tracking
     random_idx = random.randint(0, len(train_loader.dataset) - 1)
@@ -881,7 +865,6 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             make_labels = batch['make'].to(device)
             body_labels = batch['body'].to(device)
             door_labels = batch['door'].to(device)
-            sales_labels = batch['sales'].to(device)
             
             batch_size = real_images.size(0)
             batch_count += 1
@@ -940,7 +923,6 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             optim_make.zero_grad()
             optim_body.zero_grad()
             optim_door.zero_grad()
-            optim_sales.zero_grad()
             
             # Reconstruct images
             z, mu, logvar = model.encode(real_images)
@@ -985,19 +967,6 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             # Compute classification losses
             z_cls = z.detach().clone()
             z_cls.requires_grad = True
-            
-            # Filter out samples without sales labels BEFORE computing logits
-            valid_sales_mask = sales_labels != -1
-            if valid_sales_mask.sum() > 0:  # Only compute loss if we have valid samples
-                # Only pass valid samples through the classifier
-                valid_z_cls = z_cls[valid_sales_mask]
-                valid_sales_labels = sales_labels[valid_sales_mask]
-                
-                # Compute logits only for valid samples
-                valid_sales_logits = model.sales_classifier(valid_z_cls)
-                sales_loss = ce_loss(valid_sales_logits, valid_sales_labels)
-            else:
-                sales_loss = torch.tensor(0.0, device=device, requires_grad=True)
 
             # For the other classifiers, keep as is:
             year_logits = model.year_classifier(z_cls)
@@ -1010,7 +979,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             body_loss = ce_loss(body_logits, body_labels)
             door_loss = ce_loss(door_logits, door_labels)
             
-            cls_loss = year_loss + make_loss + body_loss + door_loss + sales_loss
+            cls_loss = year_loss + make_loss + body_loss + door_loss
             
             # Compute total loss
             total_loss = (
@@ -1029,14 +998,12 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             torch.nn.utils.clip_grad_norm_(model.make_classifier.parameters(), max_norm=1.0)
             torch.nn.utils.clip_grad_norm_(model.body_classifier.parameters(), max_norm=1.0)
             torch.nn.utils.clip_grad_norm_(model.door_classifier.parameters(), max_norm=1.0)
-            torch.nn.utils.clip_grad_norm_(model.sales_classifier.parameters(), max_norm=1.0)
             optim_encoder.step()
             optim_decoder.step()
             optim_year.step()
             optim_make.step()
             optim_body.step()
             optim_door.step()
-            optim_sales.step()
             
             # Record losses
             epoch_losses['total'] += total_loss.item()
@@ -1053,7 +1020,6 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             epoch_losses['make_cls'] += make_loss.item() * CLS_WEIGHT
             epoch_losses['body_cls'] += body_loss.item() * CLS_WEIGHT
             epoch_losses['door_cls'] += door_loss.item() * CLS_WEIGHT
-            epoch_losses['sales_cls'] += sales_loss.item() * CLS_WEIGHT
             
             # Store latent vectors and labels for last epoch
             if epoch == EPOCHS - 1:
@@ -1062,7 +1028,6 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
                 z_labels['make'].extend(make_labels.cpu().numpy())
                 z_labels['body'].extend(body_labels.cpu().numpy())
                 z_labels['door'].extend(door_labels.cpu().numpy())
-                z_labels['sales'].extend(sales_labels.cpu().numpy())
         
         # Calculate average losses for this epoch
         for k in epoch_losses.keys():
@@ -1106,7 +1071,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
         if (epoch + 1) % CHECKPOINT_FREQ == 0:
             optimizers = {'encoder': optim_encoder, 'decoder': optim_decoder, 'discriminator': optim_disc, 
                   'year_classifier': optim_year, 'make_classifier': optim_make,
-                  'body_classifier': optim_body, 'door_classifier': optim_door, 'sales_classifier': optim_sales}
+                  'body_classifier': optim_body, 'door_classifier': optim_door}
             save_checkpoint(model, optimizers, epoch, all_losses, output_dir)
     
     # Save final checkpoint
@@ -1144,8 +1109,8 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     
     # Calculate and save classification accuracy
     model.eval()
-    correct = {'year': 0, 'make': 0, 'body': 0, 'door': 0, 'sales': 0}
-    total = {'year': 0, 'make': 0, 'body': 0, 'door': 0, 'sales': 0}  # Track totals separately
+    correct = {'year': 0, 'make': 0, 'body': 0, 'door': 0}
+    total = {'year': 0, 'make': 0, 'body': 0, 'door': 0}  # Track totals separately
 
     with torch.no_grad():
         for batch in val_loader:
@@ -1154,12 +1119,11 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             make_labels = batch['make'].to(device)
             body_labels = batch['body'].to(device)
             door_labels = batch['door'].to(device)
-            sales_labels = batch['sales'].to(device)
             
             z, _, _ = model.encode(images)
             
             # For year, make, body, door - all samples are valid
-            year_logits, make_logits, body_logits, door_logits, _ = model.classify(z)
+            year_logits, make_logits, body_logits, door_logits = model.classify(z)
             
             _, year_preds = torch.max(year_logits, 1)
             _, make_preds = torch.max(make_logits, 1)
@@ -1177,20 +1141,10 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             total['make'] += batch_size
             total['body'] += batch_size
             total['door'] += batch_size
-            
-            # For sales - only valid samples
-            valid_sales_mask = sales_labels != -1
-            if valid_sales_mask.sum() > 0:
-                valid_z = z[valid_sales_mask]
-                valid_sales_labels = sales_labels[valid_sales_mask]
-                valid_sales_logits = model.sales_classifier(valid_z)
-                _, sales_preds = torch.max(valid_sales_logits, 1)
-                correct['sales'] += (sales_preds == valid_sales_labels).sum().item()
-                total['sales'] += valid_sales_mask.sum().item()
 
     # Calculate and save accuracies
     with open(os.path.join(output_dir, "classification_accuracy.txt"), "w") as f:
-        for label_type in ['year', 'make', 'body', 'door', 'sales']:
+        for label_type in ['year', 'make', 'body', 'door']:
             if total[label_type] > 0:
                 accuracy = 100 * correct[label_type] / total[label_type]
                 f.write(f"{label_type} accuracy: {accuracy:.2f}% ({correct[label_type]}/{total[label_type]})\n")
@@ -1251,7 +1205,6 @@ def main():
     make_classes = train_dataset.dataset.make_classes
     body_classes = train_dataset.dataset.body_classes
     door_classes = train_dataset.dataset.door_classes
-    sales_classes = train_dataset.dataset.sales_classes
     
     # Initialize model
     model = VAEGAN(
@@ -1259,8 +1212,7 @@ def main():
         year_classes=year_classes,
         make_classes=make_classes,
         body_classes=body_classes,
-        door_classes=door_classes,
-        sales_classes=sales_classes
+        door_classes=door_classes
     ).to(device)
 
     # Create optimizers for checkpoint loading
@@ -1271,8 +1223,7 @@ def main():
         'year_classifier': optim.Adam(model.year_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2)),
         'make_classifier': optim.Adam(model.make_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2)),
         'body_classifier': optim.Adam(model.body_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2)),
-        'door_classifier': optim.Adam(model.door_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2)),
-        'sales_classifier': optim.Adam(model.sales_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
+        'door_classifier': optim.Adam(model.door_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
     }
     
     # Check for latest checkpoint
