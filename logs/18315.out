@@ -1,0 +1,46 @@
+/localscratch/spool/slurmd/job18315/slurm_script: line 10: cd: /home/beum/scratch/motorVAE: No such file or directory
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) mii/1.1.2
+
+The following have been reloaded with a version change:
+  1) StdEnv/2023 => StdEnv/2020
+  2) flexiblas/3.3.1 => flexiblas/3.0.4
+  3) gcc/12.3 => gcc/9.3.0
+  4) gcccore/.12.3 => gcccore/.9.3.0
+  5) gentoo/2023 => gentoo/2020
+  6) libfabric/1.18.0 => libfabric/1.10.1
+  7) openmpi/4.1.5 => openmpi/4.0.3
+  8) ucx/1.14.1 => ucx/1.8.0
+
+/lustre10/scratch/beum/motorVAE/env/lib/python3.9/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/lustre10/scratch/beum/motorVAE/env/lib/python3.9/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=None`.
+  warnings.warn(msg)
+Using device: cuda
+Outputs will be saved to: outputs/res256_lat128_ep100_bat213_lrn0.0001_rec125.0_per5.0_gan0.2_kld0.1(tc0.1_mi0.1_dk2e-05)_cls0.2_pat16
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_1.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_2.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_4.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_3.png not found.
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_4.png not found.
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_3.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_1.png not found.
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_2.png not found.
+Found 46426 valid images
+Number of classes - Year: 19, Make: 28, Body: 8, Door: 2
+No checkpoint found. Starting training from scratch.
+Selected 2010_Dodge_Caliber_Mainstreet_hatchback_4Door_4.png for reconstruction tracking
+Epoch 1/100:   0%|          | 0/213 [00:00<?, ?it/s]Epoch 1/100:   0%|          | 0/213 [00:09<?, ?it/s]
+Traceback (most recent call last):
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 1263, in <module>
+    main()
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 1249, in main
+    model, losses = train_vaegan(model, train_loader, val_loader, output_dir)
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 950, in train_vaegan
+    percep_loss = perceptual_loss(real_features, fake_features)
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 504, in perceptual_loss
+    losses.append(F.l1_loss(real_feat, fake_feat))
+  File "/lustre10/scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/nn/functional.py", line 3298, in l1_loss
+    return torch._C._nn.l1_loss(expanded_input, expanded_target, _Reduction.get_enum(reduction))
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 3.33 GiB. GPU 0 has a total capacty of 39.50 GiB of which 2.56 GiB is free. Process 308357 has 580.00 MiB memory in use. Process 340901 has 590.00 MiB memory in use. Including non-PyTorch memory, this process has 36.89 GiB memory in use. Of the allocated memory 35.75 GiB is allocated by PyTorch, and 659.33 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
