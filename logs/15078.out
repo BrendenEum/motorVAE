@@ -1,0 +1,56 @@
+/localscratch/spool/slurmd/job15078/slurm_script: line 10: cd: /home/beum/scratch/motorVAE: No such file or directory
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) mii/1.1.2
+
+The following have been reloaded with a version change:
+  1) StdEnv/2023 => StdEnv/2020
+  2) flexiblas/3.3.1 => flexiblas/3.0.4
+  3) gcc/12.3 => gcc/9.3.0
+  4) gcccore/.12.3 => gcccore/.9.3.0
+  5) gentoo/2023 => gentoo/2020
+  6) libfabric/1.18.0 => libfabric/1.10.1
+  7) openmpi/4.1.5 => openmpi/4.0.3
+  8) ucx/1.14.1 => ucx/1.8.0
+
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) libfabric/1.10.1     2) openmpi/4.0.3     3) ucx/1.8.0
+
+/lustre10/scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/cuda/__init__.py:143: UserWarning: 
+NVIDIA H100 80GB HBM3 MIG 3g.40gb with CUDA capability sm_90 is not compatible with the current PyTorch installation.
+The current PyTorch install supports CUDA capabilities sm_37 sm_50 sm_60 sm_70.
+If you want to use the NVIDIA H100 80GB HBM3 MIG 3g.40gb GPU with PyTorch, please check the instructions at https://pytorch.org/get-started/locally/
+
+  warnings.warn(incompatible_device_warn.format(device_name, capability, " ".join(arch_list), device_name))
+/lustre10/scratch/beum/motorVAE/motorVAE.py:114: DeprecationWarning: an integer is required (got type numpy.float64).  Implicit conversion to integers using __int__ is deprecated, and may be removed in a future version of Python.
+  sales = torch.tensor(sales_val, dtype=torch.long)
+Using device: cuda
+Outputs will be saved to: outputs/res256_lat128_ep100_bat71_lrn0.0001_rec100.0_per5.0_gan0.2_kld0.08(tc0.2_mi0.1_dk2e-05)_cls0.2_pat16
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_1.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_2.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_4.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_3.png not found.
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_4.png not found.
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_3.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_1.png not found.
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_2.png not found.
+Found 46426 valid images
+Number of classes - Year: 19, Make: 28, Body: 8, Door: 2, Sales: 4
+No checkpoint found. Starting training from scratch.
+Selected 2020_Subaru_WRX_Premium_sedan_4Door_4.png for reconstruction tracking
+Epoch 1/100:   0%|          | 0/640 [00:00<?, ?it/s]Epoch 1/100:   0%|          | 0/640 [00:01<?, ?it/s]
+Traceback (most recent call last):
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 1297, in <module>
+    main()
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 1283, in main
+    model, losses = train_vaegan(model, train_loader, val_loader, output_dir)
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 895, in train_vaegan
+    real_features = model.perceptual_loss(real_images)
+  File "/lustre10/scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 309, in forward
+    x = x.repeat(1, 3, 1, 1)
+RuntimeError: CUDA error: no kernel image is available for execution on the device
+CUDA kernel errors might be asynchronously reported at some other API call,so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
