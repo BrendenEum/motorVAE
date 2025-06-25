@@ -1,42 +1,0 @@
-
-Due to MODULEPATH changes, the following have been reloaded:
-  1) mii/1.1.2
-
-The following have been reloaded with a version change:
-  1) StdEnv/2023 => StdEnv/2020           5) libfabric/1.18.0 => libfabric/1.10.1
-  2) gcccore/.12.3 => gcccore/.9.3.0      6) openmpi/4.1.5 => openmpi/4.0.3
-  3) gentoo/2023 => gentoo/2020           7) ucx/1.14.1 => ucx/1.8.0
-  4) imkl/2023.2.0 => imkl/2020.1.217
-
-
-Due to MODULEPATH changes, the following have been reloaded:
-  1) libfabric/1.10.1     2) openmpi/4.0.3     3) ucx/1.8.0
-
-Using device: cuda
-Auto-generated output directory: res256_lat128_epo200_bat128_kld1.0_(mi1.0_tc50.0_dwkl1.0)_adv1.0_rec0.5_10dC1.0
-Using specified label columns: ['Year', 'Brand', 'Body', 'Door']
-Dataset initialized with 46434 images and 4 labels: ['Year', 'Brand', 'Body', 'Door']
-Label 'Year' has 19 unique values
-Label 'Brand' has 28 unique values
-Label 'Body' has 8 unique values
-Label 'Door' has 2 unique values
-Using VAE-GAN architecture with supervised classification
-Classifier networks using first 10 latent dimensions
-Total number of VAE parameters: 15,765,148
-Total number of Discriminator parameters: 1,602,753
-Total model parameters: 17,367,901
-
-Epoch 1/200, KLD weight: 0.01000
-Epoch 1/200:   0%|          | 0/363 [00:00<?, ?it/s]Epoch 1/200:   0%|          | 0/363 [00:08<?, ?it/s, vae_loss=3.06e+4, recon_loss=3.06e+4, kld_loss=-3.77, cls_loss=0.0696, adv_loss=0.00636, d_loss=0.0107]Epoch 1/200:   0%|          | 1/363 [00:08<49:17,  8.17s/it, vae_loss=3.06e+4, recon_loss=3.06e+4, kld_loss=-3.77, cls_loss=0.0696, adv_loss=0.00636, d_loss=0.0107]Epoch 1/200:   0%|          | 1/363 [00:08<49:17,  8.17s/it, vae_loss=3.04e+4, recon_loss=3.04e+4, kld_loss=16.7, cls_loss=0.0691, adv_loss=0.00949, d_loss=0.00629]Epoch 1/200:   1%|          | 2/363 [00:08<22:32,  3.75s/it, vae_loss=3.04e+4, recon_loss=3.04e+4, kld_loss=16.7, cls_loss=0.0691, adv_loss=0.00949, d_loss=0.00629]Epoch 1/200:   1%|          | 2/363 [00:09<22:32,  3.75s/it, vae_loss=3.02e+4, recon_loss=3.02e+4, kld_loss=39.3, cls_loss=0.0695, adv_loss=0.0143, d_loss=0.00372] Epoch 1/200:   1%|          | 3/363 [00:09<13:57,  2.33s/it, vae_loss=3.02e+4, recon_loss=3.02e+4, kld_loss=39.3, cls_loss=0.0695, adv_loss=0.0143, d_loss=0.00372]Epoch 1/200:   1%|          | 3/363 [00:10<13:57,  2.33s/it, vae_loss=2.98e+4, recon_loss=2.98e+4, kld_loss=66, cls_loss=0.0705, adv_loss=0.0197, d_loss=0.00208]  Epoch 1/200:   1%|          | 4/363 [00:10<09:53,  1.65s/it, vae_loss=2.98e+4, recon_loss=2.98e+4, kld_loss=66, cls_loss=0.0705, adv_loss=0.0197, d_loss=0.00208]Epoch 1/200:   1%|          | 4/363 [00:10<09:53,  1.65s/it, vae_loss=2.95e+4, recon_loss=2.95e+4, kld_loss=93.8, cls_loss=0.0742, adv_loss=0.0244, d_loss=0.00126]Epoch 1/200:   1%|▏         | 5/363 [00:10<07:41,  1.29s/it, vae_loss=2.95e+4, recon_loss=2.95e+4, kld_loss=93.8, cls_loss=0.0742, adv_loss=0.0244, d_loss=0.00126]terminate called after throwing an instance of 'c10::CUDAError'
-  what():  CUDA error: an illegal memory access was encountered
-CUDA kernel errors might be asynchronously reported at some other API call,so the stacktrace below might be incorrect.
-For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
-Exception raised from memcpy_and_sync at /tmp/coulombc/pytorch_build_2021-11-10_08-09-16/avx2/python3.9/pytorch/c10/cuda/CUDAFunctions.h:75 (most recent call first):
-frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x55 (0x1539b1d03905 in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libc10.so)
-frame #1: <unknown function> + 0x132f3dd (0x153972ffd3dd in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libtorch_cuda.so)
-frame #2: at::native::_local_scalar_dense_cuda(at::Tensor const&) + 0x30 (0x153972ffe5e0 in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libtorch_cuda.so)
-frame #3: <unknown function> + 0x315e7cd (0x153974e2c7cd in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libtorch_cuda.so)
-frame #4: <unknown function> + 0x315e82d (0x153974e2c82d in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libtorch_cuda.so)
-frame #5: at::_ops::_local_scalar_dense::redispatch(c10::DispatchKeySet, at::Tensor const&) + 0xa5 (0x15398fb53615 in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libtorch_cpu.so)
-
-/localscratch/spool/slurmd/job59307065/slurm_script: line 35: 2441951 Aborted                 (core dumped) python motorVAEGAN-withSupervision.py --data_dir data/evox_256x256_1-4 --img_size 256 --latent_dim 128 --max_kld_weight 1.0 --tc_weight 50.0 --adv_weight 1.0 --recon_sample_weight 0.5 --cls_weight 1.0 --cls_latent_dim 10 --label_file data/labels_evox_256x256_1-4.csv --label_cols Year,Brand,Body,Door --learning_rate 0.0001 --epochs 200 --batch_size 128 --train --reconstructions --extract_latent --sample --classification_accuracy --visualize_latent_class --feature_attribution --traversals 2021_Toyota_CamryHybrid_XLE_sedan_4Door_2.png --interpolate 2007_Toyota_PriusHybrid_nan_hatchback_5Door_3.png 2025_Hyundai_Ioniq5N_nan_CUV_4Door_2.png --track_reconstruction 2018_Audi_Q7_PremiumPlus3.0TFSI_SUV_4Door_2.png
