@@ -182,8 +182,11 @@ for (var in c("year","body","make","door", "model", "trim", "sales")) {
 # Export
 ###########################
 
+# Disregard sales for now
+cd_orig = cd[,c("filename", "year","body", "make","door")]
+
 # Write to CSV
-write.csv(cd, "/Users/brenden/Desktop/motorVAE/data/labels_evox_256x256_1-4.csv", row.names = FALSE)
+write.csv(cd_orig, "/Users/brenden/Desktop/motorVAE/data/labels_evox_256x256_1-4.csv", row.names = FALSE)
 
 # Write unexpected files to CSV if specified
 if (total_errors>0) {
