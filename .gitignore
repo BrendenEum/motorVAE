@@ -6,18 +6,27 @@
 *.csv
 *.pdf
 *.eps
+<<<<<<< HEAD
 *.pptx
+=======
+>>>>>>> 3fb2d8cfb3ae76c515640301063d3de10414888b
 
 /data/*
 /analysis/temp/*
 /experiment/*
 /env/
+<<<<<<< HEAD
 /vgg16/*
 /OLD/
 /__pycache__/
 /.idea/
 /logs/old_logs/*
 /outputs/OLD*
+=======
+/OLD/
+/__pycache__/
+/.idea/
+>>>>>>> 3fb2d8cfb3ae76c515640301063d3de10414888b
 
 ._.DS_Store
 .DS_Store

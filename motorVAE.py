@@ -284,8 +284,12 @@ class PerceptualLoss(nn.Module):
         super(PerceptualLoss, self).__init__()
         
         # Load pre-trained VGG16 model
+<<<<<<< HEAD
         vgg = models.vgg16(pretrained=False)
         vgg.load_state_dict(torch.load("vgg16/vgg16-397923af.pth", map_location=device))
+=======
+        vgg = models.vgg16(pretrained=True)
+>>>>>>> 3fb2d8cfb3ae76c515640301063d3de10414888b
         
         # We use the first few layers for perceptual loss
         self.slice1 = nn.Sequential()

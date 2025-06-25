@@ -1,0 +1,32 @@
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) mii/1.1.2
+
+The following have been reloaded with a version change:
+  1) StdEnv/2023 => StdEnv/2020           5) libfabric/1.18.0 => libfabric/1.10.1
+  2) gcccore/.12.3 => gcccore/.9.3.0      6) openmpi/4.1.5 => openmpi/4.0.3
+  3) gentoo/2023 => gentoo/2020           7) ucx/1.14.1 => ucx/1.8.0
+  4) imkl/2023.2.0 => imkl/2020.1.217
+
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) libfabric/1.10.1     2) openmpi/4.0.3     3) ucx/1.8.0
+
+terminate called after throwing an instance of 'c10::CUDAError'
+  what():  CUDA error: uncorrectable ECC error encountered
+CUDA kernel errors might be asynchronously reported at some other API call,so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+Exception raised from currentStreamCaptureStatusMayInitCtx at /tmp/coulombc/pytorch_build_2021-11-10_08-09-16/avx2/python3.9/pytorch/c10/cuda/CUDAGraphsC10Utils.h:83 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x55 (0x146ea8157905 in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x23643 (0x146ea8462643 in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libc10_cuda.so)
+frame #2: <unknown function> + 0x28828 (0x146ea8467828 in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libc10_cuda.so)
+frame #3: <unknown function> + 0x2a2c5 (0x146ea84692c5 in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libc10_cuda.so)
+frame #4: <unknown function> + 0x2a7d2 (0x146ea84697d2 in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libc10_cuda.so)
+frame #5: THCStorage_resizeBytes(THCState*, c10::StorageImpl*, long) + 0x84 (0x146e6b3af454 in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0x1c9e521 (0x146e69d6c521 in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libtorch_cuda.so)
+frame #7: at::native::empty_strided_cuda(c10::ArrayRef<long>, c10::ArrayRef<long>, c10::optional<c10::ScalarType>, c10::optional<c10::Layout>, c10::optional<c10::Device>, c10::optional<bool>) + 0x66 (0x146e6b0f9f06 in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libtorch_cuda.so)
+frame #8: <unknown function> + 0x3177aba (0x146e6b245aba in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libtorch_cuda.so)
+frame #9: <unknown function> + 0x3177b30 (0x146e6b245b30 in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libtorch_cuda.so)
+frame #10: <unknown function> + 0x1e56e88 (0x146e861e2e88 in /scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/lib/libtorch_cpu.so)
+
+/localscratch/spool/slurmd/job59659764/slurm_script: line 36: 2874017 Aborted                 (core dumped) python motorVAEGAN-withSupervision.py --data_dir data/evox_256x256_1-4 --img_size 256 --latent_dim 128 --max_kld_weight 4.0 --min_tc_weight 1.0 --max_tc_weight 1.0 --adv_weight 0.5 --recon_sample_weight 0.5 --cls_weight 0.5 --cls_latent_dim 16 --label_file data/labels_evox_256x256_1-4.csv --label_cols Year,Brand,Body,Door --learning_rate 0.0001 --epochs 200 --batch_size 128 --train --reconstructions --extract_latent --sample --classification_accuracy --visualize_latent_class --feature_attribution --traversals 2021_Toyota_CamryHybrid_XLE_sedan_4Door_2.png --interpolate 2007_Toyota_PriusHybrid_nan_hatchback_5Door_3.png 2025_Polestar_Polestar4_LongRangeDualMotor_SUV_4Door_1.png --track_reconstruction 2014_Nissan_Versa_SL_sedan_4Door_1.png
