@@ -25,8 +25,8 @@ print(f"Using device: {device}")
 
 # Define hyperparameters
 IMAGE_SIZE = 256
-BATCH_SIZE = 142
-EPOCHS = 100
+BATCH_SIZE = 100
+EPOCHS = 180
 LATENT_DIM = 128
 LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
@@ -722,7 +722,6 @@ def save_losses(all_losses, output_dir):
     plt.plot(all_losses['dkld'], label='Dimension-wise KLD')
     plt.title('KL Decomposition')
     plt.xlabel('Epoch')
-    plt.ylim(-3, 3)
     plt.legend()
     plt.grid(True)
     
@@ -1084,7 +1083,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     # Save final outputs
     save_latent_traversals(model, train_loader, output_dir)
     
-    # Save latent vectors as CSV files with filenames
+    # Save latent vectors as CSV files with filenames ####################
     if len(z_samples) > 0:
         mu_path = os.path.join(output_dir, "latent_mu.csv")
         logvar_path = os.path.join(output_dir, "latent_logvar.csv")
@@ -1142,9 +1141,10 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
         print(f"  - {mu_path} ({mu_df.shape})")
         print(f"  - {logvar_path} ({logvar_df.shape})")
         print(f"  - {z_path} ({z_df.shape})")
-        
-        # Create UMAP visualizations
-        create_umap_visualizations(z_samples, z_labels, output_dir)
+    ############################################################
+    
+    # Create UMAP visualizations
+    create_umap_visualizations(z_samples, z_labels, output_dir)
     
     # Create interpolations
     create_interpolation(model, train_loader, output_dir)
