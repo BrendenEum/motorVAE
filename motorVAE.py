@@ -853,7 +853,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     all_losses = {
         'total': [], 'recon': [], 'perceptual': [], 'disc': [], 'gan': [],
         'kl': [], 'tc': [], 'mi': [], 'dkld': [], 'cls': [],
-        'year_cls': [], 'make_cls': [], 'body_cls': [], 'door_cls': [], sales_cls': []
+        'year_cls': [], 'make_cls': [], 'body_cls': [], 'door_cls': [], 'sales_cls': []
     }
     
     # Lists to store latent vectors for later analysis
