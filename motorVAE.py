@@ -38,10 +38,10 @@ RECON_WEIGHT = 125.0
 PERCEPTUAL_WEIGHT = 5.0
 GAN_WEIGHT = 0.2
 KLD_WEIGHT_START = 0.00001 # KLD Scheduler
-KLD_WEIGHT_END = 0.09
+KLD_WEIGHT_END = 1.0
 TC_WEIGHT = 0.1  # Total Correlation weight
-MI_WEIGHT = 0.1  # Mutual Information weight
-DKLD_WEIGHT = 0.00002  # Dimension-wise KL Divergence weight
+MI_WEIGHT = 0.05  # Mutual Information weight
+DKLD_WEIGHT = 0.0001  # Dimension-wise KL Divergence weight
 CLS_WEIGHT = 0.3  # Classifier weight
 
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
@@ -949,9 +949,9 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             gen_loss = gen_loss_fake + gen_loss_rand
             
             # Compute KL divergence components
-            tc_loss = compute_tc_loss(z.detach(), mu.detach(), logvar.detach())
-            mi_loss = compute_mi_loss(z.detach(), mu.detach(), logvar.detach(), batch_size)
-            dkld_loss = compute_dkld_loss(mu.detach(), logvar.detach())
+            tc_loss = compute_tc_loss(z, mu, logvar)
+            mi_loss = compute_mi_loss(z, mu, logvar, batch_size)
+            dkld_loss = compute_dkld_loss(mu, logvar)
 
             # Total KL Divergence loss schedule
             # Start small for first 25 epochs, then increase for remaining epochs.
