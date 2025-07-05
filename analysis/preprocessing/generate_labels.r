@@ -183,7 +183,8 @@ for (var in c("year","body","make","door", "model", "trim", "sales")) {
 ###########################
 
 # Disregard sales for now
-cd_orig = cd[,c("filename", "year","body", "make","door")]
+#cd_orig = cd[,c("filename", "year","body", "make","door")]
+cd_orig = cd[,c("filename", "year", "body", "make", "door", "sales")]
 
 # Write to CSV
 write.csv(cd_orig, "/Users/brenden/Desktop/motorVAE/data/labels_evox_256x256_1-4.csv", row.names = FALSE)
