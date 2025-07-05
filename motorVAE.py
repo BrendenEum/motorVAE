@@ -37,6 +37,7 @@ TRAIN_PROPORTION = 0.98 # Proportion of data to use for training. Validation is 
 RECON_WEIGHT = 125.0
 PERCEPTUAL_WEIGHT = 5.0
 GAN_WEIGHT = 0.2
+KLD_WARMUP = 5 # number of epochs before initiating linear KLD weight increase
 KLD_WEIGHT_START = 0.00001 # KLD Scheduler
 KLD_WEIGHT_END = 1.0
 TC_WEIGHT = 0.1  # Total Correlation weight
@@ -523,9 +524,9 @@ def perceptual_loss(real_features, fake_features):
 # Function to create folder based on parameters
 def create_output_folder(config):
     folder_name = (
-        f"res{IMAGE_SIZE}_lat{LATENT_DIM}_ep{EPOCHS}_bat{BATCH_SIZE}_lrn{LEARNING_RATE}_"
+        f"lat{LATENT_DIM}_ep{EPOCHS}_bat{BATCH_SIZE}_lrn{LEARNING_RATE}_"
         f"rec{RECON_WEIGHT}_per{PERCEPTUAL_WEIGHT}_gan{GAN_WEIGHT}_"
-        f"kld{KLD_WEIGHT_END}(tc{TC_WEIGHT}_mi{MI_WEIGHT}_dk{DKLD_WEIGHT})_cls{CLS_WEIGHT}_pat{PATCH_SIZE}"
+        f"kld{KLD_WEIGHT_END}warm{KLD_WARMUP}(tc{TC_WEIGHT}_mi{MI_WEIGHT}_dk{DKLD_WEIGHT})_cls{CLS_WEIGHT}"
     )
     output_dir = os.path.join("outputs", folder_name)
     os.makedirs(output_dir, exist_ok=True)
@@ -955,7 +956,8 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
 
             # Total KL Divergence loss schedule
             # Start small for first 25 epochs, then increase for remaining epochs.
-            kl_weight = KLD_WEIGHT_START if epoch < 25 else min(KLD_WEIGHT_END, (epoch - 25) / (EPOCHS - 25))
+
+            kl_weight = KLD_WEIGHT_START if epoch < KLD_WARMUP else min(KLD_WEIGHT_END, (epoch - KLD_WARMUP) / (EPOCHS - KLD_WARMUP))
             kl_loss = kl_weight * (tc_loss * TC_WEIGHT + mi_loss * MI_WEIGHT + dkld_loss * DKLD_WEIGHT)
             
             # Compute classification losses
