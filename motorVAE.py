@@ -747,6 +747,7 @@ def save_losses(all_losses, output_dir):
     plt.plot(all_losses['make_cls'], label='Make')
     plt.plot(all_losses['body_cls'], label='Body')
     plt.plot(all_losses['door_cls'], label='Door')
+    plt.plot(all_losses['sales_cls'], label='Sales')
     plt.title('Classification Losses')
     plt.xlabel('Epoch')
     plt.legend()
@@ -764,7 +765,7 @@ def create_umap_visualizations(z_samples, labels, output_dir):
     embedding = reducer.fit_transform(z_samples)
     
     # Create separate plots for each label type
-    label_types = ['year', 'make', 'body', 'door']
+    label_types = ['year', 'make', 'body', 'door', 'sales']
     
     for label_type in label_types:
         plt.figure(figsize=(10, 8))
@@ -773,31 +774,6 @@ def create_umap_visualizations(z_samples, labels, output_dir):
         plt.title(f'UMAP of Latent Space Colored by {label_type}')
         plt.savefig(os.path.join(output_dir, f"umap_{label_type}.png"))
         plt.close()
-
-"""
-# Function to create interpolation between two images
-def create_interpolation(model, dataloader, output_dir):
-    model.eval()
-    with torch.no_grad():
-        # Get two random images
-        batch = next(iter(dataloader))
-        img1, img2 = batch['image'][0:1].to(device), batch['image'][1:2].to(device)
-        
-        # Encode the images
-        z1, _, _ = model.encode(img1)
-        z2, _, _ = model.encode(img2)
-        
-        # Create interpolations
-        interpolations = []
-        for alpha in np.linspace(0, 1, 5):
-            z_interp = alpha * z1 + (1 - alpha) * z2
-            recon = model.decode(z_interp)
-            interpolations.append(recon[0].cpu().numpy())
-        
-        # Save interpolation
-        save_image_grid(interpolations, os.path.join(output_dir, "interpolation.png"), 
-                        nrow=5, title="Interpolation between two random cars")
-"""
 
 # Function to create interpolation between two images
 def create_interpolation(model, dataloader, output_dir):
@@ -858,7 +834,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     
     # Lists to store latent vectors for later analysis
     z_samples = []
-    z_labels = {'year': [], 'make': [], 'body': [], 'door': []}
+    z_labels = {'year': [], 'make': [], 'body': [], 'door': [], 'sales': []}
     
     # Select a random car for reconstruction tracking
     random_idx = random.randint(0, len(train_loader.dataset) - 1)
@@ -1056,6 +1032,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
                 z_labels['make'].extend(make_labels.cpu().numpy())
                 z_labels['body'].extend(body_labels.cpu().numpy())
                 z_labels['door'].extend(door_labels.cpu().numpy())
+                z_labels['sales'].extend(sales_labels.cpu().numpy())
         
         # Calculate average losses for this epoch
         for k in epoch_losses.keys():
@@ -1099,7 +1076,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
         if (epoch + 1) % CHECKPOINT_FREQ == 0:
             optimizers = {'encoder': optim_encoder, 'decoder': optim_decoder, 'discriminator': optim_disc, 
                   'year_classifier': optim_year, 'make_classifier': optim_make,
-                  'body_classifier': optim_body, 'door_classifier': optim_door}
+                  'body_classifier': optim_body, 'door_classifier': optim_door, 'sales_classifier': optim_sales}
             save_checkpoint(model, optimizers, epoch, all_losses, output_dir)
     
     # Save final checkpoint
