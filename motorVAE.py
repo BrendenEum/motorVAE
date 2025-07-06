@@ -38,11 +38,11 @@ RECON_WEIGHT = 125.0
 PERCEPTUAL_WEIGHT = 5.0
 GAN_WEIGHT = 0.2
 KLD_WARMUP = 5 # number of epochs before initiating linear KLD weight increase
-KLD_WEIGHT_START = 0.00001 # KLD Scheduler
-KLD_WEIGHT_END = 0.6 # Final KLD weight
+KLD_WEIGHT_START = 0 # KLD Scheduler
+KLD_WEIGHT_END = 1.0 # Final KLD weight
 TC_WEIGHT = 0.1  # Total Correlation weight
 MI_WEIGHT = 0.04  # Mutual Information weight
-DKLD_WEIGHT = 0.0001  # Dimension-wise KL Divergence weight
+DKLD_WEIGHT = 0.00004  # Dimension-wise KL Divergence weight
 CLS_WEIGHT = 0.3  # Classifier weight
 
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
