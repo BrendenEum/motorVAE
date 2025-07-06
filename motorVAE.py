@@ -39,10 +39,10 @@ PERCEPTUAL_WEIGHT = 5.0
 GAN_WEIGHT = 0.2
 KLD_WARMUP = 5 # number of epochs before initiating linear KLD weight increase
 KLD_WEIGHT_START = 0 # KLD Scheduler
-KLD_WEIGHT_END = 0.3 # Final KLD weight
-TC_WEIGHT = 0.1  # Total Correlation weight
-MI_WEIGHT = 0.05  # Mutual Information weight
-DKLD_WEIGHT = 0.0001  # Dimension-wise KL Divergence weight
+KLD_WEIGHT_END = 0.1 # Final KLD weight
+TC_WEIGHT = 0.01  # Total Correlation weight
+MI_WEIGHT = 0.001  # Mutual Information weight
+DKLD_WEIGHT = 0.01  # Dimension-wise KL Divergence weight
 CLS_WEIGHT = 0.3  # Classifier weight
 
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
@@ -407,7 +407,7 @@ def compute_tc_loss(z, mu, logvar):
     # This is what Factor-VAE does and tends to be more stable
     
     # Compute log q(z_i|x_i) - the encoder's output for each sample
-    var = torch.exp(logvar).clamp(min=1e-6)
+    var = torch.exp(logvar).clamp(min=1e-4, max=100)
     log_qz_given_x = -0.5 * torch.sum(
         math.log(2 * math.pi) + logvar + (z - mu).pow(2) / var, 
         dim=1
