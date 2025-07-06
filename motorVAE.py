@@ -42,7 +42,7 @@ KLD_WEIGHT_START = 0.00001 # KLD Scheduler
 KLD_WEIGHT_END = 0.6 # Final KLD weight
 TC_WEIGHT = 0.1  # Total Correlation weight
 MI_WEIGHT = 0.04  # Mutual Information weight
-DKLD_WEIGHT = 0.0003  # Dimension-wise KL Divergence weight
+DKLD_WEIGHT = 0.0001  # Dimension-wise KL Divergence weight
 CLS_WEIGHT = 0.3  # Classifier weight
 
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
