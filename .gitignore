@@ -26,3 +26,4 @@
 .DS_Store
 
 !data/labels_*.csv
+!outputs/*/*.csv
