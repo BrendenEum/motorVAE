@@ -26,7 +26,7 @@ print(f"Using device: {device}")
 # Define hyperparameters
 IMAGE_SIZE = 256
 BATCH_SIZE = 100
-EPOCHS = 100
+EPOCHS = 150
 LATENT_DIM = 128
 LEARNING_RATE = 0.0001
 BETA1 = 0.5 # AI recommended for GAN training
@@ -1093,9 +1093,9 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     
     # Save latent vectors as CSV files with filenames ####################
     if len(z_samples) > 0:
-        mu_path = os.path.join(output_dir, "latent_mu.csv")
-        logvar_path = os.path.join(output_dir, "latent_logvar.csv")
-        z_path = os.path.join(output_dir, "latent_z.csv")
+        mu_path = os.path.join(output_dir, "latent_mu.csv.gz")
+        logvar_path = os.path.join(output_dir, "latent_logvar.csv.gz")
+        z_path = os.path.join(output_dir, "latent_z.csv.gz")
         
         # Collect latent vectors and filenames from entire training set
         model.eval()
@@ -1141,9 +1141,9 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             z_df[col] = pd.to_numeric(z_df[col])
         
         # Save as CSV files
-        mu_df.to_csv(mu_path, index=False)
-        logvar_df.to_csv(logvar_path, index=False)
-        z_df.to_csv(z_path, index=False)
+        mu_df.to_csv(mu_path, compression='gzip', index=False)
+        logvar_df.to_csv(logvar_path, compression='gzip', index=False)
+        z_df.to_csv(z_path, compression='gzip', index=False)
         
         print(f"Saved latent vectors to CSV files:")
         print(f"  - {mu_path} ({mu_df.shape})")
