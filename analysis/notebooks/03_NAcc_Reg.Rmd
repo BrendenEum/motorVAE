@@ -1,0 +1,54 @@
+---
+title: "Regress NAcc Activity on Latent Dimension Samples"
+output: html_notebook
+---
+
+Author: Brenden Eum (2025)
+
+# Preamble
+
+```{r}
+rm(list=ls())
+library(tidyverse)
+library(brms)
+
+.outdir = "../../outputs/lat128_ep100_bat100_lrn0.0001_rec125.0_per5.0_gan0.2_kld1.0warm5(tc0.1_mi0.04_dk4e-05)_cls0.3"
+.tempdir = "../temp/"
+.figdir = "../figures/"
+.tabdir = "../tables/"
+.txtdir = "../text/"
+
+raw_z = read.csv(file.path(.outdir, "latent_z.csv"))
+raw_mu = read.csv(file.path(.outdir, "latent_mu.csv"))
+raw_logvar = read.csv(file.path(.outdir, "latent_logvar.csv"))
+```
+
+```{r}
+separate_filename = function(df) {
+  df %>%
+  # First remove the file extension (.png)
+  mutate(filename_clean = str_remove(filename, "\\.png$")) %>%
+  # Then separate into components
+  separate(filename_clean, 
+           into = c("Year", "Make", "Model", "Trim", "Body", "Door", "Color"),
+           sep = "_",
+           remove = FALSE) %>%
+  # Remove the temporary column
+  select(-filename_clean) %>%
+  mutate(
+    Make = str_to_lower(Make),
+    Model = str_to_lower(Model),
+    Trim = str_to_lower(Trim),
+    Body = str_to_lower(Body),
+    Door = str_to_lower(Door),
+    Color = str_to_lower(Color)
+  ) %>%
+  relocate(Year, Make, Model, Trim, Body, Door, Color)
+}
+```
+
+```{r}
+df_mu = 
+head(df)
+```
+
