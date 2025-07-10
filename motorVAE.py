@@ -407,7 +407,7 @@ def compute_tc_loss(z, mu, logvar):
     # This is what Factor-VAE does and tends to be more stable
     
     # Compute log q(z_i|x_i) - the encoder's output for each sample
-    var = torch.exp(logvar).clamp(min=1e-4, max=100)
+    var = torch.exp(logvar).clamp(min=0.01, max=100)
     log_qz_given_x = -0.5 * torch.sum(
         math.log(2 * math.pi) + logvar + (z - mu).pow(2) / var, 
         dim=1
@@ -446,7 +446,7 @@ def compute_mi_loss(z, mu, logvar, batch_size):
     # Clamp values for numerical stability
     mu = torch.clamp(mu, min=-10, max=10)
     logvar = torch.clamp(logvar, min=-10, max=10)
-    var = torch.clamp(torch.exp(logvar), min=eps, max=100)
+    var = torch.clamp(torch.exp(logvar), min=0.01, max=100)
     
     # 1. Compute log q(z|x) - conditional distribution (encoder)
     # log N(z; mu, var) = -0.5 * [D*log(2π) + sum_d(log(var_d) + (z_d - mu_d)^2 / var_d)]
