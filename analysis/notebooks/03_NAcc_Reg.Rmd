@@ -1,28 +1,49 @@
 ---
 title: "Regress NAcc Activity on Latent Dimension Samples"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
+    toc: true  
+    toc_float: true 
 ---
 
 Author: Brenden Eum (2025)
 
 # Preamble
 
+Things you can adjust.
 ```{r}
-rm(list=ls())
+#rm(list=ls())
+seed = 4
+tdim = 0:127 # list of latent dimension indices
+doi = 0:15 # dimensions of interest [the first 15 encode Year, Make, Body, Door, Sales]
+nSamples = 10 # number of samples from latent distribution
+```
+
+
+Start fresh and load in raw data.
+```{r}
 library(tidyverse)
 library(brms)
+library(purrr)
+library(glmnet)
 
 .outdir = "../../outputs/lat128_ep100_bat100_lrn0.0001_rec125.0_per5.0_gan0.2_kld1.0warm5(tc0.1_mi0.04_dk4e-05)_cls0.3"
 .tempdir = "../temp/"
 .figdir = "../figures/"
 .tabdir = "../tables/"
 .txtdir = "../text/"
+```
 
-raw_z = read.csv(file.path(.outdir, "latent_z.csv"))
+
+# Latent Distribution Data
+
+```{r}
 raw_mu = read.csv(file.path(.outdir, "latent_mu.csv"))
 raw_logvar = read.csv(file.path(.outdir, "latent_logvar.csv"))
 ```
 
+Separate filenames into vehicle labels.
 ```{r}
 separate_filename = function(df) {
   df %>%
@@ -47,8 +68,183 @@ separate_filename = function(df) {
 }
 ```
 
+Clean mu dataframe. *NOTE: Right now, we are only keeping the first color car. This can vary colors by Year-Make-Model.
 ```{r}
-df_mu = 
-head(df)
+df_mu = separate_filename(raw_mu)
+df_mu = df_mu[df_mu$Color==1,]
+head(df_mu)
 ```
+
+Clean logvar dataframe and convert to variance. *NOTE: Only keeping first color.
+```{r}
+df_sd = raw_logvar
+logvar_cols = paste0("logvar_", tdim)
+sd_cols = paste0("sd_", tdim)
+df_sd[logvar_cols] = lapply(df_sd[logvar_cols], function(x) exp(0.5*x))
+names(df_sd)[names(df_sd) %in% logvar_cols] = sd_cols
+
+df_sd = separate_filename(df_sd)
+df_sd = df_sd[df_sd$Color==1,]
+head(df_sd)
+```
+
+Add VIF Map
+```{r}
+raw_vif_map = read.csv("../evox_api/viflist-all_cars.csv")
+vif_map = raw_vif_map %>%
+  reframe(
+    VIF = VIF..,
+    Year = as.character(Yr),
+    Make = str_to_lower(Make) %>% str_replace_all(" ", ""),
+    Model = str_to_lower(Model) %>% str_replace_all(" ", ""),
+    Trim = str_to_lower(Trim) %>% str_replace_all(" ", ""),
+    Body = str_to_lower(Body) %>% str_replace_all(" ", ""),
+    Door = paste0(Drs, "door")
+  )
+vif_map$Trim <- ifelse(vif_map$Trim=="", "nan", vif_map$Trim)
+
+df_mu_vif = df_mu %>%
+  left_join(
+    vif_map, by=c("Year", "Make", "Model", "Trim", "Body", "Door"),
+    relationship = "one-to-many"
+  ) %>%
+  na.omit()
+
+df_sd_vif = df_sd %>% 
+  left_join(
+    vif_map, by=c("Year", "Make", "Model", "Trim", "Body", "Door"),
+    relationship = "one-to-many"
+  ) %>% 
+  na.omit()
+```
+
+
+# NAcc Data
+
+Car2, by_subject, run2
+```{r}
+car2 = read.csv("../../data/stanford-nacc/Car2_agg_df_by_subject_run2.csv")
+car2 = car2 %>%
+  separate(
+    car_folder, 
+    into = c("VIF"),
+    sep = "_",
+    remove = FALSE
+  )
+car2$VIF = as.integer(car2$VIF)
+```
+
+# Merge
+
+```{r}
+voi = c("subject", "VIF", "nacc") #nacc = nacc8mm_tr4
+data = car2[,voi] %>%
+  left_join(df_mu_vif, by = "VIF", relationship="many-to-one") %>%
+  left_join(df_sd_vif, by = "VIF", relationship="many-to-one") %>%
+  na.omit()
+```
+
+
+# Draw Latent Samples
+
+Draw samples to create data for regression.
+```{r}
+set.seed(seed)
+
+rdata = data.frame()
+for (sample in 1:nSamples) {
+  for (row in 1:nrow(data)) {
+    mu = as.numeric(data[row, paste0("mu_", tdim)])
+    sd = as.numeric(data[row, paste0("sd_", tdim)])
+    z = rnorm(length(mu), mean = mu, sd = sd)
+    
+    new_row = data.frame(
+      sample = sample,
+      subject = data$subject[row],
+      VIF = data$VIF[row],
+      nacc = data$nacc[row],
+      t(z)
+    )
+    colnames(new_row)[5:(5 + length(tdim) - 1)] = paste0("z_", tdim)
+    rdata = bind_rows(rdata, new_row)
+  }
+}
+```
+
+
+# Regression
+
+Run lasso regression, get coefficients, then run non-zero coefficients in OLS for hypothesis testing.
+```{r}
+Y = rdata$nacc
+X = as.matrix(rdata[,paste0("z_", doi)])
+
+# Extract coefficients
+lasso_model = cv.glmnet(X, Y, alpha=1) #alpha=1 lasso; alpha=0 ridge
+coef_sparse <- coef(lasso_model, s = "lambda.min")
+coef_vector <- as.numeric(coef_sparse)
+var_names <- rownames(coef_sparse)
+selected_vars <- var_names[coef_vector != 0]
+
+# Drop the intercept
+predictors <- selected_vars[selected_vars != "(Intercept)"]
+
+# Create a new dataframe: outcome + selected predictors
+rdata_selected <- rdata[, c("nacc", predictors)]
+
+# Fit OLS
+lm_model <- lm(nacc ~ ., data = rdata_selected)
+summary_model <- summary(lm_model)
+print(summary_model)
+```
+
+Bonferroni Multiple-Comparisons Correction
+```{r}
+coef_table = coef(summary_model)
+
+# Extract p-values (excluding intercept)
+estimates <- coef_table[-1, "Estimate"]
+pvals <- coef(summary_model)[-1, "Pr(>|t|)"]  # drop intercept row
+
+# Apply Bonferroni correction
+pvals_bonf <- p.adjust(pvals, method = "bonferroni")
+
+# Combine results
+results <- data.frame(
+  Variable = names(pvals),
+  Estimate = estimates,
+  Raw_p = pvals,
+  Bonferroni_p = pvals_bonf,
+  Sig_0.01 = as.numeric(pvals_bonf < 0.01),
+  Sig_0.05 = as.numeric(pvals_bonf < 0.05),
+  Sig_0.10 = as.numeric(pvals_bonf < 0.10)
+)
+rownames(results) = NULL
+
+print(results)
+```
+
+
+# Robustness Checks
+
+What happens when we feed all possible latent dimensions into the linear regression?
+```{r}
+rdata_all <- rdata[, c("nacc", paste0("z_", tdim))]
+lm_all <- lm(nacc ~ ., data = rdata_all)
+summary(lm_all)
+```
+
+
+# Discussion
+
+The first 16 dimensions in our latent space are trained to encode crucial information about sales, brand, year, body shape, and number of doors. 
+
+- A linear regression of NAcc on these first 16 dimensions (which all survived a lasso shrinkage) suggests many of these dimensions are significantly correlated with NAcc activity at the 99% significance level. One caveat is the adjusted R-squared suggests that we are only explaining about 1.2% of the variance.
+
+- Plugging all 128 latent dimensions into the NAcc regression, we find that only a few dimensions remain significant (at the 90% significance level). However, this may not be the best approach since our latent space is not entirely disentangled, despite our efforts to encourage disentanglement. This means that there is a higher likelihood that some dimensions are entangled, and that some subset of these entangled dimensions would absorb the all variation.
+
+- Perhaps a middle-ground is to ask which latent dimensions survive both our main analysis and the robustness checks, despite the fact that the robustness checks are likely not kosher. Latent dimensions 3, 6, and 12 are significant in both sets of analyses at (at least) the 90% significance level. Eye-balling the latent traversals, these correspond to:
+  - Dim 3: sedan vs convertible
+  - Dim 6: sharper (boxier) edges, like going from an old Honda to a Mercedes
+  - Dim 12: "squareness" (muscle-ness) of the front, like going from a Ford Focus to a Mustang
 

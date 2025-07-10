@@ -1,5 +1,0 @@
-year accuracy: 29.60% (275/929)
-make accuracy: 73.95% (687/929)
-body accuracy: 90.74% (843/929)
-door accuracy: 97.52% (906/929)
-sales accuracy: 73.75% (118/160)
