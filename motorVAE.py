@@ -41,8 +41,8 @@ KLD_WARMUP = 5 # number of epochs before initiating linear KLD weight increase
 KLD_WEIGHT_START = 0 # KLD Scheduler
 KLD_WEIGHT_END = 1.0 # Final KLD weight
 TC_WEIGHT = 0.1  # Total Correlation weight
-MI_WEIGHT = 0.03  # Mutual Information weight
-DKLD_WEIGHT = 0.00003  # Dimension-wise KL Divergence weight
+MI_WEIGHT = 0.04  # Mutual Information weight
+DKLD_WEIGHT = 0.00004  # Dimension-wise KL Divergence weight
 CLS_WEIGHT = 0.3  # Classifier weight
 
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 

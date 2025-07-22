@@ -55,7 +55,8 @@ with zipfile.ZipFile(zip_fn, 'w', zipfile.ZIP_DEFLATED) as zipf:
             str(df.loc[df["VIF #"]==vif,"Model"].iloc[0]).replace(" ", "") + "_" + 
             str(df.loc[df["VIF #"]==vif,"Trim"].iloc[0]).replace(" ", "") + "_" + 
             str(df.loc[df["VIF #"]==vif,"Body"].iloc[0]).replace(" ", "") + "_" + 
-            door_str + "Door"
+            door_str + "Door" + "_" + 
+            str(int(df.loc[df["VIF #"]==vif,"VIF #"].iloc[0])).replace(" ", "") 
         )
         urls = json_output['urls']
         if product not in max_ind:
