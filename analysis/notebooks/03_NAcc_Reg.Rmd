@@ -234,6 +234,27 @@ lm_all <- lm(nacc ~ ., data = rdata_all)
 summary(lm_all)
 ```
 
+Lasso
+```{r}
+set.seed(seed)
+Y_all = rdata$nacc
+X_all = as.matrix(rdata[,paste0("z_", tdim)])
+
+lasso_model_all = cv.glmnet(X_all, Y_all, alpha=1) #alpha=1 lasso; alpha=0 ridge
+
+coef_sparse_all <- coef(lasso_model_all, s = "lambda.min")
+coef_vector_all <- as.numeric(coef_sparse_all)
+var_names_all <- rownames(coef_sparse_all)
+selected_vars_all <- var_names_all[coef_vector_all != 0]
+predictors_all <- selected_vars_all[selected_vars_all != "(Intercept)"]
+rdata_selected_all <- rdata[, c("nacc", predictors_all)]
+
+lm_model_all <- lm(nacc ~ ., data = rdata_selected_all)
+summary_model_all <- summary(lm_model_all)
+cat("\nNumber of variables selected by lasso:", length(predictors_all), "\n")
+print(summary_model_all)
+```
+
 
 # Discussion
 

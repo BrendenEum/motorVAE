@@ -123,7 +123,7 @@ cd$year <- as.numeric(cd$year)
 cd$color <- cd$color %>% as.numeric() - 1
 cd$trim <- cd$trim %>% tolower()
 cd$body <- cd$body %>% tolower()
-cd$model <- cd$model %>% tolower()
+cd$model <- gsub(" ", "", cd$model) %>% tolower()
 cd$make <- cd$make %>% tolower() 
 
 
@@ -133,7 +133,7 @@ cd$make <- cd$make %>% tolower()
 ###########################
 
 #source("/Users/brenden/Desktop/motorVAE/analysis/preprocessing/process_sales.R")
-sales_data = read.csv("/Users/brenden/Desktop/motorVAE/data/autodealerdata_processed.csv")
+sales_data = read.csv("/Users/brenden/Desktop/motorVAE/data/autodealerdata-avg_annual_sales.csv")
 cd = cd %>% left_join(sales_data, by=c("year","make","model"))
 cd <- cd %>%
   mutate(sales = cut(avg_annual_sales, 
