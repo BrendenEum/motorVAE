@@ -39,7 +39,7 @@ PERCEPTUAL_WEIGHT = 5.0
 GAN_WEIGHT = 0.2
 KLD_WARMUP = 5 # number of epochs before initiating linear KLD weight increase
 KLD_WEIGHT_START = 0 # KLD Scheduler
-KLD_WEIGHT_END = 0.5 # Final KLD weight
+KLD_WEIGHT_END = 1.0 # Final KLD weight
 TC_WEIGHT = 0.1  # Total Correlation weight
 MI_WEIGHT = 0.04  # Mutual Information weight
 DKLD_WEIGHT = 0.00004  # Dimension-wise KL Divergence weight
@@ -957,7 +957,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             # Total KL Divergence loss schedule
             # Start small for first 25 epochs, then increase for remaining epochs.
 
-            kl_weight = KLD_WEIGHT_START if epoch < KLD_WARMUP else min(KLD_WEIGHT_END, (epoch - KLD_WARMUP) / (EPOCHS - KLD_WARMUP))
+            kl_weight = KLD_WEIGHT_START if epoch < KLD_WARMUP else (KLD_WEIGHT_END * (epoch - KLD_WARMUP) / (EPOCHS - KLD_WARMUP))
             kl_loss = kl_weight * (tc_loss * TC_WEIGHT + mi_loss * MI_WEIGHT + dkld_loss * DKLD_WEIGHT)
             
             # Compute classification losses
