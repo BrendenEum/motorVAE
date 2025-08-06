@@ -1,0 +1,57 @@
+/localscratch/spool/slurmd/job817011/slurm_script: line 10: cd: /home/beum/scratch/motorVAE: No such file or directory
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) mii/1.1.2
+
+The following have been reloaded with a version change:
+  1) StdEnv/2023 => StdEnv/2020
+  2) flexiblas/3.3.1 => flexiblas/3.0.4
+  3) gcc/12.3 => gcc/9.3.0
+  4) gcccore/.12.3 => gcccore/.9.3.0
+  5) gentoo/2023 => gentoo/2020
+  6) libfabric/1.18.0 => libfabric/1.10.1
+  7) openmpi/4.1.5 => openmpi/4.0.3
+  8) ucx/1.14.1 => ucx/1.8.0
+
+-------------------------------------------------------------------------------
+There are messages associated with the following module(s):
+-------------------------------------------------------------------------------
+
+python/3.9.6:
+   Python wheels built with these versions of python may not support H100
+   GPUs or more recent. We recommend using a version of python provided
+   under StdEnv/2023 Les paquets python construits avec ces versions de
+   python ne sont pas compatibles avec les GPUs H100 ou plus récents. Nous
+   vous recommendons d'utiliser une version de python fournie sous
+   StdEnv/2023
+
+-------------------------------------------------------------------------------/lustre10/scratch/beum/motorVAE/env/lib/python3.9/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/lustre10/scratch/beum/motorVAE/env/lib/python3.9/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=None`.
+  warnings.warn(msg)
+Using device: cuda
+Outputs will be saved to: outputs/lat128_ep100_bat100_lrn0.0001_rec125.0_per5.0_gan0.2_kld0.3warm5(tc0.1_mi0.04_dk4e-05)_cls0.3
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_1.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_2.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_4.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_3.png not found.
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_4.png not found.
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_3.png not found.
+2022_Volkswagen_Golf_NRL_Trim_hatchback_5Door_1.png not found.
+2022_Lincoln_Navigator_NRL_Trim_SUV_4Door_2.png not found.
+Found 46426 valid images
+Number of classes - Year: 19, Make: 28, Body: 8, Door: 2
+Sales data available for 20933/46434 observations (45.1%)
+Found checkpoint: outputs/lat128_ep100_bat100_lrn0.0001_rec125.0_per5.0_gan0.2_kld0.3warm5(tc0.1_mi0.04_dk4e-05)_cls0.3/checkpoints/checkpoint_epoch_99.pth
+Traceback (most recent call last):
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 1437, in <module>
+    main()
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 1417, in main
+    start_epoch, all_losses = load_checkpoint(model, optimizers, latest_checkpoint)
+  File "/lustre10/scratch/beum/motorVAE/motorVAE.py", line 617, in load_checkpoint
+    model.load_state_dict(checkpoint['model_state_dict'])
+  File "/lustre10/scratch/beum/motorVAE/env/lib/python3.9/site-packages/torch/nn/modules/module.py", line 2152, in load_state_dict
+    raise RuntimeError('Error(s) in loading state_dict for {}:\n\t{}'.format(
+RuntimeError: Error(s) in loading state_dict for VAEGAN:
+	Missing key(s) in state_dict: "sales_regressor.fc1.weight", "sales_regressor.fc1.bias", "sales_regressor.fc2.weight", "sales_regressor.fc2.bias", "sales_regressor.bn1.weight", "sales_regressor.bn1.bias", "sales_regressor.bn1.running_mean", "sales_regressor.bn1.running_var". 
+	Unexpected key(s) in state_dict: "sales_classifier.fc1.weight", "sales_classifier.fc1.bias", "sales_classifier.fc2.weight", "sales_classifier.fc2.bias", "sales_classifier.fc3.weight", "sales_classifier.fc3.bias", "sales_classifier.bn1.weight", "sales_classifier.bn1.bias", "sales_classifier.bn1.running_mean", "sales_classifier.bn1.running_var", "sales_classifier.bn1.num_batches_tracked", "sales_classifier.bn2.weight", "sales_classifier.bn2.bias", "sales_classifier.bn2.running_mean", "sales_classifier.bn2.running_var", "sales_classifier.bn2.num_batches_tracked". 
