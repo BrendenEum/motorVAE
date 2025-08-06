@@ -44,7 +44,7 @@ TC_WEIGHT = 0.1  # Total Correlation weight
 MI_WEIGHT = 0.04  # Mutual Information weight
 DKLD_WEIGHT = 0.00004  # Dimension-wise KL Divergence weight
 CLS_WEIGHT = 0.3  # Classifier weight
-SALES_WEIGHT = 0.5
+SALES_WEIGHT = 0.5 # Weight for sales regression loss (mean squared error)
 
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
 
