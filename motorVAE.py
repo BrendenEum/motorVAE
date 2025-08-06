@@ -44,6 +44,7 @@ TC_WEIGHT = 0.1  # Total Correlation weight
 MI_WEIGHT = 0.04  # Mutual Information weight
 DKLD_WEIGHT = 0.00004  # Dimension-wise KL Divergence weight
 CLS_WEIGHT = 0.3  # Classifier weight
+SALES_WEIGHT = 0.5
 
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
 
@@ -87,8 +88,9 @@ class VehicleDataset(Dataset):
         self.body_classes = len(self.labels_df['body'].unique())
         self.door_classes = len(self.labels_df['door'].unique())
 
-        self.sales_classes = 3 # For sales, count only non-NA values (3 classes: 0, 1, 2)
-        sales_non_na = self.labels_df['sales'].notna().sum() # Count how many observations have sales data
+        # Sales labels
+        sales_columns = ['SaleYr1', 'SaleYr2', 'Sale2024', 'Sale2025']
+        sales_non_na = self.labels_df[sales_columns].notna().all(axis=1).sum()
         
         print(f"Found {len(self.img_files)} valid images")
         print(f"Number of classes - Year: {self.year_classes}, Make: {self.make_classes}, Body: {self.body_classes}, Door: {self.door_classes}")
@@ -110,11 +112,14 @@ class VehicleDataset(Dataset):
         body = torch.tensor(labels['body'], dtype=torch.long)
         door = torch.tensor(labels['door'], dtype=torch.long)
 
-        # Handle sales data - use -1 as sentinel value for NA
-        if pd.isna(labels['sales']):
-            sales = torch.tensor(-1, dtype=torch.long)  # -1 indicates NA
-        else:
-            sales = torch.tensor(int(labels['sales']), dtype=torch.long)  # Convert to int class
+        # Get the four sales values, use -1 as sentinel for NaN
+        sales_yr1 = torch.tensor(labels['SaleYr1'] if pd.notna(labels['SaleYr1']) else -1, dtype=torch.float32)
+        sales_yr2 = torch.tensor(labels['SaleYr2'] if pd.notna(labels['SaleYr2']) else -1, dtype=torch.float32)
+        sales_2024 = torch.tensor(labels['Sale2024'] if pd.notna(labels['Sale2024']) else -1, dtype=torch.float32)
+        sales_2025 = torch.tensor(labels['Sale2025'] if pd.notna(labels['Sale2025']) else -1, dtype=torch.float32)
+
+        # Stack into a single tensor
+        sales = torch.stack([sales_yr1, sales_yr2, sales_2024, sales_2025])
 
         if self.transform:
             image = self.transform(image)
@@ -281,6 +286,33 @@ class Classifier(nn.Module):
         
         return x
 
+# Define the Sales Regressor network
+class SalesRegressor(nn.Module):
+    def __init__(self, latent_dim=16):
+        super(SalesRegressor, self).__init__()
+        
+        # Two fully connected layers as requested
+        self.fc1 = nn.Linear(16, 128)
+        self.fc2 = nn.Linear(128, 4)  # Output 4 predictions
+        
+        # Batch Normalization for stability
+        self.bn1 = nn.BatchNorm1d(128)
+        
+    def forward(self, z):
+        # Use only the first 16 dimensions
+        z = z[:, :16]
+        
+        # First layer with batch norm and ReLU
+        x = F.relu(self.bn1(self.fc1(z)))
+        
+        # Output layer - no activation for regression
+        x = self.fc2(x)
+        
+        # Ensure non-negative outputs (sales counts can't be negative)
+        x = F.relu(x)
+        
+        return x
+
 # Define the perceptual loss using VGG16
 class PerceptualLoss(nn.Module):
     def __init__(self):
@@ -320,7 +352,7 @@ class PerceptualLoss(nn.Module):
 
 # Define the full VAE-GAN model
 class VAEGAN(nn.Module):
-    def __init__(self, latent_dim, year_classes, make_classes, body_classes, door_classes, sales_classes):
+    def __init__(self, latent_dim, year_classes, make_classes, body_classes, door_classes):
         super(VAEGAN, self).__init__()
         
         # Initialize components
@@ -333,7 +365,7 @@ class VAEGAN(nn.Module):
         self.make_classifier = Classifier(latent_dim, make_classes)
         self.body_classifier = Classifier(latent_dim, body_classes)
         self.door_classifier = Classifier(latent_dim, door_classes) 
-        self.sales_classifier = Classifier(latent_dim, sales_classes) 
+        self.sales_regressor = SalesRegressor(latent_dim) 
         
         # Initialize perceptual loss
         self.perceptual_loss = PerceptualLoss()
@@ -371,9 +403,13 @@ class VAEGAN(nn.Module):
         make_logits = self.make_classifier(z)
         body_logits = self.body_classifier(z)
         door_logits = self.door_classifier(z)
-        sales_logits = self.sales_classifier(z)
         
-        return year_logits, make_logits, body_logits, door_logits, sales_logits
+        return year_logits, make_logits, body_logits, door_logits
+    
+    def predict_sales(self, z):
+        # Predict sales values
+        sales_predictions = self.sales_regressor(z)
+        return sales_predictions
     
     def forward(self, x):
         # Full forward pass
@@ -558,7 +594,7 @@ def save_checkpoint(model, optimizers, epoch, losses, output_dir):
         'make_classifier': optimizers['make_classifier'].state_dict(),
         'body_classifier': optimizers['body_classifier'].state_dict(),
         'door_classifier': optimizers['door_classifier'].state_dict(),
-        'sales_classifier': optimizers['sales_classifier'].state_dict()
+        'sales_regressor': optimizers['sales_regressor'].state_dict()
     }
     
     # Create checkpoint
@@ -588,7 +624,7 @@ def load_checkpoint(model, optimizers, checkpoint_path):
     optimizers['make_classifier'].load_state_dict(checkpoint['optimizer_states']['make_classifier'])
     optimizers['body_classifier'].load_state_dict(checkpoint['optimizer_states']['body_classifier'])
     optimizers['door_classifier'].load_state_dict(checkpoint['optimizer_states']['door_classifier'])
-    optimizers['sales_classifier'].load_state_dict(checkpoint['optimizer_states']['sales_classifier'])
+    optimizers['sales_regressor'].load_state_dict(checkpoint['optimizer_states']['sales_regressor'])
     
     start_epoch = checkpoint['epoch'] + 1
     losses = checkpoint['losses']
@@ -720,6 +756,7 @@ def save_losses(all_losses, output_dir):
     plt.plot(all_losses['perceptual'], label='Perceptual')
     plt.plot(all_losses['kl'], label='KL Divergence')
     plt.plot(all_losses['cls'], label='Classification')
+    plt.plot(all_losses['sales_reg'], label='Sales Regression')
     plt.title('Component Losses')
     plt.xlabel('Epoch')
     plt.legend()
@@ -742,14 +779,25 @@ def save_losses(all_losses, output_dir):
     plt.legend()
     plt.grid(True)
     
-    # Plot classification losses
+    # Plot classification losses (remove 'sales' from here)
     plt.subplot(3, 2, 5)
     plt.plot(all_losses['year_cls'], label='Year')
     plt.plot(all_losses['make_cls'], label='Make')
     plt.plot(all_losses['body_cls'], label='Body')
     plt.plot(all_losses['door_cls'], label='Door')
-    plt.plot(all_losses['sales_cls'], label='Sales')
+    # Remove the sales line here
     plt.title('Classification Losses')
+    plt.xlabel('Epoch')
+    plt.legend()
+    plt.grid(True)
+
+    # Add new subplot for sales regression
+    plt.subplot(3, 2, 6)
+    plt.plot(all_losses['sales_yr1'], label='SaleYr1')
+    plt.plot(all_losses['sales_yr2'], label='SaleYr2')
+    plt.plot(all_losses['sales_2024'], label='Sale2024')
+    plt.plot(all_losses['sales_2025'], label='Sale2025')
+    plt.title('Sales Regression Losses (MSE per component)')
     plt.xlabel('Epoch')
     plt.legend()
     plt.grid(True)
@@ -766,7 +814,7 @@ def create_umap_visualizations(z_samples, labels, output_dir):
     embedding = reducer.fit_transform(z_samples)
     
     # Create separate plots for each label type
-    label_types = ['year', 'make', 'body', 'door', 'sales']
+    label_types = ['year', 'make', 'body', 'door']
     
     for label_type in label_types:
         plt.figure(figsize=(10, 8))
@@ -819,23 +867,26 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     optim_make = optim.Adam(model.make_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
     optim_body = optim.Adam(model.body_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
     optim_door = optim.Adam(model.door_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2)) 
-    optim_sales = optim.Adam(model.sales_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
+    optim_sales_reg = optim.Adam(model.sales_regressor.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
+
 
     # Loss functions
     bce_loss = nn.BCELoss()
     l1_loss = nn.L1Loss()
     ce_loss = nn.CrossEntropyLoss()
+    mse_loss = nn.MSELoss()
     
     # Initialize tracking variables
     all_losses = {
         'total': [], 'recon': [], 'perceptual': [], 'disc': [], 'gan': [],
         'kl': [], 'tc': [], 'mi': [], 'dkld': [], 'cls': [],
-        'year_cls': [], 'make_cls': [], 'body_cls': [], 'door_cls': [], 'sales_cls': []
+        'year_cls': [], 'make_cls': [], 'body_cls': [], 'door_cls': [], 'sales_reg': [],
+        'sales_yr1': [], 'sales_yr2': [], 'sales_2024': [], 'sales_2025': []
     }
     
     # Lists to store latent vectors for later analysis
     z_samples = []
-    z_labels = {'year': [], 'make': [], 'body': [], 'door': [], 'sales': []}
+    z_labels = {'year': [], 'make': [], 'body': [], 'door': []}
     
     # Select a random car for reconstruction tracking
     random_idx = random.randint(0, len(train_loader.dataset) - 1)
@@ -917,7 +968,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             optim_make.zero_grad()
             optim_body.zero_grad()
             optim_door.zero_grad()
-            optim_sales.zero_grad()
+            optim_sales_reg.zero_grad()
             
             # Reconstruct images
             z, mu, logvar = model.encode(real_images)
@@ -965,32 +1016,48 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             z_cls.requires_grad = True
 
             # For the other classifiers, keep as is:
-            year_logits, make_logits, body_logits, door_logits, sales_logits = model.classify(z_cls)
+            year_logits, make_logits, body_logits, door_logits = model.classify(z_cls)
 
             year_loss = ce_loss(year_logits, year_labels)
             make_loss = ce_loss(make_logits, make_labels)
             body_loss = ce_loss(body_logits, body_labels)
             door_loss = ce_loss(door_logits, door_labels)
 
-            # Conditional sales loss - only compute for non-NA values
-            sales_mask = sales_labels != -1  # Create mask for valid sales data
-            if sales_mask.sum() > 0:  # If there are any valid sales labels in this batch
-                sales_logits_valid = sales_logits[sales_mask]
+            cls_loss = year_loss + make_loss + body_loss + door_loss
+
+            # Compute sales regression loss
+            sales_predictions = model.predict_sales(z_cls)
+            # Create mask for valid sales data (where all 4 values are not -1)
+            sales_mask = (sales_labels != -1).all(dim=1)
+
+            if sales_mask.sum() > 0:
+                sales_pred_valid = sales_predictions[sales_mask]
                 sales_labels_valid = sales_labels[sales_mask]
-                sales_loss = ce_loss(sales_logits_valid, sales_labels_valid)
+                
+                # Compute MSE for each sales component
+                sales_yr1_loss = mse_loss(sales_pred_valid[:, 0], sales_labels_valid[:, 0])
+                sales_yr2_loss = mse_loss(sales_pred_valid[:, 1], sales_labels_valid[:, 1])
+                sales_2024_loss = mse_loss(sales_pred_valid[:, 2], sales_labels_valid[:, 2])
+                sales_2025_loss = mse_loss(sales_pred_valid[:, 3], sales_labels_valid[:, 3])
+                
+                # Total sales loss is the sum of all four MSE losses
+                sales_loss = sales_yr1_loss + sales_yr2_loss + sales_2024_loss + sales_2025_loss
             else:
                 # No valid sales data in this batch, use zero loss
                 sales_loss = torch.tensor(0.0, device=device)
-
-            cls_loss = year_loss + make_loss + body_loss + door_loss + sales_loss
-
+                sales_yr1_loss = torch.tensor(0.0, device=device)
+                sales_yr2_loss = torch.tensor(0.0, device=device)
+                sales_2024_loss = torch.tensor(0.0, device=device)
+                sales_2025_loss = torch.tensor(0.0, device=device)
+            
             # Compute total loss
             total_loss = (
                 RECON_WEIGHT * recon_loss +
                 PERCEPTUAL_WEIGHT * percep_loss +
                 GAN_WEIGHT * gen_loss +
                 kl_loss +
-                CLS_WEIGHT * cls_loss
+                CLS_WEIGHT * cls_loss +
+                SALES_WEIGHT * sales_loss
             )
             
             # Update encoder & decoder
@@ -1001,15 +1068,15 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             torch.nn.utils.clip_grad_norm_(model.make_classifier.parameters(), max_norm=1.0)
             torch.nn.utils.clip_grad_norm_(model.body_classifier.parameters(), max_norm=1.0)
             torch.nn.utils.clip_grad_norm_(model.door_classifier.parameters(), max_norm=1.0)
-            torch.nn.utils.clip_grad_norm_(model.sales_classifier.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.sales_regressor.parameters(), max_norm=1.0)
             optim_encoder.step()
             optim_decoder.step()
             optim_year.step()
             optim_make.step()
             optim_body.step()
             optim_door.step()
-            optim_sales.step()
-            
+            optim_sales_reg.step()
+
             # Record losses
             epoch_losses['total'] += total_loss.item()
             epoch_losses['recon'] += recon_loss.item() * RECON_WEIGHT
@@ -1025,7 +1092,11 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             epoch_losses['make_cls'] += make_loss.item() * CLS_WEIGHT
             epoch_losses['body_cls'] += body_loss.item() * CLS_WEIGHT
             epoch_losses['door_cls'] += door_loss.item() * CLS_WEIGHT
-            epoch_losses['sales_cls'] += sales_loss.item() * CLS_WEIGHT
+            epoch_losses['sales_reg'] += sales_loss.item() * SALES_WEIGHT
+            epoch_losses['sales_yr1'] += sales_yr1_loss.item()
+            epoch_losses['sales_yr2'] += sales_yr2_loss.item()
+            epoch_losses['sales_2024'] += sales_2024_loss.item()
+            epoch_losses['sales_2025'] += sales_2025_loss.item()
             
             # Store latent vectors and labels for last epoch
             if epoch == EPOCHS - 1:
@@ -1034,7 +1105,6 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
                 z_labels['make'].extend(make_labels.cpu().numpy())
                 z_labels['body'].extend(body_labels.cpu().numpy())
                 z_labels['door'].extend(door_labels.cpu().numpy())
-                z_labels['sales'].extend(sales_labels.cpu().numpy())
         
         # Calculate average losses for this epoch
         for k in epoch_losses.keys():
@@ -1052,6 +1122,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
               f"mi: {epoch_losses['mi']:.4f}, " +
               f"dkld: {epoch_losses['dkld']:.4f}, " +
               f"Cls: {epoch_losses['cls']:.4f} " +
+              f"Sales: {epoch_losses['sales_reg']:.4f} " + 
               f"| Disc: {epoch_losses['disc']:.4f}")
         
         # Print NaN summary at the end of each epoch
@@ -1078,7 +1149,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
         if (epoch + 1) % CHECKPOINT_FREQ == 0:
             optimizers = {'encoder': optim_encoder, 'decoder': optim_decoder, 'discriminator': optim_disc, 
                   'year_classifier': optim_year, 'make_classifier': optim_make,
-                  'body_classifier': optim_body, 'door_classifier': optim_door, 'sales_classifier': optim_sales}
+                  'body_classifier': optim_body, 'door_classifier': optim_door, 'sales_regressor': optim_sales_reg}
             save_checkpoint(model, optimizers, epoch, all_losses, output_dir)
     
     # Save final checkpoint
@@ -1159,8 +1230,13 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     
     # Calculate and save classification accuracy
     model.eval()
-    correct = {'year': 0, 'make': 0, 'body': 0, 'door': 0, 'sales': 0}
-    total = {'year': 0, 'make': 0, 'body': 0, 'door': 0, 'sales': 0}  # Track totals separately
+    correct = {'year': 0, 'make': 0, 'body': 0, 'door': 0}
+    total = {'year': 0, 'make': 0, 'body': 0, 'door': 0}
+
+    # Sales regression metrics
+    sales_mae = {'yr1': 0, 'yr2': 0, '2024': 0, '2025': 0}
+    sales_mse = {'yr1': 0, 'yr2': 0, '2024': 0, '2025': 0}
+    sales_count = 0
 
     with torch.no_grad():
         for batch in val_loader:
@@ -1174,13 +1250,12 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             z, _, _ = model.encode(images)
             
             # For year, make, body, door - all samples are valid
-            year_logits, make_logits, body_logits, door_logits, sales_logits = model.classify(z)
+            year_logits, make_logits, body_logits, door_logits = model.classify(z)
 
             _, year_preds = torch.max(year_logits, 1)
             _, make_preds = torch.max(make_logits, 1)
             _, body_preds = torch.max(body_logits, 1)
             _, door_preds = torch.max(door_logits, 1)
-            _, sales_preds = torch.max(sales_logits, 1)
             
             batch_size = year_labels.size(0)
             
@@ -1188,28 +1263,68 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             correct['make'] += (make_preds == make_labels).sum().item()
             correct['body'] += (body_preds == body_labels).sum().item()
             correct['door'] += (door_preds == door_labels).sum().item()
-
-            # For sales, only count valid (non-NA) labels
-            sales_mask = sales_labels != -1
-            if sales_mask.sum() > 0:
-                correct['sales'] += (sales_preds[sales_mask] == sales_labels[sales_mask]).sum().item()
-                total['sales'] += sales_mask.sum().item()
             
             total['year'] += batch_size
             total['make'] += batch_size
             total['body'] += batch_size
             total['door'] += batch_size
 
-    # Calculate and save accuracies
-    with open(os.path.join(output_dir, "classification_accuracy.txt"), "w") as f:
-        for label_type in ['year', 'make', 'body', 'door', 'sales']:
+            # Sales regression evaluation
+            sales_predictions = model.predict_sales(z)
+            
+            # Mask for valid sales data
+            sales_mask = (sales_labels != -1).all(dim=1)
+            
+            if sales_mask.sum() > 0:
+                sales_pred_valid = sales_predictions[sales_mask]
+                sales_labels_valid = sales_labels[sales_mask]
+                
+                # Calculate MAE and MSE for each component
+                sales_mae['yr1'] += torch.abs(sales_pred_valid[:, 0] - sales_labels_valid[:, 0]).sum().item()
+                sales_mae['yr2'] += torch.abs(sales_pred_valid[:, 1] - sales_labels_valid[:, 1]).sum().item()
+                sales_mae['2024'] += torch.abs(sales_pred_valid[:, 2] - sales_labels_valid[:, 2]).sum().item()
+                sales_mae['2025'] += torch.abs(sales_pred_valid[:, 3] - sales_labels_valid[:, 3]).sum().item()
+                
+                sales_mse['yr1'] += ((sales_pred_valid[:, 0] - sales_labels_valid[:, 0]) ** 2).sum().item()
+                sales_mse['yr2'] += ((sales_pred_valid[:, 1] - sales_labels_valid[:, 1]) ** 2).sum().item()
+                sales_mse['2024'] += ((sales_pred_valid[:, 2] - sales_labels_valid[:, 2]) ** 2).sum().item()
+                sales_mse['2025'] += ((sales_pred_valid[:, 3] - sales_labels_valid[:, 3]) ** 2).sum().item()
+                
+                sales_count += sales_mask.sum().item()
+
+    # Calculate and save metrics
+    with open(os.path.join(output_dir, "evaluation_metrics.txt"), "w") as f:
+        # Classification accuracies
+        f.write("Classification Accuracies:\n")
+        f.write("-" * 40 + "\n")
+        for label_type in ['year', 'make', 'body', 'door']:
             if total[label_type] > 0:
                 accuracy = 100 * correct[label_type] / total[label_type]
                 f.write(f"{label_type} accuracy: {accuracy:.2f}% ({correct[label_type]}/{total[label_type]})\n")
                 print(f"{label_type} accuracy: {accuracy:.2f}% ({correct[label_type]}/{total[label_type]})")
-            else:
-                f.write(f"{label_type} accuracy: N/A (no valid samples)\n")
-                print(f"{label_type} accuracy: N/A (no valid samples)")
+        
+        # Sales regression metrics
+        f.write("\nSales Regression Metrics:\n")
+        f.write("-" * 40 + "\n")
+        if sales_count > 0:
+            for key in ['yr1', 'yr2', '2024', '2025']:
+                mae = sales_mae[key] / sales_count
+                mse = sales_mse[key] / sales_count
+                rmse = np.sqrt(mse)
+                
+                label = f"Sale{key.upper()}" if key in ['2024', '2025'] else f"SaleYr{key[-1]}"
+                f.write(f"{label}:\n")
+                f.write(f"  MAE: {mae:.4f}\n")
+                f.write(f"  MSE: {mse:.4f}\n")
+                f.write(f"  RMSE: {rmse:.4f}\n")
+                
+                print(f"{label} - MAE: {mae:.4f}, MSE: {mse:.4f}, RMSE: {rmse:.4f}")
+        else:
+            f.write("No valid sales data available for evaluation\n")
+            print("No valid sales data available for evaluation")
+        
+        f.write(f"\nTotal samples with valid sales data: {sales_count}\n")
+        print(f"Total samples with valid sales data: {sales_count}")
     
     return model, all_losses
 
@@ -1263,7 +1378,6 @@ def main():
     make_classes = train_dataset.dataset.make_classes
     body_classes = train_dataset.dataset.body_classes
     door_classes = train_dataset.dataset.door_classes
-    sales_classes = train_dataset.dataset.sales_classes
     
     # Initialize model
     model = VAEGAN(
@@ -1271,8 +1385,7 @@ def main():
         year_classes=year_classes,
         make_classes=make_classes,
         body_classes=body_classes,
-        door_classes=door_classes,
-        sales_classes=sales_classes,
+        door_classes=door_classes
     ).to(device)
 
     # Create optimizers for checkpoint loading
@@ -1284,7 +1397,7 @@ def main():
         'make_classifier': optim.Adam(model.make_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2)),
         'body_classifier': optim.Adam(model.body_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2)),
         'door_classifier': optim.Adam(model.door_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2)),
-        'sales_classifier': optim.Adam(model.sales_classifier.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))
+        'sales_regressor': optim.Adam(model.sales_regressor.parameters(), lr=LEARNING_RATE, betas=(BETA1, BETA2))  # Changed
     }
     
     # Check for latest checkpoint

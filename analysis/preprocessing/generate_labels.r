@@ -133,13 +133,13 @@ cd$make <- cd$make %>% tolower()
 ###########################
 
 #source("/Users/brenden/Desktop/motorVAE/analysis/preprocessing/process_sales.R")
-sales_data = read.csv("/Users/brenden/Desktop/motorVAE/data/autodealerdata-avg_annual_sales.csv")
+sales_data = read.csv("/Users/brenden/Desktop/motorVAE/data/sales_data_1_2_2024_2025.csv")
 cd = cd %>% left_join(sales_data, by=c("year","make","model"))
-cd <- cd %>%
-  mutate(sales = cut(avg_annual_sales, 
-                     breaks = quantile(avg_annual_sales, probs = c(0, 0.33, 0.67, 1), na.rm = TRUE),
-                     labels = c("Low", "Medium", "High"),
-                     include.lowest = TRUE))
+# cd <- cd %>%
+#   mutate(sales = cut(avg_annual_sales, 
+#                      breaks = quantile(avg_annual_sales, probs = c(0, 0.33, 0.67, 1), na.rm = TRUE),
+#                      labels = c("Low", "Medium", "High"),
+#                      include.lowest = TRUE))
 
 
 ###########################
@@ -154,7 +154,6 @@ cd$trim <- cd$trim %>% tolower() %>% factor()
 cd$body <- cd$body %>% tolower() %>% factor() 
 cd$model <- cd$model %>% tolower() %>% factor()
 cd$make = ifelse(cd$make %in% majors, cd$make, "other") %>% factor()
-cd$sales = cd$sales %>% factor()
 
 # Function to get the factor mapping
 factor_mapping <- function(factor_variable, fn) {
@@ -170,10 +169,9 @@ factor_mapping(cd$year, "/Users/brenden/Desktop/motorVAE/data/labels_year_mappin
 factor_mapping(cd$body, "/Users/brenden/Desktop/motorVAE/data/labels_body_mapping.csv")
 factor_mapping(cd$make, "/Users/brenden/Desktop/motorVAE/data/labels_make_mapping.csv")
 factor_mapping(cd$door, "/Users/brenden/Desktop/motorVAE/data/labels_door_mapping.csv")
-factor_mapping(cd$sales, "/Users/brenden/Desktop/motorVAE/data/labels_sales_mapping.csv")
 
 # Fix the factor numbers in the dataframe
-for (var in c("year","body","make","door", "model", "trim", "sales")) {
+for (var in c("year","body","make","door", "model", "trim")) {
   cd[,var] <- cd[,var] %>% as.numeric() - 1
 }
 
@@ -184,7 +182,7 @@ for (var in c("year","body","make","door", "model", "trim", "sales")) {
 
 # Disregard sales for now
 #cd_orig = cd[,c("filename", "year","body", "make","door")]
-cd_orig = cd[,c("filename", "year", "body", "make", "door", "sales")]
+cd_orig = cd[,c("filename", "year", "body", "make", "door", "SaleYr1", "SaleYr2", "Sale2024", "Sale2025")]
 
 # Write to CSV
 write.csv(cd_orig, "/Users/brenden/Desktop/motorVAE/data/labels_evox_256x256_1-4.csv", row.names = FALSE)

@@ -17,7 +17,7 @@ Things you can adjust.
 seed = 4
 tdim = 0:127 # list of latent dimension indices
 doi = 0:15 # dimensions of interest [the first 15 encode Year, Make, Body, Door, Sales]
-nSamples = 10 # number of samples from latent distribution
+nSamples = 1 # number of samples from latent distribution
 ```
 
 
@@ -28,7 +28,10 @@ library(brms)
 library(purrr)
 library(glmnet)
 
-.outdir = "../../outputs/lat128_ep100_bat100_lrn0.0001_rec125.0_per5.0_gan0.2_kld1.0warm5(tc0.1_mi0.04_dk4e-05)_cls0.3"
+### CHANGE THIS TO THE BEST OUTPUT FOLDER
+.output_folder = "lat128_ep100_bat100_lrn0.0001_rec125.0_per5.0_gan0.2_kld0.5warm5(tc0.1_mi0.04_dk4e-05)_cls0.3"
+###
+.outdir = paste0("../../outputs/", .output_folder)
 .tempdir = "../temp/"
 .figdir = "../figures/"
 .tabdir = "../tables/"
@@ -134,6 +137,25 @@ car2 = car2 %>%
 car2$VIF = as.integer(car2$VIF)
 ```
 
+# Sales data
+
+```{r}
+df_sales = read.csv("../../data/autodealerdata-avg_annual_sales.csv") %>%
+  mutate(
+    Year = as.character(year),
+    Make = make,
+    Model = model
+  )
+df_sales_vif = df_sales %>%
+  left_join(
+    vif_map, by=c("Year", "Make", "Model"),
+    relationship="one-to-many"
+  ) %>% 
+  distinct(VIF, avg_annual_sales, .keep_all=T) %>%
+  na.omit()
+```
+
+
 # Merge
 
 ```{r}
@@ -141,6 +163,7 @@ voi = c("subject", "VIF", "nacc") #nacc = nacc8mm_tr4
 data = car2[,voi] %>%
   left_join(df_mu_vif, by = "VIF", relationship="many-to-one") %>%
   left_join(df_sd_vif, by = "VIF", relationship="many-to-one") %>%
+  left_join(df_sales_vif, by = "VIF", relationship="many-to-one") %>%
   na.omit()
 ```
 
@@ -156,16 +179,17 @@ for (sample in 1:nSamples) {
   for (row in 1:nrow(data)) {
     mu = as.numeric(data[row, paste0("mu_", tdim)])
     sd = as.numeric(data[row, paste0("sd_", tdim)])
-    z = rnorm(length(mu), mean = mu, sd = sd)
+    z = mu #rnorm(length(mu), mean = mu, sd = sd)
     
     new_row = data.frame(
       sample = sample,
       subject = data$subject[row],
       VIF = data$VIF[row],
       nacc = data$nacc[row],
+      sales = data$avg_annual_sales[row] %>% round(1),
       t(z)
     )
-    colnames(new_row)[5:(5 + length(tdim) - 1)] = paste0("z_", tdim)
+    colnames(new_row)[6:(6 + length(tdim) - 1)] = paste0("z_", tdim)
     rdata = bind_rows(rdata, new_row)
   }
 }
@@ -174,10 +198,26 @@ for (sample in 1:nSamples) {
 
 # Regression
 
+First, regress NAcc on Sales to get a benchmark R2.
+
+```{r}
+lm(nacc ~ 1 + sales, data = rdata) %>% summary()
+```
+
+Next, include the latent dimensions in the OLS to check change in R2.
+
+```{r}
+voi = c("nacc", "sales", paste0("z_", doi) )
+rdata_ols = rdata[,voi]
+lm(nacc ~ ., data = rdata_ols) %>% summary()
+```
+
+
 Run lasso regression, get coefficients, then run non-zero coefficients in OLS for hypothesis testing.
 ```{r}
 Y = rdata$nacc
-X = as.matrix(rdata[,paste0("z_", doi)])
+voi = c("sales", paste0("z_", doi) )
+X = as.matrix(rdata[,voi])
 
 # Extract coefficients
 lasso_model = cv.glmnet(X, Y, alpha=1) #alpha=1 lasso; alpha=0 ridge
@@ -229,9 +269,8 @@ print(results)
 
 What happens when we feed all possible latent dimensions into the linear regression?
 ```{r}
-rdata_all <- rdata[, c("nacc", paste0("z_", tdim))]
-lm_all <- lm(nacc ~ ., data = rdata_all)
-summary(lm_all)
+rdata_all <- rdata[, c("nacc", "sales", paste0("z_", tdim))]
+lm(nacc ~ ., data = rdata_all) %>% summary()
 ```
 
 Lasso
