@@ -30,6 +30,7 @@ for (i in 0:1607) {
   
   # Convert last day on dealership lot to year of sale
   df$year_of_sale <- year(as.Date(df$last_seen))
+  df$month_of_sale <- month(as.Date(df$last_seen))
   
   # Reduce to year_of_sale & year-make-model
   df <- df %>%
@@ -38,11 +39,11 @@ for (i in 0:1607) {
       make = tolower(brand_name),
       model = tolower(model_name)
     ) %>%
-    select(year, make, model, year_of_sale)
+    select(year, make, model, year_of_sale, month_of_sale)
   
   # Get the total sales per year_of_sale for each year-make-model
   current_sales_counts <- df %>%
-    group_by(year, make, model, year_of_sale) %>%
+    group_by(year, make, model, year_of_sale, month_of_sale) %>%
     summarise(
       count = n(),
       .groups = "drop"
@@ -86,10 +87,11 @@ ind = (fs$year==2007 & fs$make=="acura" & fs$model=="rl") |
   (fs$year==2019 & fs$make=="honda" & fs$model=="hrv") |
   (fs$year==2021 & fs$make=="toyota" & fs$model=="camry")
 pdata = fs[ind, ]
-pdata = pdata %>%
-  group_by(age) %>%
-  summarize(zlog_sales=mean(zlog_sales))
-ggplot(data=pdata, aes(age, zlog_sales)) +
+#pdata = pdata %>%
+#  group_by(age) %>%
+#  summarize(zlog_sales=mean(zlog_sales))
+pdata$group = interaction(pdata$year, pdata$make, pdata$model)
+ggplot(data=pdata, aes(x=age, y=zlog_sales, color=group)) +
   geom_line() +
   theme_bw()
 

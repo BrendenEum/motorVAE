@@ -44,7 +44,7 @@ TC_WEIGHT = 0.1  # Total Correlation weight
 MI_WEIGHT = 0.04  # Mutual Information weight
 DKLD_WEIGHT = 0.00004  # Dimension-wise KL Divergence weight
 CLS_WEIGHT = 0.3  # Classifier weight
-SALES_WEIGHT = 0.5 # Weight for sales regression loss (mean squared error)
+SALES_WEIGHT = 0.5 # Weight for sales regression loss (mean square error)
 
 DISC_WEIGHT = 1.0 # Separate loss function, so this doesn't matter. 
 
@@ -1041,7 +1041,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
                 sales_2025_loss = mse_loss(sales_pred_valid[:, 3], sales_labels_valid[:, 3])
                 
                 # Total sales loss is the sum of all four MSE losses
-                sales_loss = sales_yr1_loss + sales_yr2_loss + sales_2024_loss + sales_2025_loss
+                sales_loss = sales_yr1_loss + sales_yr2_loss #+ sales_2024_loss + sales_2025_loss
             else:
                 # No valid sales data in this batch, use zero loss
                 sales_loss = torch.tensor(0.0, device=device)
