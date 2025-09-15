@@ -1,0 +1,477 @@
+---
+title: "Toyota-Stanford Replication"
+output:
+  pdf_document:
+    toc: true
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+---
+
+Author: Brenden Eum (2025)
+
+# Preamble
+
+Things you can adjust.
+```{r}
+#rm(list=ls())
+seed = 4
+```
+
+
+Start fresh.
+```{r}
+library(tidyverse)
+library(here) # Looks for ".here" file and treats that as the root folder! Great for project management!
+library(lme4)
+library(sandwich)
+library(plotrix)
+library(patchwork)
+library(car)
+library(corrplot)
+
+.root <- here()
+.outdir = file.path(.root, "outputs")
+.datadir = file.path(.root, "data")
+.tempdir = file.path(.root, "analysis/temp")
+.figdir = file.path(.root, "analysis/figures")
+.tabdir = file.path(.root, "analysis/tables")
+.txtdir = file.path(.root, "analysis/text")
+```
+
+Quarterly sales data from autodealerdata
+```{r}
+qs = read.csv(file.path(.datadir, "quarterly_sales_2005_2025.csv"))
+```
+
+NAcc data from Stanford
+- subject: subject id
+- Make: brand of car
+- Model: car model
+- nacc: % signal change at nacc8mm_tr4
+- mpfc: % signal change at mpfc8mm_tr5, tr6, tr7
+- insula_hypergranular_ana_tr4: % signal change at posterior insula, which we may use as a control for noise
+- knowMore_clean: ratings (1-4) how much the subjects wanted to know more
+- purchase_clean: ratings (1-4) subject's purchase likelihood
+
+```{r}
+nacc = read.csv(file.path(.datadir, "stanford-nacc/Car2_agg_df_by_subject_run2 (1).csv"))
+nacc = nacc %>% 
+  mutate(
+    make = Make %>% tolower(),
+    make = ifelse(make=="mercedes", "mercedes-benz", make),
+    model = Model %>% tolower() %>% gsub(" ", "", .),
+    year = 2023,
+    pins = insula_hypergranular_ana_tr4,
+    electric = ifelse(Fuel_Type.x=="Electric", 1, 0)
+  ) %>%
+  select(
+    subject, year, make, model, electric, q_slope_2023,
+    nacc, mpfc, ains, pins, 
+    knowMore_clean, purchase_clean
+  )
+```
+
+
+Get all the stimuli used in the fMRI study.
+```{r}
+nacc_stim = nacc %>%
+  distinct(year, make, model) %>%
+  print()
+nStim = nrow(nacc_stim)
+```
+
+# Analysis Explained
+
+## Problem
+
+Goodcarbadcar dataset does not distinguish different manufacturing dates for each make-model in their sales counts. Therefore, sales in 2023-Q3 could reflect both 2023 and 2024 models. 
+
+Autodealerdata dataset DOES distinguish different manufacturing dates for each make-model in their sales counts.
+
+## Solutions
+
+We will try two approaches. Either goodcarbadcar sales counts reflects (1) sales of the newest make-model, or (2) cumulative sales of that make-model. 
+
+Typically, dealerships do not keep cars on a lot for more than 18 months. This means sales counts in a specific quarter will, at most, reflect the newest model and the previous year's model. 
+
+Solution 1: Newest Model
+
+For each stimulus, set quarterly sales equal to:
+- Q1: 2023-Q1 sales for 2023 model
+- Q2: 2023-Q2 sales for 2023 model
+- Q3.1: 2023-Q3 sales for 2024 model
+- Q4.1: 2023-Q4 sales for 2024 model
+
+Solution 2: Oldest Model
+
+For each stimulus, set quarterly sales equal to:
+- Q1: 2023-Q1 sales for 2023 model
+- Q2: 2023-Q2 sales for 2023 model
+- Q3: 2023-Q3 sales for 2023 model
+- Q4: 2023-Q4 sales for 2023 model
+
+Solution 3: Both Models
+
+For each stimulus, set quarterly sales equal to:
+- Q1: 2023-Q1 sales for 2023 model
+- Q2: 2023-Q2 sales for 2023 model
+- Q3: 2023-Q3 sales for 2023 model + 2023-Q3 sales for 2024 model
+- Q4: 2023-Q4 sales for 2023 model + 2023-Q4 sales for 2024 model
+
+Then, use these metrics to calculate the average change in quarterly sales over the year.
+dQ = (1/3)[(Q2-Q1) + (Q3-Q2) + (Q4-Q3)] 
+
+
+### Solution 1: Newest Model
+
+```{r}
+df_dQ_New = data.frame()
+
+for (s in 1:nStim) {
+  
+  make = nacc_stim$make[s]
+  model = nacc_stim$model[s]
+  
+  ind1 = (qs$year==2023 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==1)
+  ind2 = (qs$year==2023 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==2)
+  ind3 = (qs$year==2024 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==3)
+  ind4 = (qs$year==2024 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==4)
+  
+  if (sum(ind1)!=0 && sum(ind2)!=0 && sum(ind3)!=0 && sum(ind4)!=0) {
+    
+    Q1 = qs[ind1, "count"]
+    Q2 = qs[ind2, "count"]
+    Q3 = qs[ind3, "count"]
+    Q4 = qs[ind4, "count"]
+    
+    dQ_New = (1/3)*((Q2-Q1)+(Q3-Q2)+(Q4-Q3))
+  
+    add_row = data.frame(make, model, dQ_New)
+    df_dQ_New = bind_rows(df_dQ_New, add_row)
+    
+  }
+}
+
+epsilon = 0.0001
+df_dQ_New$ndQ_New = (df_dQ_New$dQ_New + abs(min(df_dQ_New$dQ_New)) + epsilon) %>% log()
+```
+
+
+### Solution 2: Oldest Model
+
+```{r}
+df_dQ_Old = data.frame()
+
+for (s in 1:nStim) {
+  
+  make = nacc_stim$make[s]
+  model = nacc_stim$model[s]
+  
+  ind1 = (qs$year==2023 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==1)
+  ind2 = (qs$year==2023 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==2)
+  ind3 = (qs$year==2023 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==3)
+  ind4 = (qs$year==2023 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==4)
+  
+  if (sum(ind1)!=0 && sum(ind2)!=0 && sum(ind3)!=0 && sum(ind4)!=0) {
+    
+    Q1 = qs[ind1, "count"]
+    Q2 = qs[ind2, "count"]
+    Q3 = qs[ind3, "count"]
+    Q4 = qs[ind4, "count"]
+    
+    dQ_Old = (1/3)*((Q2-Q1)+(Q3-Q2)+(Q4-Q3))
+    Q_Old = Q1 + Q2 + Q3 + Q4
+  
+    add_row = data.frame(make, model, dQ_Old, Q_Old)
+    df_dQ_Old = bind_rows(df_dQ_Old, add_row)
+    
+  }
+}
+
+epsilon = 0.0001
+df_dQ_Old$ndQ_Old = (df_dQ_Old$dQ_Old + abs(min(df_dQ_Old$dQ_Old)) + epsilon) %>% log()
+```
+
+
+### Solution 3: Both Models
+
+```{r}
+df_dQ_Both = data.frame()
+
+for (s in 1:nStim) {
+  
+  make = nacc_stim$make[s]
+  model = nacc_stim$model[s]
+  
+  ind1 = (qs$year==2023 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==1)
+  ind2 = (qs$year==2023 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==2)
+  ind3.1 = (qs$year==2023 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==3)
+  ind3.2 = (qs$year==2024 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==3)
+  ind4.1 = (qs$year==2023 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==4)
+  ind4.2 = (qs$year==2024 & qs$make==make & qs$model==model) & (qs$year_sold==2023 & qs$quarter_sold==4)
+  
+  if (sum(ind1)!=0 && sum(ind2)!=0 && sum(c(ind3.1,ind3.2))!=0 && sum(c(ind4.1,ind4.2))!=0) {
+    
+    Q1 = qs[ind1, "count"]
+    Q2 = qs[ind2, "count"]
+    Q3.1 =  if (sum(ind3.1)!=0) qs[ind3.1, "count"] else 0
+    Q3.2 =  if (sum(ind3.2)!=0) qs[ind3.2, "count"] else 0
+    Q3 = Q3.1 + Q3.2
+    Q4.1 =  if (sum(ind4.1)!=0) qs[ind4.1, "count"] else 0
+    Q4.2 =  if (sum(ind4.2)!=0) qs[ind4.2, "count"] else 0
+    Q4 = Q4.1 + Q4.2
+    
+    dQ_Both = (1/3)*((Q2-Q1)+(Q3-Q2)+(Q4-Q3))
+  
+    add_row = data.frame(make, model, dQ_Both)
+    df_dQ_Both = bind_rows(df_dQ_Both, add_row)
+    
+  }
+}
+
+epsilon = 0.0001
+df_dQ_Both$ndQ_Both = (df_dQ_Both$dQ_Both + abs(min(df_dQ_Both$dQ_Both)) + epsilon) %>% log()
+```
+
+
+# Individual-Level Replications
+
+## Make Regression Data
+
+```{r}
+# Merge in autodealerdata average quarterly slopes
+rdata = nacc %>%
+  merge(., df_dQ_New, by=c("make", "model"), all.x=T) %>%
+  merge(., df_dQ_Old, by=c("make", "model"), all.x=T) %>%
+  merge(., df_dQ_Both, by=c("make", "model"), all.x=T)
+
+hist_dQ_New = ggplot(data=rdata) +
+  geom_histogram(aes(x=(ndQ_New))) +
+  theme_classic()
+hist_dQ_Old = ggplot(data=rdata) +
+  geom_histogram(aes(x=(ndQ_Old))) + 
+  theme_classic()
+hist_dQ_Both = ggplot(data=rdata) +
+  geom_histogram(aes(x=(ndQ_Both))) + 
+  theme_classic()
+hist_dQ_New / hist_dQ_Old / hist_dQ_Both
+```
+
+## Check corr between datasets
+
+goodcarbadcar data vs autodealer data.
+```{r}
+corrdata = rdata %>% distinct(make, model, .keep_all=T)
+ggplot(data=corrdata, aes(y=q_slope_2023)) +
+  geom_abline(intercept=0, slope=1, color="grey", linewidth=2) +
+  
+  geom_line(aes(x=dQ_Old, color="Old"), linewidth=1, alpha=.8) +
+  geom_line(aes(x=dQ_New, color="New"), linewidth=1, alpha=.8) +
+  geom_line(aes(x=dQ_Both, color="Both"), linewidth=1, alpha=.8) +
+  
+  labs(
+    y = "goodcarbadcar dQ",
+    x = "autodealerdata dQ"
+  ) +
+  theme_bw() +
+  scale_color_manual(
+    name="Manufacture Year", 
+    values=c("Old"="dodgerblue", "New"="gold2", "Both"="maroon")
+  )
+```
+```{r}
+lm(q_slope_2023 ~ dQ_Old, data = corrdata) %>% summary()
+```
+
+```{r}
+cor.test(corrdata$q_slope_2023, corrdata$dQ_Old)
+```
+
+
+
+## Replication 1: Newest
+
+```{r}
+# replication_1 <- lmer(
+#   dQ_New ~ 1 + nacc + (1 + nacc | subject), 
+#   data = rdata
+# )
+# 
+# summary(replication_1)
+```
+
+
+## Replication 2: Oldest
+
+Anova analysis suggests that linear model (replication_2.2) is performing better than random effects model (replication_2.1).
+```{r}
+replication_2.1 <- lmer(
+  dQ_Old ~ 1 + electric + knowMore_clean + nacc + mpfc + pins + (1 + nacc | subject), 
+  data = rdata,
+  control = lmerControl(optimizer = "bobyqa")
+)
+
+replication_2.2 <- lm(
+  dQ_Old ~ 1 + electric + knowMore_clean  + nacc + mpfc + pins, 
+  data = rdata
+)
+
+anova(replication_2.1, replication_2.2)
+```
+
+```{r}
+replication_2.2_noBrain <- lm(
+  dQ_Old ~ 1 + electric + knowMore_clean, 
+  data = rdata
+)
+```
+
+```{r}
+replication_2.2_noBrain %>% summary()
+```
+
+```{r}
+summary(replication_2.2)
+```
+
+What about with goodcarbadcar data?
+```{r}
+replication_2.3 <- lm(
+  q_slope_2023 ~ 1 + electric + knowMore_clean  + nacc + mpfc + ains, 
+  data = rdata
+)
+summary(replication_2.3)
+```
+
+
+Average change in quarterly sales, by average NAcc signal.
+```{r}
+pdata = rdata %>%
+  group_by(make, model) %>%
+  summarize(
+    nacc_se = std.error(nacc),
+    nacc_y = mean(nacc),
+    mpfc_y = mean(mpfc),
+    dQ_Old = first(dQ_Old),
+    dQ_New = first(dQ_New),
+    dQ_Both = first(dQ_Both),
+    electric = first(electric)
+  )
+pdata$electric = factor(pdata$electric, levels=c(0,1), labels=c("Gas", "Electric"))
+
+corr_res = cor.test(pdata$dQ_Old, pdata$nacc_y)
+corr_est = corr_res$estimate %>% round(2) %>% as.character()
+corr_pval = corr_res$p.value %>% round(2) %>% as.character()
+
+ggplot(data=pdata) +
+  
+  geom_smooth(
+    aes(y=dQ_Old, x=nacc_y), method="lm", se=TRUE, 
+    color="grey70", fill="grey80", linetype="dashed"
+  ) +
+  geom_point(aes(y=dQ_Old, x=nacc_y, color=electric)) +
+  geom_text(
+    aes(y=dQ_Old, x=nacc_y, label=model), 
+    hjust=0, vjust=0, nudge_x=-.002, nudge_y=220, size=3
+  ) +
+  annotate(
+    "text", x=Inf, y=-Inf, hjust=1.1, vjust=-1.1, 
+    label=paste0("R = ", corr_est, ", p = ", corr_pval), 
+    size=4
+  ) +
+  
+  labs(
+    y = "Avg. Quarterly Slope in 2023",
+    x = "NAcc (% Signal Change, tr4)",
+    color = "Fuel Type"
+  ) +
+  theme_bw()
+```
+
+```{r}
+cor.test(rdata$knowMore_clean, rdata$nacc)
+```
+
+```{r}
+cor.test(rdata$purchase_clean, rdata$nacc)
+```
+
+VIF Analysis
+```{r}
+# Calculate VIF for replication_2.2 model
+vif_results <- vif(replication_2.2)
+
+# Create a data frame for better visualization
+vif_df <- data.frame(
+  Variable = names(vif_results),
+  VIF = as.numeric(vif_results)
+)
+
+# Add interpretation column
+vif_df$Interpretation <- ifelse(vif_df$VIF > 10, "High multicollinearity (VIF > 10)",
+                       ifelse(vif_df$VIF > 5, "Moderate multicollinearity (5 < VIF < 10)",
+                              "Low multicollinearity (VIF < 5)"))
+print(vif_df)
+
+# Check correlation matrix of predictors for additional insight
+predictor_vars <- c("electric", "knowMore_clean", "nacc", "mpfc", "ains", "pins")
+correlation_matrix <- cor(rdata[, predictor_vars], use = "complete.obs")
+
+# Visualize correlation matrix
+corrplot(correlation_matrix, 
+         method = "color", 
+         type = "upper", 
+         order = "hclust",
+         tl.cex = 0.8,
+         tl.col = "black",
+         title = "Correlation Matrix of Predictors",
+         mar = c(0,0,1,0))
+```
+
+
+
+
+## Replication 3: Both
+
+Anova analysis suggests that linear model (replication_3.2) is performing better than random effects model (replication_3.1).
+```{r}
+replication_3.1 <- lmer(
+  dQ_Both ~ 1 + electric + knowMore_clean + nacc + mpfc + ains + (1 + nacc | subject), 
+  data = rdata,
+  control = lmerControl(optimizer = "bobyqa")
+)
+
+replication_3.2 <- lm(
+  dQ_Both ~ 1 + electric + knowMore_clean  + nacc + mpfc + ains, 
+  data = rdata
+)
+
+anova(replication_3.1, replication_3.2)
+```
+
+```{r}
+summary(replication_3.2)
+```
+
+
+# Extra
+
+## Raw Yearly Sales
+
+```{r}
+lm(log(Q_Old) ~ 1 + scale(electric) + scale(knowMore_clean) + scale(nacc) + scale(mpfc) + scale(ains), data=rdata) %>% summary()
+```
+
+```{r}
+lm(log(Q_Old) ~ 1 + scale(electric) + scale(knowMore_clean), data=rdata) %>% summary()
+```
+
+```{r}
+lm(scale(q_slope_2023) ~ 1 + scale(electric) + scale(knowMore_clean) + scale(nacc) + scale(mpfc) + scale(ains), data=rdata) %>% summary()
+```
+
+```{r}
+lm(scale(q_slope_2023) ~ 1 + scale(electric) + scale(knowMore_clean), data=rdata) %>% summary()
+```

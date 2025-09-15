@@ -1,0 +1,19 @@
+Classification Accuracies:
+----------------------------------------
+year accuracy: 7.53% (70/929)
+make accuracy: 10.55% (98/929)
+body accuracy: 44.35% (412/929)
+door accuracy: 82.24% (764/929)
+
+Sales Regression Metrics:
+----------------------------------------
+SaleYr1:
+  MAE: 0.4081
+  MSE: 0.2801
+  RMSE: 0.5293
+SaleYr2:
+  MAE: 0.4725
+  MSE: 0.3477
+  RMSE: 0.5896
+
+Total samples with valid sales data: 341

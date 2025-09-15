@@ -39,7 +39,7 @@ PERCEPTUAL_WEIGHT = 5.0
 GAN_WEIGHT = 0.2
 KLD_WARMUP = 5 # number of epochs before initiating linear KLD weight increase
 KLD_WEIGHT_START = 0 # KLD Scheduler
-KLD_WEIGHT_END = 0.3 # Final KLD weight
+KLD_WEIGHT_END = 1.0 # Final KLD weight
 TC_WEIGHT = 0.1  # Total Correlation weight
 MI_WEIGHT = 0.04  # Mutual Information weight
 DKLD_WEIGHT = 0.00004  # Dimension-wise KL Divergence weight
@@ -89,7 +89,7 @@ class VehicleDataset(Dataset):
         self.door_classes = len(self.labels_df['door'].unique())
 
         # Sales labels
-        sales_columns = ['SaleYr1', 'SaleYr2', 'Sale2024', 'Sale2025']
+        sales_columns = ['SaleYr1', 'SaleYr2']
         sales_non_na = self.labels_df[sales_columns].notna().all(axis=1).sum()
         
         print(f"Found {len(self.img_files)} valid images")
@@ -115,11 +115,9 @@ class VehicleDataset(Dataset):
         # Get the four sales values, use -1 as sentinel for NaN
         sales_yr1 = torch.tensor(labels['SaleYr1'] if pd.notna(labels['SaleYr1']) else -1, dtype=torch.float32)
         sales_yr2 = torch.tensor(labels['SaleYr2'] if pd.notna(labels['SaleYr2']) else -1, dtype=torch.float32)
-        sales_2024 = torch.tensor(labels['Sale2024'] if pd.notna(labels['Sale2024']) else -1, dtype=torch.float32)
-        sales_2025 = torch.tensor(labels['Sale2025'] if pd.notna(labels['Sale2025']) else -1, dtype=torch.float32)
 
         # Stack into a single tensor
-        sales = torch.stack([sales_yr1, sales_yr2, sales_2024, sales_2025])
+        sales = torch.stack([sales_yr1, sales_yr2])
 
         if self.transform:
             image = self.transform(image)
@@ -293,7 +291,7 @@ class SalesRegressor(nn.Module):
         
         # Two fully connected layers as requested
         self.fc1 = nn.Linear(16, 128)
-        self.fc2 = nn.Linear(128, 4)  # Output 4 predictions
+        self.fc2 = nn.Linear(128, 2)  # Output 2 predictions
         
         # Batch Normalization for stability
         self.bn1 = nn.BatchNorm1d(128)
@@ -562,7 +560,7 @@ def create_output_folder(config):
     folder_name = (
         f"lat{LATENT_DIM}_ep{EPOCHS}_bat{BATCH_SIZE}_lrn{LEARNING_RATE}_"
         f"rec{RECON_WEIGHT}_per{PERCEPTUAL_WEIGHT}_gan{GAN_WEIGHT}_"
-        f"kld{KLD_WEIGHT_END}warm{KLD_WARMUP}(tc{TC_WEIGHT}_mi{MI_WEIGHT}_dk{DKLD_WEIGHT})_cls{CLS_WEIGHT}_yr1yr2"
+        f"kld{KLD_WEIGHT_END}warm{KLD_WARMUP}(tc{TC_WEIGHT}_mi{MI_WEIGHT}_dk{DKLD_WEIGHT})_cls{CLS_WEIGHT}_yr1yr2{SALES_WEIGHT}"
     )
     output_dir = os.path.join("outputs", folder_name)
     os.makedirs(output_dir, exist_ok=True)
@@ -740,6 +738,23 @@ def save_latent_traversals(model, dataloader, output_dir):
 
 # Function to save losses
 def save_losses(all_losses, output_dir):
+
+    # Convert the dictionary of lists to a DataFrame
+    losses_df = pd.DataFrame(all_losses)
+    losses_df['epoch'] = range(len(losses_df))
+    
+    # Order columns to match the plot order
+    column_order = ['epoch','total','recon', 'perceptual', 'kl', 'cls', 'sales_reg','disc','tc', 'mi', 
+                    'dkld','year_cls','make_cls', 'body_cls', 'door_cls','sales_yr1', 'sales_yr2','gan']
+    
+    # Reorder columns (only include columns that exist)
+    cols_to_use = [col for col in column_order if col in losses_df.columns]
+    losses_df = losses_df[cols_to_use]
+    
+    # Save to CSV
+    csv_path = os.path.join(output_dir, "losses.csv")
+    losses_df.to_csv(csv_path, index=False)
+
     # Create figure with subplots
     plt.figure(figsize=(20, 15))
     
@@ -795,8 +810,6 @@ def save_losses(all_losses, output_dir):
     plt.subplot(3, 2, 6)
     plt.plot(all_losses['sales_yr1'], label='SaleYr1')
     plt.plot(all_losses['sales_yr2'], label='SaleYr2')
-    plt.plot(all_losses['sales_2024'], label='Sale2024')
-    plt.plot(all_losses['sales_2025'], label='Sale2025')
     plt.title('Sales Regression Losses (MSE per component)')
     plt.xlabel('Epoch')
     plt.legend()
@@ -881,7 +894,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
         'total': [], 'recon': [], 'perceptual': [], 'disc': [], 'gan': [],
         'kl': [], 'tc': [], 'mi': [], 'dkld': [], 'cls': [],
         'year_cls': [], 'make_cls': [], 'body_cls': [], 'door_cls': [], 'sales_reg': [],
-        'sales_yr1': [], 'sales_yr2': [], 'sales_2024': [], 'sales_2025': []
+        'sales_yr1': [], 'sales_yr2': []
     }
     
     # Lists to store latent vectors for later analysis
@@ -1037,8 +1050,6 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
                 # Compute MSE for each sales component
                 sales_yr1_loss = mse_loss(sales_pred_valid[:, 0], sales_labels_valid[:, 0])
                 sales_yr2_loss = mse_loss(sales_pred_valid[:, 1], sales_labels_valid[:, 1])
-                sales_2024_loss = mse_loss(sales_pred_valid[:, 2], sales_labels_valid[:, 2])
-                sales_2025_loss = mse_loss(sales_pred_valid[:, 3], sales_labels_valid[:, 3])
                 
                 # Total sales loss is the sum of all four MSE losses
                 sales_loss = sales_yr1_loss + sales_yr2_loss #+ sales_2024_loss + sales_2025_loss
@@ -1047,8 +1058,6 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
                 sales_loss = torch.tensor(0.0, device=device)
                 sales_yr1_loss = torch.tensor(0.0, device=device)
                 sales_yr2_loss = torch.tensor(0.0, device=device)
-                sales_2024_loss = torch.tensor(0.0, device=device)
-                sales_2025_loss = torch.tensor(0.0, device=device)
             
             # Compute total loss
             total_loss = (
@@ -1095,8 +1104,6 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
             epoch_losses['sales_reg'] += sales_loss.item() * SALES_WEIGHT
             epoch_losses['sales_yr1'] += sales_yr1_loss.item()
             epoch_losses['sales_yr2'] += sales_yr2_loss.item()
-            epoch_losses['sales_2024'] += sales_2024_loss.item()
-            epoch_losses['sales_2025'] += sales_2025_loss.item()
             
             # Store latent vectors and labels for last epoch
             if epoch == EPOCHS - 1:
@@ -1234,8 +1241,8 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
     total = {'year': 0, 'make': 0, 'body': 0, 'door': 0}
 
     # Sales regression metrics
-    sales_mae = {'yr1': 0, 'yr2': 0, '2024': 0, '2025': 0}
-    sales_mse = {'yr1': 0, 'yr2': 0, '2024': 0, '2025': 0}
+    sales_mae = {'yr1': 0, 'yr2': 0}
+    sales_mse = {'yr1': 0, 'yr2': 0}
     sales_count = 0
 
     with torch.no_grad():
@@ -1282,13 +1289,9 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
                 # Calculate MAE and MSE for each component
                 sales_mae['yr1'] += torch.abs(sales_pred_valid[:, 0] - sales_labels_valid[:, 0]).sum().item()
                 sales_mae['yr2'] += torch.abs(sales_pred_valid[:, 1] - sales_labels_valid[:, 1]).sum().item()
-                sales_mae['2024'] += torch.abs(sales_pred_valid[:, 2] - sales_labels_valid[:, 2]).sum().item()
-                sales_mae['2025'] += torch.abs(sales_pred_valid[:, 3] - sales_labels_valid[:, 3]).sum().item()
                 
                 sales_mse['yr1'] += ((sales_pred_valid[:, 0] - sales_labels_valid[:, 0]) ** 2).sum().item()
                 sales_mse['yr2'] += ((sales_pred_valid[:, 1] - sales_labels_valid[:, 1]) ** 2).sum().item()
-                sales_mse['2024'] += ((sales_pred_valid[:, 2] - sales_labels_valid[:, 2]) ** 2).sum().item()
-                sales_mse['2025'] += ((sales_pred_valid[:, 3] - sales_labels_valid[:, 3]) ** 2).sum().item()
                 
                 sales_count += sales_mask.sum().item()
 
@@ -1307,7 +1310,7 @@ def train_vaegan(model, train_loader, val_loader, output_dir):
         f.write("\nSales Regression Metrics:\n")
         f.write("-" * 40 + "\n")
         if sales_count > 0:
-            for key in ['yr1', 'yr2', '2024', '2025']:
+            for key in ['yr1', 'yr2']:
                 mae = sales_mae[key] / sales_count
                 mse = sales_mse[key] / sales_count
                 rmse = np.sqrt(mse)

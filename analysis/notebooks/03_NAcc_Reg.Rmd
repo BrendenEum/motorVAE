@@ -29,7 +29,7 @@ library(purrr)
 library(glmnet)
 
 ### CHANGE THIS TO THE BEST OUTPUT FOLDER
-.output_folder = "lat128_ep100_bat100_lrn0.0001_rec125.0_per5.0_gan0.2_kld0.5warm5(tc0.1_mi0.04_dk4e-05)_cls0.3"
+.output_folder = "OLDlat128_ep100_bat100_lrn0.0001_rec125.0_per5.0_gan0.2_kld0.5warm5(tc0.1_mi0.04_dk4e-05)_cls0.3"
 ###
 .outdir = paste0("../../outputs/", .output_folder)
 .tempdir = "../temp/"
@@ -126,7 +126,7 @@ df_sd_vif = df_sd %>%
 
 Car2, by_subject, run2
 ```{r}
-car2 = read.csv("../../data/stanford-nacc/Car2_agg_df_by_subject_run2.csv")
+car2 = read.csv("../../data/stanford-nacc/Car2_agg_df_by_subject_run2 (1).csv")
 car2 = car2 %>%
   separate(
     car_folder, 
@@ -135,6 +135,9 @@ car2 = car2 %>%
     remove = FALSE
   )
 car2$VIF = as.integer(car2$VIF)
+car2$agins = car2$insula_agranular_ana_tr4
+car2$gins = car2$insula_granular_ana_tr4
+car2$dgins = car2$insula_dysgranular_ana_tr4
 ```
 
 # Sales data
@@ -159,7 +162,7 @@ df_sales_vif = df_sales %>%
 # Merge
 
 ```{r}
-voi = c("subject", "VIF", "nacc") #nacc = nacc8mm_tr4
+voi = c("subject", "VIF", "nacc", "agins", "gins", "dgins") #nacc = nacc8mm_tr4
 data = car2[,voi] %>%
   left_join(df_mu_vif, by = "VIF", relationship="many-to-one") %>%
   left_join(df_sd_vif, by = "VIF", relationship="many-to-one") %>%
@@ -186,10 +189,13 @@ for (sample in 1:nSamples) {
       subject = data$subject[row],
       VIF = data$VIF[row],
       nacc = data$nacc[row],
+      agins = data$agins[row],
+      gins = data$gins[row],
+      dgins = data$dgins[row],
       sales = data$avg_annual_sales[row] %>% round(1),
       t(z)
     )
-    colnames(new_row)[6:(6 + length(tdim) - 1)] = paste0("z_", tdim)
+    colnames(new_row)[9:(9 + length(tdim) - 1)] = paste0("z_", tdim)
     rdata = bind_rows(rdata, new_row)
   }
 }
@@ -207,10 +213,11 @@ lm(nacc ~ 1 + sales, data = rdata) %>% summary()
 Next, include the latent dimensions in the OLS to check change in R2.
 
 ```{r}
-voi = c("nacc", "sales", paste0("z_", doi) )
+voi = c("nacc", paste0("z_", doi) )
 rdata_ols = rdata[,voi]
 lm(nacc ~ ., data = rdata_ols) %>% summary()
 ```
+
 
 
 Run lasso regression, get coefficients, then run non-zero coefficients in OLS for hypothesis testing.
@@ -265,11 +272,65 @@ print(results)
 ```
 
 
+# Control regressoins
+
+```{r}
+roi = "agins"
+Y = rdata[,roi]
+voi = c("sales", paste0("z_", doi) )
+X = as.matrix(rdata[,voi])
+
+# Extract coefficients
+lasso_model = cv.glmnet(X, Y, alpha=1) #alpha=1 lasso; alpha=0 ridge
+coef_sparse <- coef(lasso_model, s = "lambda.min")
+coef_vector <- as.numeric(coef_sparse)
+var_names <- rownames(coef_sparse)
+selected_vars <- var_names[coef_vector != 0]
+
+# Drop the intercept
+predictors <- selected_vars[selected_vars != "(Intercept)"]
+
+# Create a new dataframe: outcome + selected predictors
+rdata$y = rdata[,roi]
+rdata_selected <- rdata[, c("y", predictors)]
+
+# Fit OLS
+lm_model <- lm(y ~ ., data = rdata_selected)
+summary_model <- summary(lm_model)
+print(summary_model)
+```
+Bonferroni Multiple-Comparisons Correction
+```{r}
+coef_table = coef(summary_model)
+
+# Extract p-values (excluding intercept)
+estimates <- coef_table[-1, "Estimate"]
+pvals <- coef(summary_model)[-1, "Pr(>|t|)"]  # drop intercept row
+
+# Apply Bonferroni correction
+pvals_bonf <- p.adjust(pvals, method = "bonferroni")
+
+# Combine results
+results <- data.frame(
+  Variable = names(pvals),
+  Estimate = estimates,
+  Raw_p = pvals,
+  Bonferroni_p = pvals_bonf,
+  Sig_0.01 = as.numeric(pvals_bonf < 0.01),
+  Sig_0.05 = as.numeric(pvals_bonf < 0.05),
+  Sig_0.10 = as.numeric(pvals_bonf < 0.10)
+)
+rownames(results) = NULL
+
+print(results)
+```
+
+
 # Robustness Checks
 
 What happens when we feed all possible latent dimensions into the linear regression?
 ```{r}
-rdata_all <- rdata[, c("nacc", "sales", paste0("z_", tdim))]
+rdata_all <- rdata[, c("nacc", paste0("z_", tdim))]
 lm(nacc ~ ., data = rdata_all) %>% summary()
 ```
 

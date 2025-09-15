@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --account=def-webbr_gpu
-#SBATCH --time=00-20:00:00 # DD-HH:MM:SS
+#SBATCH --time=1-00:00:00 # DD-HH:MM:SS
 #SBATCH --gpus=nvidia_h100_80gb_hbm3_3g.40gb:1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=80000M
+#SBATCH --mem=80G
 #SBATCH --output=logs/%j.out
 
 # Go to project folder

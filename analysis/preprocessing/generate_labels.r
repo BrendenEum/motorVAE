@@ -133,7 +133,7 @@ cd$make <- cd$make %>% tolower()
 ###########################
 
 #source("/Users/brenden/Desktop/motorVAE/analysis/preprocessing/process_sales.R")
-sales_data = read.csv("/Users/brenden/Desktop/motorVAE/data/sales_data_1_2_2024_2025.csv")
+sales_data = read.csv("/Users/brenden/Desktop/motorVAE/data/SalesData_Yr1_2.csv")
 cd = cd %>% left_join(sales_data, by=c("year","make","model"))
 # cd <- cd %>%
 #   mutate(sales = cut(avg_annual_sales, 
@@ -182,7 +182,7 @@ for (var in c("year","body","make","door", "model", "trim")) {
 
 # Disregard sales for now
 #cd_orig = cd[,c("filename", "year","body", "make","door")]
-cd_orig = cd[,c("filename", "year", "body", "make", "door", "SaleYr1", "SaleYr2", "Sale2024", "Sale2025")]
+cd_orig = cd[,c("filename", "year", "body", "make", "door", "SaleYr1", "SaleYr2")]
 
 # Write to CSV
 write.csv(cd_orig, "/Users/brenden/Desktop/motorVAE/data/labels_evox_256x256_1-4.csv", row.names = FALSE)

@@ -1,0 +1,223 @@
+---
+title: "07_check_autodealerdata_consistentDealers"
+output:
+  pdf_document:
+    toc: true
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+---
+
+Checking validity of autodealerdata, when subsetted to consistent dealers between 2017 to 2024.
+
+## Start Fresh
+```{r}
+rm(list=ls())
+gc()
+library(here)
+library(tidyverse)
+library(arrow)
+library(plotrix)
+library(patchwork)
+library(lubridate)
+.root = here() 
+.outdir = file.path(.root, "outputs")
+.datadir = file.path(.root, "data")
+.tmpdir = file.path(.root, "analysis/temp")
+.figdir = file.path(.root, "analysis/figures")
+.tabdir = file.path(.root, "analysis/tables")
+.txtdir = file.path(.root, "analysis/text")
+```
+
+## Subset by Consistent Dealers
+
+Only keep dealers that are consistently in the dataset between 2017 and 2024
+
+```{r}
+cache_file = file.path(.tmpdir, "autodealerdata_individual_parquets")
+individual_sales = open_dataset(cache_file)
+
+consistent_dealers <- individual_sales %>%
+  filter(is_new == TRUE & year > 2005 & year < 2025) %>%
+  filter(year_sold >= 2017 & year_sold <= 2024) %>%
+  group_by(dealer_id) %>%
+  summarise(years_present = n_distinct(year_sold)) %>%  # Changed to year_sold
+  filter(years_present == 8) %>%
+  pull(dealer_id, as_vector = TRUE)
+
+# Keep only observations from consistent dealers in the 2017-2024 window
+individual_new_sales = individual_sales %>%
+  filter(is_new == T & year > 2005 & year < 2025) %>%
+  filter(year_sold >= 2017 & year_sold <= 2024) %>% 
+  filter(dealer_id %in% consistent_dealers) %>%
+  collect()
+
+# Check how many dealers were consistent and how many observations remain
+cat("Number of consistent dealers:", length(consistent_dealers), "\n")
+cat("Observations in filtered dataset:", nrow(individual_new_sales), "\n")
+```
+
+
+# Where are these dealers?
+
+Note, we're only considering zip codes that have 5 digits.
+
+```{r}
+library(zipcodeR)
+library(maps)
+library(viridis)
+
+# Get counts per zipcode
+zips = individual_new_sales$zip_code[individual_new_sales$zip_code>=10000 & individual_new_sales$zip_code<=99999]
+zips = data.frame(zipcode=as.character(zips))
+zips = zips %>% group_by(zipcode) %>% summarize(count=n(), .groups="drop")
+
+# Get zip code data with coordinates
+zip_data <- zip_code_db %>%
+  inner_join(zips, by = "zipcode") %>%
+  select(zipcode, lat, lng, count)
+
+# Get US map data
+us_map <- map_data("state")
+
+# Create the heatmap with log scaling
+ggplot() +
+  geom_polygon(data = us_map, 
+               aes(x = long, y = lat, group = group),
+               fill = "white", color = "gray50", size = 0.2) +
+  geom_point(data = zip_data,
+             aes(x = lng, y = lat, color = count),
+             alpha = 0.8, size=0.2) +
+  scale_color_gradient(name = "Count", 
+                      low = "mistyrose", 
+                      high = "dodgerblue3",
+                      trans = "log10",
+                      labels = scales::comma_format(),
+                      limits = c(1, 1000000)) +
+  coord_fixed(1.3) +
+  theme_void() +
+  theme(legend.position = "right",
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+
+# Transactions Per Year
+
+```{r}
+#individual_new_sales = read_parquet(file.path(.tmpdir, "individual_new_sales_2005_2025.parquet"))
+
+FRED = read.csv("/Users/brenden/Desktop/motorVAE/data/FRED_lightweight_vehicle_monthly_sales.csv") %>%
+  mutate(
+    year_sold = year(as.Date(observation_date))
+  ) %>%
+  group_by(year_sold) %>%
+  summarize(
+    total_sales = sum(ALTSALES, na.rm = TRUE),
+    n_months = n()  # Count months to verify complete years
+  ) 
+
+df_trans_year = individual_new_sales %>%
+  group_by(year_sold) %>%
+  summarize(count = n(), .groups="drop")
+
+# Calculate scaling factor for the secondary axis
+scale_factor <- max(df_trans_year$count) / max(FRED$total_sales)
+
+# Plot
+ggplot() +
+  
+  geom_line(
+    data=df_trans_year, 
+    aes(x=year_sold, y=count, color="Autodealerdata, Consistent Dealers"),
+    linewidth=1
+  ) +
+  
+  geom_line(
+    data=FRED, 
+    aes(x=year_sold, y=total_sales*scale_factor, color="FRED, Lightweight Vehicle Sales"),
+    linewidth=1
+  ) +
+  
+  scale_y_continuous(
+    name = "Autodealerdata New Car Sales",
+    sec.axis = sec_axis(~ . / scale_factor, name = "FRED Lightweight Vehicle Sales (millions)")
+  ) +
+  # Add legend
+  scale_color_manual(values = c(
+    "Autodealerdata, Consistent Dealers" = "dodgerblue",
+    "FRED, Lightweight Vehicle Sales" = "maroon")
+  ) +
+  labs(x="Year Sold", color="Data Source") +
+  theme_bw() +
+  theme(legend.position="bottom") 
+```
+
+
+# Unique Makes & Models Per Year
+
+```{r}
+#individual_new_sales = read_parquet(file.path(.tmpdir, "individual_new_sales_2005_2025.parquet"))
+
+df_models_year = individual_new_sales %>%
+  distinct(year_sold, make, model) %>%
+  group_by(year_sold) %>%
+  summarize(count=n(), .groups="drop")
+
+ggplot(data=df_models_year, aes(x=year_sold, y=count)) +
+  geom_line(linewidth=1) +
+  labs(y="# of Unique Make-Models of New Cars", x="Year Sold") +
+  coord_cartesian(ylim=c(0, NA)) +
+  theme_bw()
+```
+
+
+# Mean Asking Price by Year
+
+```{r}
+#individual_new_sales = read_parquet(file.path(.tmpdir, "individual_new_sales_2005_2025.parquet"))
+
+df_ask_year = individual_new_sales %>%
+  group_by(year_sold) %>%
+  summarize(ask_mean = mean(ask_price), ask_se = std.error(ask_price), ask_median = median(ask_price), .groups="drop")
+
+ggplot(data=df_ask_year, aes(x=year_sold)) +
+  geom_line(aes(y=ask_median, color="Median"), linewidth=1) +
+  geom_line(aes(y=ask_mean, color="Mean"), linewidth=1) +
+  geom_linerange(aes(ymin=ask_mean-ask_se, ymax=ask_mean+ask_se, color="Mean"), linewidth=1) +
+  labs(y="Ask Price", x="Year Sold", color="Statistic") +
+  theme_bw()
+```
+
+
+# Sales by Age and Proportion of New by Age
+
+```{r}
+rm(individual_new_sales)
+gc()
+
+df_new_age = individual_sales %>%
+  filter(year > 2005 & year < 2025) %>%
+  filter(year_sold >= 2017 & year_sold <= 2024) %>% 
+  filter(dealer_id %in% consistent_dealers) %>%
+  mutate(age = year_sold - as.integer(year)) %>%
+  group_by(age) %>%
+  summarize(new_proportion = mean(is_new), count=n(), .groups="drop") %>%
+  collect()
+
+p1 = ggplot(data=df_new_age, aes(x=age, y=count)) +
+  geom_linerange(aes(ymin=0, ymax=count)) +
+  geom_point() +
+  labs(y="Count", x="Age") +
+  theme_bw()
+
+p2 = ggplot(data=df_new_age, aes(x=age, y=new_proportion)) +
+  geom_hline(yintercept = .5, color="grey") +
+  geom_point() +
+  geom_linerange(aes(ymin=0, ymax=new_proportion)) +
+  labs(y="Pr. Reported as New Vehicle Sold", x="Age of Vehicle") +
+  theme_bw()
+
+p1 / p2
+```
